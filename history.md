@@ -1,3 +1,10 @@
+
+8.0.0 / 2019-06-16
+==================
+
+**others**
+  * [[`b5dd5e8`](http://github.com/koajs/koa-router/commit/b5dd5e8f00e841b7061a62ab6228cbe96a999470)] - chore: rename to @koa/router (dead-horse <<dead_horse@qq.com>>)
+
 -------------
 
 # Changelogs inherit from koa-router.
