@@ -1,4 +1,6 @@
-# History
+-------------
+
+# Changelogs inherit from koa-router.
 
 ## 7.4.0
 

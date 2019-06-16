@@ -1,16 +1,16 @@
 {
-  "name": "koa-router",
+  "name": "@koa/router",
   "description": "Router middleware for koa. Provides RESTful resource routing.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/alexmingoia/koa-router.git"
+    "url": "https://github.com/koajs/koa-router.git"
   },
   "main": "lib/router.js",
   "files": [
     "lib"
   ],
   "author": "Alex Mingoia <talk@alexmingoia.com>",
-  "version": "7.4.0",
+  "version": "1.0.0",
   "keywords": [
     "koa",
     "middleware",
