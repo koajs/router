@@ -10,6 +10,10 @@
     "semi": [
       "warn",
       "always"
+    ],
+    "space-before-function-paren": [
+      "warn",
+      "never"
     ]
   }
 }
