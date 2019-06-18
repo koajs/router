@@ -5,5 +5,11 @@
   },
   "plugins": [
     "mocha"
-  ]
+  ],
+  "rules": {
+    "semi": [
+      "warn",
+      "always"
+    ]
+  }
 }
