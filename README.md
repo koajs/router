@@ -2,7 +2,7 @@
 
 [![NPM version](https://img.shields.io/npm/v/@koa/router.svg?style=flat)](https://npmjs.org/package/@koa/router) [![NPM Downloads](https://img.shields.io/npm/dm/@koa/router.svg?style=flat)](https://npmjs.org/package/@koa/router) [![Node.js Version](https://img.shields.io/node/v/@koa/router.svg?style=flat)](http://nodejs.org/download/) [![Build Status](https://img.shields.io/travis/koajs/koa-router.svg?style=flat)](http://travis-ci.org/koajs/koa-router) [![Tips](https://img.shields.io/gratipay/koajs.svg?style=flat)](https://www.gratipay.com/koajs/) [![Gitter Chat](https://img.shields.io/badge/gitter-join%20chat-1dce73.svg?style=flat)](https://gitter.im/koajs/koa-router/)
 
-## Call for Mantainers
+## Call for Maintainers
 
 This module if fork from [koa-router](https://github.com/ZijianHe/koa-router), the most widely used router module in koa
 community, because of it is lake of activity now. Thanks for the greate work of @alexmingoia and the original team.
