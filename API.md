@@ -36,11 +36,11 @@ Create a new router.
 Basic usage:
 
 ```javascript
-var Koa = require('koa');
-var Router = require('koa-router');
+const Koa = require('koa');
+const Router = require('koa-router');
 
-var app = new Koa();
-var router = new Router();
+const app = new Koa();
+const router = new Router();
 
 router.get('/', (ctx, next) => {
   // ctx.router available
@@ -127,8 +127,8 @@ router.get(
 Nesting routers is supported:
 
 ```javascript
-var forums = new Router();
-var posts = new Router();
+const forums = new Router();
+const posts = new Router();
 
 posts.get('/', (ctx, next) => {...});
 posts.get('/:pid', (ctx, next) => {...});
@@ -143,7 +143,7 @@ app.use(forums.routes());
 Route paths can be prefixed at the router level:
 
 ```javascript
-var router = new Router({
+const router = new Router({
   prefix: '/users'
 });
 
@@ -244,11 +244,11 @@ with `405 Method Not Allowed` and `501 Not Implemented` as appropriate.
 
 **Example**  
 ```javascript
-var Koa = require('koa');
-var Router = require('koa-router');
+const Koa = require('koa');
+const Router = require('koa-router');
 
-var app = new Koa();
-var router = new Router();
+const app = new Koa();
+const router = new Router();
 
 app.use(router.routes());
 app.use(router.allowedMethods());
@@ -257,12 +257,12 @@ app.use(router.allowedMethods());
 **Example with [Boom](https://github.com/hapijs/boom)**
 
 ```javascript
-var Koa = require('koa');
-var Router = require('koa-router');
-var Boom = require('boom');
+const Koa = require('koa');
+const Router = require('koa-router');
+const Boom = require('boom');
 
-var app = new Koa();
-var router = new Router();
+const app = new Koa();
+const router = new Router();
 
 app.use(router.routes());
 app.use(router.allowedMethods({
@@ -393,6 +393,6 @@ Generate URL from url pattern and given `params`.
 
 **Example**  
 ```javascript
-var url = Router.url('/users/:id', {id: 1});
+const url = Router.url('/users/:id', {id: 1});
 // => "/users/1"
 ```
