@@ -35,7 +35,7 @@
   },
   "scripts": {
     "test": "NODE_ENV=test mocha test/**/*.js",
-    "docs": "NODE_ENV=test jsdoc2md -t ./lib/README_tpl.hbs --src ./lib/*.js  >| README.md"
+    "docs": "NODE_ENV=test jsdoc2md -t ./lib/API_tpl.hbs --src ./lib/*.js  >| API.md"
   },
   "engines": {
     "node": ">= 4"
