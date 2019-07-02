@@ -127,8 +127,8 @@ router.get(
 Nesting routers is supported:
 
 ```javascript
-var forums = new Router();
-var posts = new Router();
+const forums = new Router();
+const posts = new Router();
 
 posts.get('/', (ctx, next) => {...});
 posts.get('/:pid', (ctx, next) => {...});
@@ -143,7 +143,7 @@ app.use(forums.routes());
 Route paths can be prefixed at the router level:
 
 ```javascript
-var router = new Router({
+const router = new Router({
   prefix: '/users'
 });
 
