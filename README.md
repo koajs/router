@@ -1,35 +1,29 @@
 # koa-router
 
-[![NPM version](https://img.shields.io/npm/v/@koa/router.svg?style=flat)](https://npmjs.org/package/@koa/router) [![NPM Downloads](https://img.shields.io/npm/dm/@koa/router.svg?style=flat)](https://npmjs.org/package/@koa/router) [![Node.js Version](https://img.shields.io/node/v/@koa/router.svg?style=flat)](http://nodejs.org/download/) [![Build Status](https://img.shields.io/travis/koajs/koa-router.svg?style=flat)](http://travis-ci.org/koajs/koa-router) [![Tips](https://img.shields.io/gratipay/koajs.svg?style=flat)](https://www.gratipay.com/koajs/) [![Gitter Chat](https://img.shields.io/badge/gitter-join%20chat-1dce73.svg?style=flat)](https://gitter.im/koajs/koa-router/)
+[![NPM version](https://img.shields.io/npm/v/@koa/router.svg?style=flat-square)](https://npmjs.org/package/@koa/router) [![NPM Downloads](https://img.shields.io/npm/dm/@koa/router.svg?style=flat-square)](https://npmjs.org/package/@koa/router) [![Node.js Version](https://img.shields.io/node/v/@koa/router.svg?style=flat-square)](http://nodejs.org/download) [![Build Status](https://img.shields.io/travis/koajs/koa-router.svg?style=flat-square)](http://travis-ci.org/koajs/koa-router) [![Backers](https://img.shields.io/opencollective/backers/koajs.svg?style=flat-square)](https://github.com/koajs/koa#backers) [![Sponsors](https://img.shields.io/opencollective/sponsors/koajs.svg?style=flat-square)](https://github.com/koajs/koa#sponsors) [![Gitter Chat](https://img.shields.io/badge/gitter-join%20chat-1dce73.svg?style=flat-square)](https://gitter.im/koajs/koa-router)
 
 ## Call for Maintainers
 
-This module if fork from [koa-router](https://github.com/ZijianHe/koa-router), the most widely used router module in koa
-community, because of it is lake of activity now. Thanks for the greate work of @alexmingoia and the original team.
+This module is forked from the original [koa-router](https://github.com/ZijianHe/koa-router) due to its lack of activity. `koa-router` is the most widely used router module in the Koa community and we need maintainers. If you're interested in fixing bugs or implementing new features feel free to open a pull request. We'll be adding active contributors as collaborators.
 
-And now we need maintainers for this project. Anyone interested can creates pull requests to fixes bugs or implements
-new features, we will add active contributors as collaborators.
+Thanks to @alexmingoia and all the original contributors for their great work.
 
 > Router middleware for [koa](https://github.com/koajs/koa)
 
-* Express-style routing using `app.get`, `app.put`, `app.post`, etc.
-* Named URL parameters.
-* Named routes with URL generation.
-* Responds to `OPTIONS` requests with allowed methods.
-* Support for `405 Method Not Allowed` and `501 Not Implemented`.
-* Multiple route middleware.
-* Multiple routers.
-* Nestable routers.
-* ES7 async/await support.
+- Express-style routing using `app.get`, `app.put`, `app.post`, etc.
+- Named URL parameters.
+- Named routes with URL generation.
+- Responds to `OPTIONS` requests with allowed methods.
+- Support for `405 Method Not Allowed` and `501 Not Implemented`.
+- Multiple route middleware.
+- Multiple routers.
+- Nestable routers.
+- ES7 async/await support.
 
 ## Migrating to 7 / Koa 2
 
-- The API has changed to match the new promise-based middleware
-  signature of koa 2. See the
-  [koa 2.x readme](https://github.com/koajs/koa/tree/2.0.0-alpha.3) for more
-  information.
-- Middleware is now always run in the order declared by `.use()` (or `.get()`,
-  etc.), which matches Express 4 API.
+- The API has changed to match the new promise-based middleware signature of koa 2. See the [koa 2.x readme](https://github.com/koajs/koa) for more information.
+- Middleware is now always run in the order declared by `.use()` (or `.get()`, etc.), which matches Express 4 API.
 
 ## Installation
 
