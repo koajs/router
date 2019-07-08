@@ -2,13 +2,15 @@
 
 [![NPM version](https://img.shields.io/npm/v/@koa/router.svg?style=flat)](https://npmjs.org/package/@koa/router) [![NPM Downloads](https://img.shields.io/npm/dm/@koa/router.svg?style=flat)](https://npmjs.org/package/@koa/router) [![Node.js Version](https://img.shields.io/node/v/@koa/router.svg?style=flat)](http://nodejs.org/download/) [![Build Status](https://img.shields.io/travis/koajs/koa-router.svg?style=flat)](http://travis-ci.org/koajs/koa-router) [![Tips](https://img.shields.io/gratipay/koajs.svg?style=flat)](https://www.gratipay.com/koajs/) [![Gitter Chat](https://img.shields.io/badge/gitter-join%20chat-1dce73.svg?style=flat)](https://gitter.im/koajs/koa-router/)
 
-## Call for Maintainers
+## Call for Mantainers
 
-This module if fork from [koa-router](https://github.com/ZijianHe/koa-router), the most widely used router module in koa
-community, because of it is lake of activity now. Thanks for the greate work of @alexmingoia and the original team.
+This module is a fork from [koa-router](https://github.com/ZijianHe/koa-router), the most widely used router module in koa
+community, because of its lack of activity. **Thanks for the great work of @alexmingoia and the original team**.
 
-And now we need maintainers for this project. Anyone interested can creates pull requests to fixes bugs or implements
+Now we need mantainers for this project. Anyone interested can create pull requests to bug fixes or implement
 new features, we will add active contributors as collaborators.
+
+---
 
 > Router middleware for [koa](https://github.com/koajs/koa)
 
