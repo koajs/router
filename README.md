@@ -4,11 +4,13 @@
 
 ## Call for Maintainers
 
-This module if fork from [koa-router](https://github.com/ZijianHe/koa-router), the most widely used router module in koa
-community, because of it is lake of activity now. Thanks for the greate work of @alexmingoia and the original team.
+This module is a fork from [koa-router](https://github.com/ZijianHe/koa-router), the most widely used router module in koa
+community, because of its lack of activity. **Thanks for the great work of @alexmingoia and the original team**.
 
-And now we need maintainers for this project. Anyone interested can creates pull requests to fixes bugs or implements
+Now we need maintainers for this project. Anyone interested can create pull requests to bug fixes or implement
 new features, we will add active contributors as collaborators.
+
+---
 
 > Router middleware for [koa](https://github.com/koajs/koa)
 
