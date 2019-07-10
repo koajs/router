@@ -1,28 +1,27 @@
 # koa-router
 
-[![NPM version](https://img.shields.io/npm/v/@koa/router.svg?style=flat)](https://npmjs.org/package/@koa/router) [![NPM Downloads](https://img.shields.io/npm/dm/@koa/router.svg?style=flat)](https://npmjs.org/package/@koa/router) [![Node.js Version](https://img.shields.io/node/v/@koa/router.svg?style=flat)](http://nodejs.org/download/) [![Build Status](https://img.shields.io/travis/koajs/koa-router.svg?style=flat)](http://travis-ci.org/koajs/koa-router) [![Tips](https://img.shields.io/gratipay/koajs.svg?style=flat)](https://www.gratipay.com/koajs/) [![Gitter Chat](https://img.shields.io/badge/gitter-join%20chat-1dce73.svg?style=flat)](https://gitter.im/koajs/koa-router/)
+Router middleware for [koa](https://github.com/koajs/koa)
+
+[![NPM version](https://img.shields.io/npm/v/@koa/router.svg?style=flat)](https://npmjs.org/package/@koa/router) 
+[![NPM Downloads](https://img.shields.io/npm/dm/@koa/router.svg?style=flat)](https://npmjs.org/package/@koa/router) 
+[![Node.js Version](https://img.shields.io/node/v/@koa/router.svg?style=flat)](http://nodejs.org/download/)
+[![Build Status](https://img.shields.io/travis/koajs/koa-router.svg?style=flat)](http://travis-ci.org/koajs/koa-router)
+[![Gitter Chat](https://img.shields.io/badge/gitter-join%20chat-1dce73.svg?style=flat)](https://gitter.im/koajs/koa-router/)
+
+* Express-style routing (`app.get`, `app.put`, `app.post`, etc.)
+* Named URL parameters
+* Named routes with URL generation
+* Responds to `OPTIONS` requests with allowed methods
+* Support for `405 Method Not Allowed` and `501 Not Implemented`
+* Multiple route middleware
+* Multiple and nestable routers
+* `async/await` support
 
 ## Call for Maintainers
 
-This module is a fork from [koa-router](https://github.com/ZijianHe/koa-router), the most widely used router module in koa
-community, because of its lack of activity. **Thanks for the great work of @alexmingoia and the original team**.
+This module is forked from the original [koa-router](https://github.com/ZijianHe/koa-router) due to its lack of activity. `koa-router` is the most widely used router module in the Koa community and we need maintainers. If you're interested in fixing bugs or implementing new features feel free to open a pull request. We'll be adding active contributors as collaborators.
 
-Now we need maintainers for this project. Anyone interested can create pull requests to bug fixes or implement
-new features, we will add active contributors as collaborators.
-
----
-
-> Router middleware for [koa](https://github.com/koajs/koa)
-
-* Express-style routing using `app.get`, `app.put`, `app.post`, etc.
-* Named URL parameters.
-* Named routes with URL generation.
-* Responds to `OPTIONS` requests with allowed methods.
-* Support for `405 Method Not Allowed` and `501 Not Implemented`.
-* Multiple route middleware.
-* Multiple routers.
-* Nestable routers.
-* ES7 async/await support.
+Thanks to the original authors @alexmingoia and the original team for their great work.
 
 ## Migrating to 7 / Koa 2
 
