@@ -1,4 +1,4 @@
-# koa-router
+# @koa/router
 
 Router middleware for [koa](https://github.com/koajs/koa)
 
