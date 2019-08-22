@@ -5,8 +5,8 @@ Router middleware for [koa](https://github.com/koajs/koa)
 [![NPM version](https://img.shields.io/npm/v/@koa/router.svg?style=flat)](https://npmjs.org/package/@koa/router) 
 [![NPM Downloads](https://img.shields.io/npm/dm/@koa/router.svg?style=flat)](https://npmjs.org/package/@koa/router) 
 [![Node.js Version](https://img.shields.io/node/v/@koa/router.svg?style=flat)](http://nodejs.org/download/)
-[![Build Status](https://img.shields.io/travis/koajs/koa-router.svg?style=flat)](http://travis-ci.org/koajs/koa-router)
-[![Gitter Chat](https://img.shields.io/badge/gitter-join%20chat-1dce73.svg?style=flat)](https://gitter.im/koajs/koa-router/)
+[![Build Status](https://img.shields.io/travis/koajs/router.svg?style=flat)](http://travis-ci.org/koajs/router)
+[![gitter](https://img.shields.io/gitter/room/koajs/koa.svg?style=flat)](https://gitter.im/koajs/koa)
 
 * Express-style routing (`app.get`, `app.put`, `app.post`, etc.)
 * Named URL parameters
@@ -44,7 +44,7 @@ npm install @koa/router
 
 ## Contributing
 
-Please submit all issues and pull requests to the [koajs/koa-router](http://github.com/koajs/koa-router) repository!
+Please submit all issues and pull requests to the [koajs/router](http://github.com/koajs/router) repository!
 
 ## Tests
 
@@ -52,4 +52,4 @@ Run tests using `npm test`.
 
 ## Support
 
-If you have any problem or suggestion please open an issue [here](https://github.com/koajs/koa-router/issues).
+If you have any problem or suggestion please open an issue [here](https://github.com/koajs/router/issues).
