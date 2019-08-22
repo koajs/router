@@ -6,7 +6,7 @@ Router middleware for [koa](https://github.com/koajs/koa)
 [![NPM Downloads](https://img.shields.io/npm/dm/@koa/router.svg?style=flat)](https://npmjs.org/package/@koa/router) 
 [![Node.js Version](https://img.shields.io/node/v/@koa/router.svg?style=flat)](http://nodejs.org/download/)
 [![Build Status](https://img.shields.io/travis/koajs/router.svg?style=flat)](http://travis-ci.org/koajs/router)
-[![gitter](https://img.shields.io/gitter/room/koajs/koa.svg?style=flat-square)](https://gitter.im/koajs/koa)
+[![gitter](https://img.shields.io/gitter/room/koajs/koa.svg?style=flat)](https://gitter.im/koajs/koa)
 
 * Express-style routing (`app.get`, `app.put`, `app.post`, etc.)
 * Named URL parameters
