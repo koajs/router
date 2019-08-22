@@ -38,7 +38,7 @@
     "docs": "NODE_ENV=test jsdoc2md -t ./lib/API_tpl.hbs --src ./lib/*.js  >| API.md"
   },
   "engines": {
-    "node": ">= 4"
+    "node": ">= 8.0.0"
   },
   "license": "MIT"
 }
