@@ -21,15 +21,16 @@
     "co": "^4.6.0",
     "debug": "^2.2.0",
     "http-errors": "^1.3.1",
+    "koa-convert": "^1.2.0",
     "methods": "^1.0.1",
     "path-to-regexp": "^1.1.1"
   },
   "devDependencies": {
+    "expect.js": "^0.3.1",
     "gulp": "^3.8.11",
     "gulp-mocha": "^2.0.0",
     "jsdoc-to-markdown": "^1.1.1",
-    "expect.js": "^0.3.1",
-    "koa": "^0.20.0",
+    "koa": "^2.8.1",
     "mocha": "^2.0.1",
     "should": "^6.0.3",
     "supertest": "^1.0.1"
