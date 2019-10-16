@@ -26,6 +26,13 @@
     "urijs": "^1.19.0"
   },
   "devDependencies": {
+    "eslint": "latest",
+    "eslint-config-koa": "latest",
+    "eslint-config-standard": "^14.1.0",
+    "eslint-plugin-import": "2.18.2",
+    "eslint-plugin-node": "10.0.0",
+    "eslint-plugin-promise": "4.2.1",
+    "eslint-plugin-standard": "^4.0.1",
     "expect.js": "^0.3.1",
     "jsdoc-to-markdown": "^5.0.1",
     "koa": "2.2.0",
@@ -35,7 +42,8 @@
   },
   "scripts": {
     "test": "NODE_ENV=test mocha test/**/*.js",
-    "docs": "NODE_ENV=test jsdoc2md -t ./lib/API_tpl.hbs --src ./lib/*.js  >| API.md"
+    "docs": "NODE_ENV=test jsdoc2md -t ./lib/API_tpl.hbs --src ./lib/*.js  >| API.md",
+    "lint": "eslint lib bench test"
   },
   "engines": {
     "node": ">= 8.0.0"
