@@ -22,7 +22,7 @@
     "http-errors": "^1.7.3",
     "koa-compose": "^4.1.0",
     "methods": "^1.1.2",
-    "path-to-regexp": "^1.1.1",
+    "path-to-regexp": "1.7.0",
     "urijs": "^1.19.0"
   },
   "peerDependencies": {
