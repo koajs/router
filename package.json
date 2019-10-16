@@ -30,11 +30,13 @@
     "jsdoc-to-markdown": "^5.0.1",
     "koa": "2.2.0",
     "mocha": "^6.2.0",
+    "nyc": "14.1.1",
     "should": "^6.0.3",
     "supertest": "^4.0.2"
   },
   "scripts": {
     "test": "NODE_ENV=test mocha test/**/*.js",
+    "test-cov": "nyc --reporter=lcov --reporter=text --reporter=text-summary mocha --timeout=3000 test/**/*.js",
     "docs": "NODE_ENV=test jsdoc2md -t ./lib/API_tpl.hbs --src ./lib/*.js  >| API.md"
   },
   "engines": {
