@@ -1365,8 +1365,32 @@ describe('Router', function () {
     })
 
     it('generates URL for given route name without params and query params', function(done) {
-        const app = new Koa();
-        const router = new Router();
+        var router = new Router();
+        router.get('books', '/books', function (ctx) {
+          ctx.status = 204;
+        });
+        var url = router.url('books');
+        url.should.equal('/books');
+        var url = router.url('books');
+        url.should.equal('/books', {});
+        var url = router.url('books');
+        url.should.equal('/books', {}, {});
+        var url = router.url('books',
+          {},
+          { query: { page: 3, limit: 10 } }
+        );
+        url.should.equal('/books?page=3&limit=10');
+        var url = router.url('books',
+          {},
+          { query: 'page=3&limit=10' }
+        );
+        url.should.equal('/books?page=3&limit=10');
+        done();
+    })
+
+
+    it('generates URL for given route name without params and query params', function(done) {
+        var router = new Router();
         router.get('category', '/category', function (ctx) {
           ctx.status = 204;
         });
