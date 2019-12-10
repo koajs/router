@@ -29,9 +29,6 @@
   "files": [
     "lib"
   ],
-  "peerDependencies": {
-    "koa": ">=2.2"
-  },
   "homepage": "https://github.com/koajs/router",
   "keywords": [
     "koa",
