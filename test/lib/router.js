@@ -455,6 +455,44 @@ describe('Router', function () {
     });
   });
 
+  it('matches corresponding requests with optional route parameter', function (done) {
+    var app = new Koa();
+    var router = new Router();
+    app.use(router.routes());
+    router.get('/resources', function (ctx) {
+      ctx.should.have.property('params');
+      ctx.params.should.be.empty();
+      ctx.status = 204;
+    });
+    var id = '10';
+    var ext = '.json';
+    router.get('/resources/:id{.:ext}?', function (ctx) {
+      ctx.should.have.property('params');
+      ctx.params.should.have.property('id', id);
+      if (ctx.params.ext) ctx.params.ext.should.be.equal(ext.substring(1));
+      ctx.status = 204;
+    });
+    var server = http.createServer(app.callback());
+    request(server)
+    .get('/resources')
+    .expect(204)
+    .end(function (err, res) {
+      if (err) return done(err);
+      request(server)
+      .get('/resources/' + id)
+      .expect(204)
+      .end(function (err, res) {
+        if (err) return done(err);
+        request(server)
+          .get('/resources/' + id + ext)
+          .expect(204)
+          .end(function (err, res) {
+            done(err);
+          });
+      });
+    });
+  });
+
   it('executes route middleware using `app.context`', function (done) {
     var app = new Koa();
     var router = new Router();
@@ -1107,7 +1145,7 @@ describe('Router', function () {
         done();
       }, error => done(error));
     });
-    
+
     it('uses a same router middleware at given paths continuously - ZijianHe/koa-router#gh-244 gh-18', function (done) {
       const app = new Koa();
       const base = new Router({ prefix: '/api' });
