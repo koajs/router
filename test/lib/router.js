@@ -194,7 +194,7 @@ describe('Router', function () {
       });
   });
 
-  it('matches middleware only if route was matched (gh-182)', function (done) {
+  it('matches middleware even if no route was matched (gh-44)', function (done) {
     var app = new Koa();
     var router = new Router();
     var otherRouter = new Router();
@@ -215,8 +215,8 @@ describe('Router', function () {
       .expect(200)
       .end(function (err, res) {
         if (err) return done(err);
-        expect(res.body).to.have.property('foo', 'bar');
-        expect(res.body).to.not.have.property('bar');
+        expect(res.body).to.have.property('bar', 'baz');
+        expect(res.body).to.not.have.property('foo');
         done();
       })
   });
