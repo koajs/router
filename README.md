@@ -34,6 +34,14 @@ Install using [npm](https://www.npmjs.org/):
 npm install @koa/router
 ```
 
+## Typescript
+
+Although we do not support directly, there is an associated @types package.
+
+```sh
+npm install @types/koa__router
+```
+
 ## [API Reference](./API.md)
 
 ## Contributing
