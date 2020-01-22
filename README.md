@@ -17,12 +17,6 @@ Router middleware for [koa](https://github.com/koajs/koa)
 * Multiple and nestable routers
 * `async/await` support
 
-## Call for Maintainers
-
-This module is forked from the original [koa-router](https://github.com/ZijianHe/koa-router) due to its lack of activity. `koa-router` is the most widely used router module in the Koa community and we need maintainers. If you're interested in fixing bugs or implementing new features feel free to open a pull request. We'll be adding active contributors as collaborators.
-
-Thanks to the original authors @alexmingoia and the original team for their great work.
-
 ## Migrating to 7 / Koa 2
 
 - The API has changed to match the new promise-based middleware
@@ -53,3 +47,10 @@ Run tests using `npm test`.
 ## Support
 
 If you have any problem or suggestion please open an issue [here](https://github.com/koajs/router/issues).
+
+## Call for Maintainers
+
+This module is forked from the original [koa-router](https://github.com/ZijianHe/koa-router) due to its lack of activity. `koa-router` is the most widely used router module in the Koa community and we need maintainers. If you're interested in fixing bugs or implementing new features feel free to open a pull request. We'll be adding active contributors as collaborators.
+
+Thanks to the original authors @alexmingoia and the original team for their great work.
+
