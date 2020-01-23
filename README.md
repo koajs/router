@@ -39,7 +39,7 @@ npm install @koa/router
 Although we do not support directly, there is an associated @types package.
 
 ```sh
-npm install @types/koa__router
+npm install @types/koa__router --save-dev
 ```
 
 ## [API Reference](./API.md)
