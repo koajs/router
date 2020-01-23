@@ -36,7 +36,7 @@ npm install @koa/router
 
 ## Typescript
 
-Although we do not support directly, there is an associated @types package.
+Although we do not support directly, there is an associated [@types](https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/koa__router) package.
 
 ```sh
 npm install @types/koa__router --save-dev
@@ -61,4 +61,3 @@ If you have any problem or suggestion please open an issue [here](https://github
 This module is forked from the original [koa-router](https://github.com/ZijianHe/koa-router) due to its lack of activity. `koa-router` is the most widely used router module in the Koa community and we need maintainers. If you're interested in fixing bugs or implementing new features feel free to open a pull request. We'll be adding active contributors as collaborators.
 
 Thanks to the original authors @alexmingoia and the original team for their great work.
-
