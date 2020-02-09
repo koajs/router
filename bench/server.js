@@ -32,8 +32,8 @@ for (let i = n; i > 0; i--) {
   let child = new Router();
   if (useMiddleware) child.use((ctx, next) => next());
   child.get(`/:${''.padStart(i, 'a')}`, ok);
-  child.nest('/grandchild', grandchild);
-  router.nest(`/${i}/child`, child);
+  child.middleware('/grandchild', grandchild);
+  router.middleware(`/${i}/child`, child);
 }
 
 if (process.env.DEBUG) {
@@ -44,4 +44,4 @@ app.use(router.routes());
 
 process.stdout.write(`mw: ${useMiddleware} factor: ${n}`);
 
-app.listen(process.env.PORT);
+app.listen(3333);

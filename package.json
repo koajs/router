@@ -21,7 +21,8 @@
     "koa": "^2.11.0",
     "mocha": "^6.2.2",
     "should": "^13.2.3",
-    "supertest": "^4.0.2"
+    "supertest": "^4.0.2",
+    "wrk": "^1.2.0"
   },
   "engines": {
     "node": ">= 8.0.0"
@@ -44,6 +45,7 @@
   },
   "scripts": {
     "docs": "NODE_ENV=test jsdoc2md -t ./lib/API_tpl.hbs --src ./lib/*.js  >| API.md",
-    "test": "NODE_ENV=test mocha test/**/*.js"
+    "test": "NODE_ENV=test mocha test/**/*.js",
+    "bench": "make -C bench"
   }
 }
