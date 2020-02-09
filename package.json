@@ -19,7 +19,8 @@
     "expect.js": "^0.3.1",
     "jsdoc-to-markdown": "^5.0.3",
     "koa": "^2.11.0",
-    "mocha": "^6.2.2",
+    "mocha": "^7.0.1",
+    "nyc": "^15.0.0",
     "should": "^13.2.3",
     "supertest": "^4.0.2"
   },
@@ -44,6 +45,7 @@
   },
   "scripts": {
     "docs": "NODE_ENV=test jsdoc2md -t ./lib/API_tpl.hbs --src ./lib/*.js  >| API.md",
-    "test": "NODE_ENV=test mocha test/**/*.js"
+    "test": "NODE_ENV=test mocha test/**/*.js",
+    "test:cov": "NODE_ENV=test nyc mocha test/**/*.js"
   }
 }
