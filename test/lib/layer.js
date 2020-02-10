@@ -232,5 +232,12 @@ describe('Layer', function() {
       var url = route.url({ category: 'programming', title: 'how to node' });
       url.should.equal('/programming/how%20to%20node');
     });
+
+    it('LAYER PARAM ', function () {
+      var route = new Layer('/:category/:title', ['get'], [function () {}], 'books');
+      console.log(route.paramNames)
+      console.log(route.params('/:category/:title', ['programming', 'ydkjs'], {':title': 'how-to-code'}))
+
+    })
   });
 });
