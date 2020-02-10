@@ -233,11 +233,14 @@ describe('Layer', function() {
       url.should.equal('/programming/how%20to%20node');
     });
 
-    it('LAYER PARAM ', function () {
+    it('param with paramNames positive check', function () {
       var route = new Layer('/:category/:title', ['get'], [function () {}], 'books');
-      console.log(route.paramNames)
-      console.log(route.params('/:category/:title', ['programming', 'ydkjs'], {':title': 'how-to-code'}))
-
+      route.paramNames = [{
+        name: 'category',
+      }]
+      const paramSet = route.params('/:category/:title', ['programming', 'ydkjs'], {'title': 'how-to-code'})
+      paramSet.should.have.property('title', 'how-to-code')
+      paramSet.should.have.property( 'category', 'programming' )
     })
   });
 });
