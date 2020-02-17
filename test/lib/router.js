@@ -1207,6 +1207,12 @@ describe('Router', function () {
       var router = Router().use(subrouter.routes());
       expect(router.route('child')).to.have.property('name', 'child');
     });
+
+    it('should return false if no name matches', function () {
+      var app = new Koa()
+      const value = Router().route('Picard')
+      value.should.be.false()
+    })
   });
 
   describe('Router#url()', function () {
@@ -1222,6 +1228,7 @@ describe('Router', function () {
       url = router.url('books', 'programming', 'how to node');
       url.should.equal('/programming/how%20to%20node');
       done();
+      
     });
 
     it('generates URL for given route name within embedded routers', function (done) {
@@ -1290,7 +1297,6 @@ describe('Router', function () {
         done();
     })
 
-
     it('generates URL for given route name without params and query params', function(done) {
         var app = new Koa();
         var router = new Router();
@@ -1303,6 +1309,18 @@ describe('Router', function () {
         url.should.equal('/category?page=3&limit=10');
         done();
     })
+
+    it("should test Error flow if no route is found for name", function() {
+      const app = new Koa();
+      const router = new Router();
+      app.use(router.routes());
+      router.get("books", "/:category/:title", function(ctx) {
+        ctx.status = 204;
+      });
+      router
+        .url("Picard", "Enterprise")
+        .should.throw(Error);
+    });
   });
 
   describe('Router#param()', function () {
