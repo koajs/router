@@ -1317,9 +1317,10 @@ describe('Router', function () {
       router.get("books", "/:category/:title", function(ctx) {
         ctx.status = 204;
       });
+
       router
         .url("Picard", "Enterprise")
-        .should.throw(Error);
+        .should.Error();
     });
   });
 
