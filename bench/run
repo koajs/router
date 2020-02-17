@@ -4,9 +4,8 @@ set -e
 
 export FACTOR=$1
 export USE_MIDDLEWARE=$2
-export PORT=3333
 
-host="http://localhost:$PORT"
+host="http://localhost:3333"
 
 node "$(dirname $0)/server.js" &
 
