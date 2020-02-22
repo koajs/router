@@ -216,6 +216,16 @@ describe('Layer', function() {
         done();
       });
     });
+
+    it('param with paramNames positive check', function () {
+      var route = new Layer('/:category/:title', ['get'], [function () {}], 'books');
+      route.paramNames = [{
+        name: 'category',
+      }]
+      const paramSet = route.params('/:category/:title', ['programming', 'ydkjs'], {'title': 'how-to-code'})
+      paramSet.should.have.property('title', 'how-to-code')
+      paramSet.should.have.property( 'category', 'programming' )
+    })
   });
 
   describe('Layer#url()', function() {
@@ -232,5 +242,11 @@ describe('Layer', function() {
       var url = route.url({ category: 'programming', title: 'how to node' });
       url.should.equal('/programming/how%20to%20node');
     });
+    it('setPrefix method checks Layer for path', function () {
+      const route = new Layer('/category', ['get'], [function () {}], 'books');
+      route.path = '/hunter2'
+      const prefix = route.setPrefix('TEST')
+      prefix.path.should.equal('TEST/hunter2')
+    })
   });
 });
