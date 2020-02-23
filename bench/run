@@ -5,7 +5,6 @@ set -e
 set -o allexport; source "$(dirname $0)/../.env"; set +o allexport
 export FACTOR=$1
 export USE_MIDDLEWARE=$2
-printenv
 echo "Environment Set"
 
 echo "Starting server on PORT:$PORT"
@@ -13,7 +12,6 @@ host="http://localhost:$PORT"
 
 node "$(dirname $0)/server.js" &
 
-wait $!
 pid=$!
 
 curl \
@@ -34,3 +32,4 @@ wrk "$host/10/child/grandchild/%40" \
 
 echo "Killed Port $PORT on PID $pid"
 kill $pid 
+exit
