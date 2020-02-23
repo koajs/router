@@ -44,6 +44,6 @@ if (process.env.DEBUG) {
 
 app.use(router.routes());
 
-process.stdout.write(`mw: ${useMiddleware} factor: ${n}`);
+process.stdout.write(`mw: ${useMiddleware} factor: ${n} requests/sec`);
 
 app.listen(env.PORT);
