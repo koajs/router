@@ -1,8 +1,8 @@
 all: middleware
 
 middleware:
-	@sh ./run 5 false
 	@sh ./run 1 false
+	@sh ./run 5 false
 	@sh ./run 10 false
 	@sh ./run 20 false
 	@sh ./run 50 false
