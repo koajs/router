@@ -777,6 +777,17 @@ describe('Router', function () {
         });
     });
 
+    it("allowedMethods check if flow (allowedArr.length)", function (done) {
+      var app = new Koa();
+      var router = new Router();
+      app.use(router.routes());
+      app.use(router.allowedMethods())
+      router.get('')
+      request(http.createServer(app.callback()))
+      .get('/users')
+      .end(() => done());
+    });
+
   });
 
   it('supports custom routing detect path: ctx.routerPath', function (done) {

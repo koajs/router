@@ -242,11 +242,27 @@ describe('Layer', function() {
       var url = route.url({ category: 'programming', title: 'how to node' });
       url.should.equal('/programming/how%20to%20node');
     });
-    it('setPrefix method checks Layer for path', function () {
+  });
+
+  describe('Layer#prefix', () => {
+    it('setPrefix method passes check Layer for path', function () {
       const route = new Layer('/category', ['get'], [function () {}], 'books');
       route.path = '/hunter2'
-      const prefix = route.setPrefix('TEST')
-      prefix.path.should.equal('TEST/hunter2')
+
+      console.log(route)
+      const prefix = route.setPrefix('/TEST')
+      console.log(route)
+      prefix.path.should.equal('/TEST/hunter2')
     })
-  });
+  })
+
+  it('setPrefix method fails check Layer for path', function () {
+    const route = new Layer(false, ['get'], [function () {}], 'books');
+    route.path = false
+
+    console.log(route)
+    const prefix = route.setPrefix('/TEST')
+    console.log(route)
+    prefix.path.should.equal(false)
+  })
 });
