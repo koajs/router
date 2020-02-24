@@ -1,12 +1,14 @@
 const Koa = require('koa');
 const Router = require('../');
+const env = require('@ladjs/env')({path:'../.env', includeProcessEnv: true,
+assignToProcessEnv: true,});
 
 const app = new Koa();
 const router = new Router();
 
 const ok = ctx => ctx.status = 200;
-const n = parseInt(process.env.FACTOR || '10', 10);
-const useMiddleware = process.env.USE_MIDDLEWARE === 'true';
+const n = parseInt(env.FACTOR || '10', 10);
+const useMiddleware = env.USE_MIDDLEWARE === 'true';
 
 router.get('/_health', ok);
 
@@ -42,6 +44,6 @@ if (process.env.DEBUG) {
 
 app.use(router.routes());
 
-process.stdout.write(`mw: ${useMiddleware} factor: ${n}`);
+process.stdout.write(`mw: ${useMiddleware} factor: ${n} requests/sec`);
 
-app.listen(3333);
+app.listen(env.PORT);

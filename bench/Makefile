@@ -1,23 +1,23 @@
 all: middleware
 
 middleware:
-	@./run 1 false
-	@./run 5 false
-	@./run 10 false
-	@./run 20 false
-	@./run 50 false
-	@./run 100 false
-	@./run 200 false
-	@./run 500 false
-	@./run 1000 false
-	@./run 1 true
-	@./run 5 true
-	@./run 10 true
-	@./run 20 true
-	@./run 50 true
-	@./run 100 true
-	@./run 200 true
-	@./run 500 true
-	@./run 1000 true
+	@sh ./run 1 false
+	@sh ./run 5 false
+	@sh ./run 10 false
+	@sh ./run 20 false
+	@sh ./run 50 false
+	@sh ./run 100 false
+	@sh ./run 200 false
+	@sh ./run 500 false
+	@sh ./run 1000 false
+	@sh ./run 1 true
+	@sh ./run 5 true
+	@sh ./run 10 true
+	@sh ./run 20 true
+	@sh ./run 50 true
+	@sh ./run 100 true
+	@sh ./run 200 true
+	@sh ./run 500 true
+	@sh ./run 1000 true
 
 .PHONY: all middleware
