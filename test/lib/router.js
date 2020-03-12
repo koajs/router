@@ -784,11 +784,8 @@ describe('Router', function () {
       app.use(router.allowedMethods())
       router.get('')
       request(http.createServer(app.callback()))
-      .get('/users', cb => console.log(cb))
-      .end(function (err, res) {
-        if (err) return done(err);
-        done();
-      });
+      .get('/users')
+      .end(() => done());
     });
 
   });
