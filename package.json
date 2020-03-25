@@ -43,7 +43,7 @@
   "main": "lib/router.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/koajs/koa-router.git"
+    "url": "https://github.com/koajs/router.git"
   },
   "scripts": {
     "docs": "NODE_ENV=test jsdoc2md -t ./lib/API_tpl.hbs --src ./lib/*.js  >| API.md",
