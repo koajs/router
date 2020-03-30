@@ -81,6 +81,61 @@ describe('Layer', function() {
         });
     });
 
+    it('populates ctx.params correctly for more complex router prefix', function(done) {
+      var app = new Koa();
+      var router = new Router({ prefix: '/:category/:color' });
+      app.use(router.routes());
+      router
+        .use((ctx, next) => {
+          ctx.should.have.property('params');
+          ctx.params.should.be.type('object');
+          ctx.params.should.have.property('category', 'cats');
+          ctx.params.should.have.property('color', 'gray');
+          return next();
+        })
+        .get('/:active/suffixHere', function(ctx) {
+          ctx.should.have.property('params');
+          ctx.params.should.be.type('object');
+          ctx.params.should.have.property('category', 'cats');
+          ctx.params.should.have.property('color', 'gray');
+          ctx.params.should.have.property('active', 'true');
+          ctx.status = 204;
+        });
+      request(http.createServer(app.callback()))
+        .get('/cats/gray/true/suffixHere')
+        .expect(204)
+        .end(function(err, res) {
+          if (err) return done(err);
+          done();
+        });
+    });
+
+    it('populates ctx.params correctly for static prefix', function(done) {
+      var app = new Koa();
+      var router = new Router({ prefix: '/all' });
+      app.use(router.routes());
+      router
+        .use((ctx, next) => {
+          ctx.should.have.property('params');
+          ctx.params.should.be.type('object');
+          ctx.params.should.be.empty();
+          return next();
+        })
+        .get('/:active/suffixHere', function(ctx) {
+          ctx.should.have.property('params');
+          ctx.params.should.be.type('object');
+          ctx.params.should.have.property('active', 'true');
+          ctx.status = 204;
+        });
+      request(http.createServer(app.callback()))
+        .get('/all/true/suffixHere')
+        .expect(204)
+        .end(function(err, res) {
+          if (err) return done(err);
+          done();
+        });
+    });
+
     it('return orginal path parameters when decodeURIComponent throw error', function(done) {
       var app = new Koa();
       var router = new Router();
