@@ -55,6 +55,32 @@ describe('Layer', function() {
       });
     });
 
+    it('populates ctx.params correctly for router prefix', function(done) {
+      var app = new Koa();
+      var router = new Router({ prefix: '/x/:category/y' });
+      app.use(router.routes());
+      router
+        .use((ctx, next) => {
+          ctx.should.have.property('params');
+          ctx.params.should.be.type('object');
+          ctx.params.should.have.property('category', 'cats');
+          return next();
+        })
+        .get('/suffixHere', function(ctx) {
+          ctx.should.have.property('params');
+          ctx.params.should.be.type('object');
+          ctx.params.should.have.property('category', 'cats');
+          ctx.status = 204;
+        });
+      request(http.createServer(app.callback()))
+        .get('/x/cats/y/suffixHere')
+        .expect(204)
+        .end(function(err, res) {
+          if (err) return done(err);
+          done();
+        });
+    });
+
     it('return orginal path parameters when decodeURIComponent throw error', function(done) {
       var app = new Koa();
       var router = new Router();
