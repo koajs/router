@@ -57,7 +57,7 @@ describe('Layer', function() {
 
     it('populates ctx.params correctly for router prefix', function(done) {
       var app = new Koa();
-      var router = new Router({ prefix: '/x/:category/y' });
+      var router = new Router({ prefix: '/:category' });
       app.use(router.routes());
       router
         .use((ctx, next) => {
@@ -73,7 +73,7 @@ describe('Layer', function() {
           ctx.status = 204;
         });
       request(http.createServer(app.callback()))
-        .get('/x/cats/y/suffixHere')
+        .get('/cats/suffixHere')
         .expect(204)
         .end(function(err, res) {
           if (err) return done(err);
