@@ -218,7 +218,7 @@ describe('Layer', function() {
     });
 
     it('param with paramNames positive check', function () {
-      var route = new Layer('/:category/:title', ['get'], [function () {}], 'books');
+      var route = new Layer('/:category/:title', ['get'], [function () {}], {name: 'books'});
       route.paramNames = [{
         name: 'category',
       }]
@@ -230,7 +230,7 @@ describe('Layer', function() {
 
   describe('Layer#url()', function() {
     it('generates route URL', function() {
-      var route = new Layer('/:category/:title', ['get'], [function () {}], 'books');
+      var route = new Layer('/:category/:title', ['get'], [function () {}], {name: 'books'});
       var url = route.url({ category: 'programming', title: 'how-to-node' });
       url.should.equal('/programming/how-to-node');
       url = route.url('programming', 'how-to-node');
@@ -238,12 +238,12 @@ describe('Layer', function() {
     });
 
     it('escapes using encodeURIComponent()', function() {
-      var route = new Layer('/:category/:title', ['get'], [function () {}], 'books');
+      var route = new Layer('/:category/:title', ['get'], [function () {}], {name: 'books'});
       var url = route.url({ category: 'programming', title: 'how to node' });
       url.should.equal('/programming/how%20to%20node');
     });
     it('setPrefix method checks Layer for path', function () {
-      const route = new Layer('/category', ['get'], [function () {}], 'books');
+      const route = new Layer('/category', ['get'], [function () {}], {name: 'books'});
       route.path = '/hunter2'
       const prefix = route.setPrefix('TEST')
       prefix.path.should.equal('TEST/hunter2')
