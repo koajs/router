@@ -11,7 +11,8 @@ var fs = require('fs')
   , Router = require('../../lib/router')
   , Layer = require('../../lib/layer')
   , expect = require('expect.js')
-  , should = require('should');
+  , should = require('should')
+  , assert = require('assert');
 
 describe('Router', function () {
   it('creates new router with koa app', function (done) {
@@ -1070,6 +1071,84 @@ describe('Router', function () {
           done();
         });
     });
+
+    it('assigns middleware to array of paths with function middleware and router need to nest. - gh-22', function (done) {
+      const app = new Koa();
+      const base = new Router({ prefix: '/api' });
+      const nested = new Router({ prefix: '/qux' });
+      const pathList = ['/foo', '/bar'];
+
+      nested.get('/baz', ctx => {
+        ctx.body = {
+          foo: ctx.foo,
+          bar: ctx.bar,
+          baz: 'baz'
+        }
+      });
+
+      base.use(pathList, (ctx, next) => {
+        ctx.foo = 'foo';
+        ctx.bar = 'bar';
+
+        return next();
+      }, nested.routes());
+
+      app.use(base.routes());
+
+      Promise.all(pathList.map(pathname => {
+        return request(http.createServer(app.callback()))
+          .get(`/api${pathname}/qux/baz`)
+          .expect(200);
+      })).then((resList) => {
+        resList.forEach(res => {
+          assert.deepEqual(res.body, {foo: 'foo', bar: 'bar', baz: 'baz' });
+        });
+
+        done();
+      }, error => done(error));
+    });
+    
+    it('uses a same router middleware at given paths continuously - ZijianHe/koa-router#gh-244 gh-18', function (done) {
+      const app = new Koa();
+      const base = new Router({ prefix: '/api' });
+      const nested = new Router({ prefix: '/qux' });
+
+      nested.get('/baz', ctx => {
+        ctx.body = {
+          foo: ctx.foo,
+          bar: ctx.bar,
+          baz: 'baz'
+        }
+      });
+
+      base
+        .use('/foo', (ctx, next) => {
+          ctx.foo = 'foo';
+          ctx.bar = 'bar';
+
+          return next();
+        }, nested.routes())
+        .use('/bar', (ctx, next) => {
+          ctx.foo = 'foo';
+          ctx.bar = 'bar';
+
+          return next();
+        }, nested.routes());
+
+      app.use(base.routes());
+
+      Promise.all(['/foo', '/bar'].map(pathname => {
+        return request(http.createServer(app.callback()))
+          .get(`/api${pathname}/qux/baz`)
+          .expect(200);
+      })).then((resList) => {
+        resList.forEach(res => {
+          assert.deepEqual(res.body, {foo: 'foo', bar: 'bar', baz: 'baz' });
+        });
+
+        done();
+      }, error => done(error));
+    });
   });
 
   describe('Router#register()', function () {
@@ -1128,6 +1207,12 @@ describe('Router', function () {
       var router = Router().use(subrouter.routes());
       expect(router.route('child')).to.have.property('name', 'child');
     });
+
+    it('should return false if no name matches', function () {
+      var app = new Koa()
+      const value = Router().route('Picard')
+      value.should.be.false()
+    })
   });
 
   describe('Router#url()', function () {
@@ -1143,6 +1228,7 @@ describe('Router', function () {
       url = router.url('books', 'programming', 'how to node');
       url.should.equal('/programming/how%20to%20node');
       done();
+      
     });
 
     it('generates URL for given route name within embedded routers', function (done) {
@@ -1211,7 +1297,6 @@ describe('Router', function () {
         done();
     })
 
-
     it('generates URL for given route name without params and query params', function(done) {
         var app = new Koa();
         var router = new Router();
@@ -1224,6 +1309,19 @@ describe('Router', function () {
         url.should.equal('/category?page=3&limit=10');
         done();
     })
+
+    it("should test Error flow if no route is found for name", function() {
+      const app = new Koa();
+      const router = new Router();
+      app.use(router.routes());
+      router.get("books", "/:category/:title", function(ctx) {
+        ctx.status = 204;
+      });
+
+      router
+        .url("Picard", "Enterprise")
+        .should.Error();
+    });
   });
 
   describe('Router#param()', function () {

@@ -1,46 +1,54 @@
 {
   "name": "@koa/router",
   "description": "Router middleware for koa. Provides RESTful resource routing.",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/koajs/koa-router.git"
-  },
-  "main": "lib/router.js",
-  "files": [
-    "lib"
-  ],
+  "version": "8.0.8",
   "author": "Alex Mingoia <talk@alexmingoia.com>",
-  "version": "8.0.2",
-  "keywords": [
-    "koa",
-    "middleware",
-    "router",
-    "route"
-  ],
+  "bugs": {
+    "url": "https://github.com/koajs/router/issues",
+    "email": "niftylettuce@gmail.com"
+  },
   "dependencies": {
-    "debug": "^3.1.0",
-    "http-errors": "^1.3.1",
-    "koa-compose": "^3.0.0",
-    "methods": "^1.0.1",
-    "path-to-regexp": "^1.1.1",
-    "urijs": "^1.19.0"
+    "debug": "^4.1.1",
+    "http-errors": "^1.7.3",
+    "koa-compose": "^4.1.0",
+    "methods": "^1.1.2",
+    "path-to-regexp": "1.x",
+    "urijs": "^1.19.2"
   },
   "devDependencies": {
+    "@ladjs/env": "^1.0.0",
     "expect.js": "^0.3.1",
-    "jsdoc-to-markdown": "^5.0.1",
-    "koa": "2.2.0",
-    "mocha": "^6.2.0",
-    "nyc": "14.1.1",
-    "should": "^6.0.3",
-    "supertest": "^4.0.2"
-  },
-  "scripts": {
-    "test": "NODE_ENV=test mocha test/**/*.js",
-    "test-cov": "nyc --reporter=lcov --reporter=text --reporter=text-summary mocha --timeout=3000 test/**/*.js",
-    "docs": "NODE_ENV=test jsdoc2md -t ./lib/API_tpl.hbs --src ./lib/*.js  >| API.md"
+    "jsdoc-to-markdown": "^5.0.3",
+    "koa": "^2.11.0",
+    "mocha": "^7.0.1",
+    "nyc": "^15.0.0",
+    "should": "^13.2.3",
+    "supertest": "^4.0.2",
+    "wrk": "^1.2.0"
   },
   "engines": {
     "node": ">= 8.0.0"
   },
-  "license": "MIT"
+  "files": [
+    "lib"
+  ],
+  "homepage": "https://github.com/koajs/router",
+  "keywords": [
+    "koa",
+    "middleware",
+    "route",
+    "router"
+  ],
+  "license": "MIT",
+  "main": "lib/router.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/koajs/router.git"
+  },
+  "scripts": {
+    "docs": "NODE_ENV=test jsdoc2md -t ./lib/API_tpl.hbs --src ./lib/*.js  >| API.md",
+    "test": "NODE_ENV=test mocha test/**/*.js",
+    "test-cov": "nyc --reporter=lcov --reporter=text --reporter=text-summary mocha --timeout=3000 test/**/*.js",
+    "bench": "make -C bench"
+  }
 }
