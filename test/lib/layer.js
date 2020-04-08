@@ -239,7 +239,10 @@ describe('Layer', function() {
 
     it('escapes using encodeURIComponent()', function() {
       var route = new Layer('/:category/:title', ['get'], [function () {}], {name: 'books'});
-      var url = route.url({ category: 'programming', title: 'how to node' });
+      var url = route.url(
+        { category: 'programming', title: 'how to node' },
+        { encode: encodeURIComponent }
+      );
       url.should.equal('/programming/how%20to%20node');
     });
     it('setPrefix method checks Layer for path', function () {
