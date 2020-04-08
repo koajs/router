@@ -1107,7 +1107,7 @@ describe('Router', function () {
         done();
       }, error => done(error));
     });
-    
+
     it('uses a same router middleware at given paths continuously - ZijianHe/koa-router#gh-244 gh-18', function (done) {
       const app = new Koa();
       const base = new Router({ prefix: '/api' });
@@ -1234,7 +1234,7 @@ describe('Router', function () {
       });
       url.should.equal('/programming/how%20to%20node');
       done();
-      
+
     });
 
     it('generates URL for given route name within embedded routers', function (done) {
@@ -1852,6 +1852,61 @@ describe('Router', function () {
         });
       }
     }
+
+    it(`prefix and '/' route behavior`, function(done) {
+      var app = new Koa();
+      var router = new Router({
+        strict: false,
+        prefix: '/foo'
+      });
+
+      var strictRouter = new Router({
+        strict: true,
+        prefix: '/bar'
+      })
+
+      router.get('/', function(ctx) {
+        ctx.body = '';
+      });
+
+      strictRouter.get('/', function(ctx) {
+        ctx.body = '';
+      });
+
+      app.use(router.routes());
+      app.use(strictRouter.routes());
+
+      var server = http.createServer(app.callback());
+
+      request(server)
+        .get('/foo')
+        .expect(200)
+        .end(function (err) {
+          if (err) return done(err);
+
+          request(server)
+            .get('/foo/')
+            .expect(200)
+            .end(function (err) {
+              if (err) return done(err);
+
+              request(server)
+                .get('/bar')
+                .expect(404)
+                .end(function (err) {
+                  if (err) return done(err);
+
+                  request(server)
+                    .get('/bar/')
+                    .expect(200)
+                    .end(function (err) {
+                      if (err) return done(err);
+                      done();
+                    });
+                });
+            });
+        });
+    })
   });
 
   describe('Static Router#url()', function () {
