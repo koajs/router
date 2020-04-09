@@ -1107,7 +1107,7 @@ describe('Router', function () {
         done();
       }, error => done(error));
     });
-    
+
     it('uses a same router middleware at given paths continuously - ZijianHe/koa-router#gh-244 gh-18', function (done) {
       const app = new Koa();
       const base = new Router({ prefix: '/api' });
@@ -1223,12 +1223,18 @@ describe('Router', function () {
       router.get('books', '/:category/:title', function (ctx) {
         ctx.status = 204;
       });
-      var url = router.url('books', { category: 'programming', title: 'how to node' });
+      var url = router.url(
+        'books',
+        { category: 'programming', title: 'how to node' },
+        { encode: encodeURIComponent }
+      );
       url.should.equal('/programming/how%20to%20node');
-      url = router.url('books', 'programming', 'how to node');
+      url = router.url('books', 'programming', 'how to node', {
+        encode: encodeURIComponent,
+      });
       url.should.equal('/programming/how%20to%20node');
       done();
-      
+
     });
 
     it('generates URL for given route name within embedded routers', function (done) {
@@ -1245,9 +1251,15 @@ describe('Router', function () {
         });
         router.use(embeddedRouter.routes());
         app.use(router.routes());
-        var url = router.url('chapters', { chapterName: 'Learning ECMA6', pageNumber: 123 });
+        var url = router.url(
+            'chapters',
+            { chapterName: 'Learning ECMA6', pageNumber: 123 },
+            { encode: encodeURIComponent }
+        );
         url.should.equal('/books/chapters/Learning%20ECMA6/123');
-        url = router.url('chapters', 'Learning ECMA6', 123);
+        url = router.url('chapters', 'Learning ECMA6', 123, {
+            encode: encodeURIComponent,
+        });
         url.should.equal('/books/chapters/Learning%20ECMA6/123');
         done();
     });
@@ -1269,7 +1281,11 @@ describe('Router', function () {
       embeddedRouter.use(embeddedRouter2.routes());
       router.use(embeddedRouter.routes());
       app.use(router.routes());
-      var url = router.url('chapters', { chapterName: 'Learning ECMA6', pageNumber: 123 });
+      var url = router.url(
+        'chapters',
+        { chapterName: 'Learning ECMA6', pageNumber: 123 },
+        { encode: encodeURIComponent }
+      );
       url.should.equal('/books/chapters/Learning%20ECMA6/pages/123');
       done();
     });
@@ -1836,6 +1852,61 @@ describe('Router', function () {
         });
       }
     }
+
+    it(`prefix and '/' route behavior`, function(done) {
+      var app = new Koa();
+      var router = new Router({
+        strict: false,
+        prefix: '/foo'
+      });
+
+      var strictRouter = new Router({
+        strict: true,
+        prefix: '/bar'
+      })
+
+      router.get('/', function(ctx) {
+        ctx.body = '';
+      });
+
+      strictRouter.get('/', function(ctx) {
+        ctx.body = '';
+      });
+
+      app.use(router.routes());
+      app.use(strictRouter.routes());
+
+      var server = http.createServer(app.callback());
+
+      request(server)
+        .get('/foo')
+        .expect(200)
+        .end(function (err) {
+          if (err) return done(err);
+
+          request(server)
+            .get('/foo/')
+            .expect(200)
+            .end(function (err) {
+              if (err) return done(err);
+
+              request(server)
+                .get('/bar')
+                .expect(404)
+                .end(function (err) {
+                  if (err) return done(err);
+
+                  request(server)
+                    .get('/bar/')
+                    .expect(200)
+                    .end(function (err) {
+                      if (err) return done(err);
+                      done();
+                    });
+                });
+            });
+        });
+    })
   });
 
   describe('Static Router#url()', function () {
@@ -1845,7 +1916,11 @@ describe('Router', function () {
     });
 
     it('escapes using encodeURIComponent()', function () {
-      var url = Router.url('/:category/:title', { category: 'programming', title: 'how to node' });
+      var url = Router.url(
+        '/:category/:title',
+        { category: 'programming', title: 'how to node' },
+        { encode: encodeURIComponent }
+      );
       url.should.equal('/programming/how%20to%20node');
     });
 
