@@ -1,3 +1,9 @@
+9.0.0 / 2020-04-09
+==================
+
+- Update `path-to-regexp`. Migration path: change usage of `'*'` in routes to `(.*)` or `:splat*`.
+    - Example: `router.get('*', ....)` becomes `router.get('(.*)') ....)`
+
 
 8.0.0 / 2019-06-16
 ==================
