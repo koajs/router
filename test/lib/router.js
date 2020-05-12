@@ -1648,6 +1648,40 @@ describe('Router', function () {
       });
     });
 
+    it('places a `routerPath` value on context (respects middelware-chains) (gh-34)', function(done) {
+      const app = new Koa();
+      const router = new Router();
+      
+      const middleware = async function (ctx, next) {
+        await next();
+        expect(ctx.routerPath).to.be('/users/list')
+      };
+
+      router.use(middleware)
+      router.get('/users/list', function (ctx, next) {
+        expect(ctx.routerPath).to.be('/users/list')
+        ctx.body = { hello: 'world' };
+      });
+      router.get('/users/:id', function (ctx, next) {
+        expect(ctx.routerPath).to.be('/users/:id')
+        should.exist(ctx.params.id);
+        ctx.body = { hello: 'world' };
+      });
+
+      const routerMiddleware = router.routes();
+
+      request(http.createServer(
+        app
+          .use(routerMiddleware)
+          .callback()))
+      .get('/users/list')
+      .expect(200)
+      .end(function(err, res) {
+        if (err) return done(err);
+        done();
+      });
+    });
+
     it('places a `_matchedRouteName` value on the context for a named route', function(done) {
       const app = new Koa();
       const router = new Router();
