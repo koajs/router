@@ -182,7 +182,7 @@ Returns router middleware which dispatches a route matching the request.
 <a name="module_koa-router--Router+use"></a>
 
 #### router.use([path], middleware) ⇒ <code>Router</code>
-Use given middleware.
+Use given middleware, __if and only if__, a route is matched.
 
 Middleware run in the order they are defined by `.use()`. They are invoked
 sequentially, requests start at the first middleware and work their way
