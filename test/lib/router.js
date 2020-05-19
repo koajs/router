@@ -1648,22 +1648,22 @@ describe('Router', function () {
       });
     });
 
-    it('places a `routerPath` value on context (respects middelware-chains) (gh-34)', function(done) {
+    it('places a `matchedRoute` value on context (gh-34)', function(done) {
       const app = new Koa();
       const router = new Router();
       
       const middleware = async function (ctx, next) {
         await next();
-        expect(ctx.routerPath).to.be('/users/list')
+        expect(ctx.matchedRoute).to.be('/users/list')
       };
 
       router.use(middleware)
       router.get('/users/list', function (ctx, next) {
-        expect(ctx.routerPath).to.be('/users/list')
+        expect(ctx.matchedRoute).to.be('/users/list')
         ctx.body = { hello: 'world' };
       });
       router.get('/users/:id', function (ctx, next) {
-        expect(ctx.routerPath).to.be('/users/:id')
+        expect(ctx.matchedRoute).to.be('/users/:id')
         should.exist(ctx.params.id);
         ctx.body = { hello: 'world' };
       });
