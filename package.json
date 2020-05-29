@@ -1,7 +1,7 @@
 {
   "name": "@koa/router",
   "description": "Router middleware for koa. Provides RESTful resource routing.",
-  "version": "9.0.0",
+  "version": "8.0.8",
   "author": "Alex Mingoia <talk@alexmingoia.com>",
   "bugs": {
     "url": "https://github.com/koajs/router/issues",
@@ -46,8 +46,8 @@
   },
   "scripts": {
     "docs": "NODE_ENV=test jsdoc2md -t ./lib/API_tpl.hbs --src ./lib/*.js  >| API.md",
-    "test": "NODE_ENV=test mocha test/**/*.js",
-    "test:cov": "NODE_ENV=test nyc mocha test/**/*.js",
+    "test": "mocha test/**/*.js",
+    "coverage": "nyc npm run test",
     "bench": "make -C bench"
   }
 }
