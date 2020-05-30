@@ -1,6 +1,6 @@
-# @koa/router
+# [@koa/router](https://github.com/koajs/router)
 
-Router middleware for [koa](https://github.com/koajs/koa)
+> Router middleware for [Koa](https://github.com/koajs/koa).
 
 [![NPM version](https://img.shields.io/npm/v/@koa/router.svg?style=flat)](https://npmjs.org/package/@koa/router) 
 [![NPM Downloads](https://img.shields.io/npm/dm/@koa/router.svg?style=flat)](https://npmjs.org/package/@koa/router) 
@@ -20,18 +20,18 @@ Router middleware for [koa](https://github.com/koajs/koa)
 ## Migrating to 7 / Koa 2
 
 - The API has changed to match the new promise-based middleware
-  signature of koa 2. See the
-  [koa 2.x readme](https://github.com/koajs/koa/tree/2.0.0-alpha.3) for more
+  signature of koa 2. See the [koa 2.x readme](https://github.com/koajs/koa/tree/2.0.0-alpha.3) for more
   information.
 - Middleware is now always run in the order declared by `.use()` (or `.get()`,
   etc.), which matches Express 4 API.
 
 ## Installation
 
-Install using [npm](https://www.npmjs.org/):
-
-```sh
-npm install @koa/router
+```bash
+# npm .. 
+npm i @koa/router
+# yarn .. 
+yarn add @koa/router
 ```
 
 ## [API Reference](./API.md)
@@ -39,10 +39,6 @@ npm install @koa/router
 ## Contributing
 
 Please submit all issues and pull requests to the [koajs/router](http://github.com/koajs/router) repository!
-
-## Tests
-
-Run tests using `npm test`.
 
 ## Support
 
@@ -54,3 +50,6 @@ This module is forked from the original [koa-router](https://github.com/ZijianHe
 
 Thanks to the original authors @alexmingoia and the original team for their great work.
 
+### License
+
+[MIT](LICENSE)
