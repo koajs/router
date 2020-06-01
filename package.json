@@ -1,7 +1,7 @@
 {
   "name": "@koa/router",
   "description": "Router middleware for koa. Provides RESTful resource routing.",
-  "version": "8.0.5",
+  "version": "9.0.1",
   "author": "Alex Mingoia <talk@alexmingoia.com>",
   "bugs": {
     "url": "https://github.com/koajs/router/issues",
@@ -12,16 +12,18 @@
     "http-errors": "^1.7.3",
     "koa-compose": "^4.1.0",
     "methods": "^1.1.2",
-    "path-to-regexp": "1.x",
-    "urijs": "^1.19.2"
+    "path-to-regexp": "^6.1.0"
   },
   "devDependencies": {
+    "@ladjs/env": "^1.0.0",
     "expect.js": "^0.3.1",
     "jsdoc-to-markdown": "^5.0.3",
     "koa": "^2.11.0",
-    "mocha": "^6.2.2",
+    "mocha": "^7.0.1",
+    "nyc": "^15.0.0",
     "should": "^13.2.3",
-    "supertest": "^4.0.2"
+    "supertest": "^4.0.2",
+    "wrk": "^1.2.0"
   },
   "engines": {
     "node": ">= 8.0.0"
@@ -40,10 +42,12 @@
   "main": "lib/router.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/koajs/koa-router.git"
+    "url": "https://github.com/koajs/router.git"
   },
   "scripts": {
     "docs": "NODE_ENV=test jsdoc2md -t ./lib/API_tpl.hbs --src ./lib/*.js  >| API.md",
-    "test": "NODE_ENV=test mocha test/**/*.js"
+    "test": "mocha test/**/*.js",
+    "coverage": "nyc npm run test",
+    "bench": "make -C bench"
   }
 }

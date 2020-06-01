@@ -2,17 +2,17 @@
  * Router tests
  */
 
-const fs = require('fs')
-  , http = require('http')
-  , Koa = require('koa')
-  , methods = require('methods')
-  , path = require('path')
-  , request = require('supertest')
-  , Router = require('../../lib/router')
-  , Layer = require('../../lib/layer')
-  , expect = require('expect.js')
-  , should = require('should')
-  , assert = require('assert');
+const fs = require('fs');
+const http = require('http');
+const Koa = require('koa');
+const methods = require('methods');
+const path = require('path');
+const request = require('supertest');
+const Router = require('../../lib/router');
+const Layer = require('../../lib/layer');
+const expect = require('expect.js');
+const should = require('should');
+const assert = require('assert');
 
 describe('Router', function () {
   it('creates new router with koa app', function (done) {
@@ -429,12 +429,12 @@ describe('Router', function () {
       ctx.status = 204;
     });
 	  router.put('/:category/not-a-title', function (ctx) {
-		  ctx.should.have.property('params');
-		  ctx.params.should.have.property('category', 'programming');
-		  ctx.params.should.not.have.property('title');
-		  ctx.status = 204;
-	  });
-    let server = http.createServer(app.callback());
+      ctx.should.have.property('params');
+      ctx.params.should.have.property('category', 'programming');
+      ctx.params.should.not.have.property('title');
+      ctx.status = 204;
+    });
+    const server = http.createServer(app.callback());
     request(server)
     .get('/programming/how-to-node')
     .expect(204)
@@ -445,12 +445,12 @@ describe('Router', function () {
       .expect(204)
       .end(function (err, res) {
         if (err) return done(err);
-	      request(server)
-		      .put('/programming/not-a-title')
-		      .expect(204)
-		      .end(function (err, res) {
-			      done(err);
-		      });
+        request(server)
+          .put('/programming/not-a-title')
+          .expect(204)
+          .end(function (err, res) {
+            done(err);
+          });
       });
     });
   });
@@ -815,6 +815,19 @@ describe('Router', function () {
         });
     });
 
+  });
+
+  it("allowedMethods check if flow (allowedArr.length)", function (done) {
+    const app = new Koa();
+    const router = new Router();
+    app.use(router.routes());
+    app.use(router.allowedMethods());
+
+    router.get('');
+
+    request(http.createServer(app.callback()))
+      .get('/users')
+      .end(() => done());
   });
 
   it('supports custom routing detect path: ctx.routerPath', function (done) {
@@ -1245,6 +1258,12 @@ describe('Router', function () {
       const router = Router().use(subrouter.routes());
       expect(router.route('child')).to.have.property('name', 'child');
     });
+
+    it('should return false if no name matches', function () {
+      const app = new Koa()
+      const value = Router().route('Picard')
+      value.should.be.false()
+    })
   });
 
   describe('Router#url()', function () {
@@ -1255,11 +1274,18 @@ describe('Router', function () {
       router.get('books', '/:category/:title', function (ctx) {
         ctx.status = 204;
       });
-      let url = router.url('books', { category: 'programming', title: 'how to node' });
+      let url = router.url(
+        'books',
+        { category: 'programming', title: 'how to node' },
+        { encode: encodeURIComponent }
+      );
       url.should.equal('/programming/how%20to%20node');
-      url = router.url('books', 'programming', 'how to node');
+      url = router.url('books', 'programming', 'how to node', {
+        encode: encodeURIComponent,
+      });
       url.should.equal('/programming/how%20to%20node');
       done();
+
     });
 
     it('generates URL for given route name within embedded routers', function (done) {
@@ -1276,9 +1302,15 @@ describe('Router', function () {
         });
         router.use(embeddedRouter.routes());
         app.use(router.routes());
-        let url = router.url('chapters', { chapterName: 'Learning ECMA6', pageNumber: 123 });
+        let url = router.url(
+            'chapters',
+            { chapterName: 'Learning ECMA6', pageNumber: 123 },
+            { encode: encodeURIComponent }
+        );
         url.should.equal('/books/chapters/Learning%20ECMA6/123');
-        url = router.url('chapters', 'Learning ECMA6', 123);
+        url = router.url('chapters', 'Learning ECMA6', 123, {
+            encode: encodeURIComponent,
+        });
         url.should.equal('/books/chapters/Learning%20ECMA6/123');
         done();
     });
@@ -1300,7 +1332,11 @@ describe('Router', function () {
       embeddedRouter.use(embeddedRouter2.routes());
       router.use(embeddedRouter.routes());
       app.use(router.routes());
-      const url = router.url('chapters', { chapterName: 'Learning ECMA6', pageNumber: 123 });
+      const url = router.url(
+        'chapters',
+        { chapterName: 'Learning ECMA6', pageNumber: 123 },
+        { encode: encodeURIComponent }
+      );
       url.should.equal('/books/chapters/Learning%20ECMA6/pages/123');
       done();
     });
@@ -1328,7 +1364,6 @@ describe('Router', function () {
         done();
     })
 
-
     it('generates URL for given route name without params and query params', function(done) {
         const app = new Koa();
         const router = new Router();
@@ -1341,6 +1376,19 @@ describe('Router', function () {
         url.should.equal('/category?page=3&limit=10');
         done();
     })
+
+    it("should test Error flow if no route is found for name", function() {
+      const app = new Koa();
+      const router = new Router();
+      app.use(router.routes());
+      router.get("books", "/:category/:title", function(ctx) {
+        ctx.status = 204;
+      });
+
+      router
+        .url("Picard", "Enterprise")
+        .should.Error();
+    });
   });
 
   describe('Router#param()', function () {
@@ -1855,6 +1903,61 @@ describe('Router', function () {
         });
       }
     }
+
+    it(`prefix and '/' route behavior`, function(done) {
+      const app = new Koa();
+      const router = new Router({
+        strict: false,
+        prefix: '/foo'
+      });
+
+      const strictRouter = new Router({
+        strict: true,
+        prefix: '/bar'
+      })
+
+      router.get('/', function(ctx) {
+        ctx.body = '';
+      });
+
+      strictRouter.get('/', function(ctx) {
+        ctx.body = '';
+      });
+
+      app.use(router.routes());
+      app.use(strictRouter.routes());
+
+      const server = http.createServer(app.callback());
+
+      request(server)
+        .get('/foo')
+        .expect(200)
+        .end(function (err) {
+          if (err) return done(err);
+
+          request(server)
+            .get('/foo/')
+            .expect(200)
+            .end(function (err) {
+              if (err) return done(err);
+
+              request(server)
+                .get('/bar')
+                .expect(404)
+                .end(function (err) {
+                  if (err) return done(err);
+
+                  request(server)
+                    .get('/bar/')
+                    .expect(200)
+                    .end(function (err) {
+                      if (err) return done(err);
+                      done();
+                    });
+                });
+            });
+        });
+    })
   });
 
   describe('Static Router#url()', function () {
@@ -1864,7 +1967,11 @@ describe('Router', function () {
     });
 
     it('escapes using encodeURIComponent()', function () {
-      const url = Router.url('/:category/:title', { category: 'programming', title: 'how to node' });
+      const url = Router.url(
+        '/:category/:title',
+        { category: 'programming', title: 'how to node' },
+        { encode: encodeURIComponent }
+      );
       url.should.equal('/programming/how%20to%20node');
     });
 
