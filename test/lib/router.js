@@ -428,7 +428,7 @@ describe('Router', function () {
       ctx.params.should.have.property('category', 'programming');
       ctx.status = 204;
     });
-	  router.put('/:category/not-a-title', function (ctx) {
+    router.put('/:category/not-a-title', function (ctx) {
       ctx.should.have.property('params');
       ctx.params.should.have.property('category', 'programming');
       ctx.params.should.not.have.property('title');
