@@ -1734,6 +1734,46 @@ describe('Router', function () {
         done();
       });
     });
+
+    it('places a `routerPath` value on the context for current route', function(done) {
+      const app = new Koa();
+      const router = new Router();
+
+      router.get('/users/:id', function (ctx) {
+        expect(ctx.routerPath).to.be('/users/:id')
+        ctx.status = 200
+      });
+
+      request(http.createServer(app.use(router.routes()).callback()))
+        .get('/users/1')
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err);
+          done();
+        });
+    });
+
+    it('places a `_matchedRoute` value on the context for current route', function(done) {
+      const app = new Koa();
+      const router = new Router();
+
+      router.get('/users/list', function (ctx) {
+        expect(ctx._matchedRoute).to.be('/users/list')
+        ctx.status = 200
+      });
+      router.get('/users/:id', function (ctx) {
+        expect(ctx._matchedRoute).to.be('/users/:id')
+        ctx.status = 200
+      });
+
+      request(http.createServer(app.use(router.routes()).callback()))
+        .get('/users/list')
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err);
+          done();
+        });
+    });
   });
 
   describe('If no HEAD method, default to GET', function () {
