@@ -1674,8 +1674,8 @@ describe('Router', function () {
       const app = new Koa();
       const router = new Router();
       const middleware = function (ctx, next) {
+        next();
         expect(ctx._matchedRoute).to.be('/users/:id')
-        return next();
       };
 
       router.use(middleware);
