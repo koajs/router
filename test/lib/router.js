@@ -851,6 +851,30 @@ describe('Router', function () {
     .expect('GET /users', done);
   });
 
+  it("parameter added to request in ctx", function (done) {
+      const app = new Koa();
+      const router = new Router();
+      router.get("/:hello", function (ctx) {
+          try {
+            expect(ctx.params.hello).eql("world");
+            expect(ctx.request.params.hello).eql("world");
+            ctx.body = { status: "success" };
+          } catch(err) {
+            ctx.status = 500;
+            ctx.body = err.message;
+          }
+      });
+      app.use(router.routes());
+      request(http.createServer(app.callback()))
+          .get("/world")
+          .expect(200)
+          .end(function (err, res) {
+            if (err) return done(err);
+              expect(res.body).to.eql({ status: "success" });
+              done();
+          });
+  });
+
   describe('Router#[verb]()', function () {
     it('registers route specific to HTTP verb', function () {
       const app = new Koa();
