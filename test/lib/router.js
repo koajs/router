@@ -854,11 +854,11 @@ describe('Router', function () {
   it("parameter added to request in ctx", function (done) {
       const app = new Koa();
       const router = new Router();
-      router.get("/:hello", function (ctx) {
+      router.get("/echo/:saying", function (ctx) {
           try {
-            expect(ctx.params.hello).eql("world");
-            expect(ctx.request.params.hello).eql("world");
-            ctx.body = { status: "success" };
+            expect(ctx.params.saying).eql("helloWorld");
+            expect(ctx.request.params.saying).eql("helloWorld");
+            ctx.body = { echo: ctx.params.saying };
           } catch(err) {
             ctx.status = 500;
             ctx.body = err.message;
@@ -866,13 +866,47 @@ describe('Router', function () {
       });
       app.use(router.routes());
       request(http.createServer(app.callback()))
-          .get("/world")
+          .get("/echo/helloWorld")
           .expect(200)
           .end(function (err, res) {
             if (err) return done(err);
-              expect(res.body).to.eql({ status: "success" });
+              expect(res.body).to.eql({ echo: "helloWorld" });
               done();
           });
+  });
+
+  it("parameter added to request in ctx with sub router", function (done) {
+    const app = new Koa();
+    const router = new Router();
+    const subrouter = new Router();
+
+    router.use(function (ctx, next) {
+      ctx.foo = 'boo';
+      return next();
+    });
+
+    subrouter
+      .get('/:saying', function (ctx) {
+        try {
+          expect(ctx.params.saying).eql("helloWorld");
+          expect(ctx.request.params.saying).eql("helloWorld");
+          ctx.body = { echo: ctx.params.saying };
+        } catch(err) {
+          ctx.status = 500;
+          ctx.body = err.message;
+        }
+      });
+
+    router.use('/echo', subrouter.routes());
+    app.use(router.routes());
+    request(http.createServer(app.callback()))
+      .get('/echo/helloWorld')
+        .expect(200)
+        .end(function (err, res) {
+          if (err) return done(err);
+            expect(res.body).to.eql({ echo: "helloWorld" });
+            done();
+        });
   });
 
   describe('Router#[verb]()', function () {
