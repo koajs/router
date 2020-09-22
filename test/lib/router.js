@@ -16,7 +16,6 @@ const assert = require('assert');
 
 describe('Router', function () {
   it('creates new router with koa app', function (done) {
-    const app = new Koa();
     const router = new Router();
     router.should.be.instanceOf(Router);
     done();
@@ -79,7 +78,7 @@ describe('Router', function () {
       });
   });
 
-  it('router can be accecced with ctx', function (done) {
+  it('router can be accessed with ctx', function (done) {
       const app = new Koa();
       const router = new Router();
       router.get('home', '/', function (ctx) {
@@ -158,7 +157,6 @@ describe('Router', function () {
   });
 
   it('exposes middleware factory', function (done) {
-    const app = new Koa();
     const router = new Router();
     router.should.have.property('routes');
     router.routes.should.be.type('function');
@@ -265,7 +263,6 @@ describe('Router', function () {
 
   it('nests routers with prefixes at root', function (done) {
     const app = new Koa();
-    const api = new Router();
     const forums = new Router({
       prefix: '/forums'
     });
@@ -316,7 +313,6 @@ describe('Router', function () {
 
   it('nests routers with prefixes at path', function (done) {
     const app = new Koa();
-    const api = new Router();
     const forums = new Router({
       prefix: '/api'
     });
@@ -809,7 +805,7 @@ describe('Router', function () {
         .end(function (err, res) {
           if (err) return done(err);
           res.header.should.have.property('allow', 'HEAD, GET');
-          let allowHeaders = res.res.rawHeaders.filter((item) => item == 'Allow');
+          let allowHeaders = res.res.rawHeaders.filter((item) => item === 'Allow');
           expect(allowHeaders.length).to.eql(1);
           done();
         });
@@ -990,7 +986,7 @@ describe('Router', function () {
 
   });
 
-  describe('Router#use()', function (done) {
+  describe('Router#use()', function () {
     it('uses router middleware without path', function (done) {
       const app = new Koa();
       const router = new Router();
@@ -1266,7 +1262,7 @@ describe('Router', function () {
       const router = new Router();
       router.should.have.property('register');
       router.register.should.be.type('function');
-      const route = router.register('/', ['GET', 'POST'], function () {});
+      router.register('/', ['GET', 'POST'], function () {});
       app.use(router.routes());
       router.stack.should.be.an.instanceOf(Array);
       router.stack.should.have.property('length', 1);
@@ -1309,7 +1305,6 @@ describe('Router', function () {
 
   describe('Router#route()', function () {
     it('inherits routes from nested router', function () {
-      const app = new Koa();
       const subrouter = Router().get('child', '/hello', function (ctx) {
         ctx.body = { hello: 'world' };
       });
@@ -1318,7 +1313,6 @@ describe('Router', function () {
     });
 
     it('should return false if no name matches', function () {
-      const app = new Koa()
       const value = Router().route('Picard')
       value.should.be.false()
     })
@@ -1400,7 +1394,6 @@ describe('Router', function () {
     });
 
     it('generates URL for given route name with params and query params', function(done) {
-        const app = new Koa();
         const router = new Router();
         router.get('books', '/books/:category/:id', function (ctx) {
           ctx.status = 204;
@@ -1423,22 +1416,22 @@ describe('Router', function () {
     })
 
     it('generates URL for given route name without params and query params', function(done) {
-        var router = new Router();
+        const router = new Router();
         router.get('books', '/books', function (ctx) {
           ctx.status = 204;
         });
-        var url = router.url('books');
+        let url = router.url('books');
         url.should.equal('/books');
-        var url = router.url('books');
+        url = router.url('books');
         url.should.equal('/books', {});
-        var url = router.url('books');
+        url = router.url('books');
         url.should.equal('/books', {}, {});
-        var url = router.url('books',
+        url = router.url('books',
           {},
           { query: { page: 3, limit: 10 } }
         );
         url.should.equal('/books?page=3&limit=10');
-        var url = router.url('books',
+        url = router.url('books',
           {},
           { query: 'page=3&limit=10' }
         );
@@ -1448,7 +1441,7 @@ describe('Router', function () {
 
 
     it('generates URL for given route name without params and query params', function(done) {
-        var router = new Router();
+        const router = new Router();
         router.get('category', '/category', function (ctx) {
           ctx.status = 204;
         });
@@ -1472,6 +1465,97 @@ describe('Router', function () {
         .should.Error();
     });
   });
+
+  describe('Router#match()', function () {
+    let matchRouter
+    before(function () {
+      matchRouter = new Router()
+      matchRouter.get('/updates', function (ctx) {})
+      matchRouter.post('/updates', function (ctx) {})
+
+      const nestedRouterOne = new Router()
+      nestedRouterOne.get('/firstpath', function (ctx) {})
+      nestedRouterOne.get('/secondpath', function (ctx) {})
+
+      const nestedRouterTwo = new Router()
+      nestedRouterTwo.get('/firstpath', function (ctx) {})
+      nestedRouterTwo.post('/firstpath', function (ctx) {})
+      nestedRouterTwo.get('/secondpath', function (ctx) {})
+
+      nestedRouterOne.use('/secondnest', nestedRouterTwo.routes(), nestedRouterTwo.allowedMethods())
+      matchRouter.use('/firstnest', nestedRouterOne.routes(), nestedRouterOne.allowedMethods())
+    })
+
+    it('no matches', function(done) {
+      const matched = matchRouter.match('/bogus/path', 'GET')
+
+      matched.should.deepEqual({
+        pathOnly: [],
+        pathAndMethod: [],
+        pathNotMethod: [],
+        allMatchedPaths: [],
+        route: false
+      })
+      done()
+    })
+
+    it('match for OPTIONS method', function(done) {
+      const matched = matchRouter.match('/updates', 'OPTIONS')
+
+      matched.pathOnly.length.should.equal(2)
+      matched.pathOnly[0].path.should.equal('/updates')
+      matched.pathOnly[0].methods.should.deepEqual(['HEAD', 'GET'])
+      matched.pathOnly[1].path.should.equal('/updates')
+      matched.pathOnly[1].methods.should.deepEqual(['POST'])
+
+      matched.pathNotMethod.should.deepEqual([])
+
+      matched.pathNotMethod.should.deepEqual([])
+
+      matched.allMatchedPaths.length.should.equal(2)
+
+      matched.route.should.equal(false)
+      done()
+    })
+
+    it('route matched is false', function(done) {
+      const matched = matchRouter.match('/firstnest/firstpath', 'POST')
+
+      matched.pathOnly.length.should.equal(1)
+      matched.pathOnly[0].path.should.equal('/firstnest')
+
+      matched.pathAndMethod.length.should.equal(0)
+
+      matched.pathNotMethod.length.should.equal(1)
+      matched.pathNotMethod[0].path.should.equal('/firstnest/firstpath')
+
+      matched.allMatchedPaths.length.should.equal(2)
+
+      matched.route.should.equal(false)
+      done()
+    })
+
+    it('route matched is true', function(done) {
+      const matched = matchRouter.match('/firstnest/secondnest/firstpath', 'GET')
+
+      matched.pathOnly.length.should.equal(2)
+      matched.pathOnly[0].path.should.equal('/firstnest/secondnest')
+      matched.pathOnly[1].path.should.equal('/firstnest')
+
+      matched.pathAndMethod.length.should.equal(1)
+      matched.pathAndMethod[0].path.should.equal('/firstnest/secondnest/firstpath')
+      matched.pathAndMethod[0].methods.should.deepEqual(['HEAD', 'GET'])
+
+      matched.pathNotMethod.length.should.equal(1)
+      matched.pathNotMethod[0].path.should.equal('/firstnest/secondnest/firstpath')
+      matched.pathNotMethod[0].methods.should.deepEqual(['POST'])
+
+      matched.allMatchedPaths.length.should.equal(4)
+
+      matched.route.should.equal(true)
+      done()
+    })
+  })
 
   describe('Router#param()', function () {
     it('runs parameter middleware', function (done) {
@@ -1511,10 +1595,7 @@ describe('Router', function () {
           return next();
         })
         .param('first', function (id, ctx, next) {
-          ctx.ranFirst = true;
-          if (ctx.user) {
-            ctx.ranFirst = false;
-          }
+          ctx.ranFirst = !ctx.user;
           if (!id) return ctx.status = 404;
           return next();
         })
