@@ -16,6 +16,13 @@
   },
   "devDependencies": {
     "@ladjs/env": "^1.0.0",
+    "eslint": "^7.10.0",
+    "eslint-config-koa": "^2.0.2",
+    "eslint-config-standard": "^14.1.1",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1",
     "expect.js": "^0.3.1",
     "jsdoc-to-markdown": "^5.0.3",
     "koa": "^2.11.0",
@@ -48,6 +55,7 @@
     "docs": "NODE_ENV=test jsdoc2md -t ./lib/API_tpl.hbs --src ./lib/*.js  >| API.md",
     "test": "mocha test/**/*.js",
     "coverage": "nyc npm run test",
+    "lint": "eslint lib bench test",
     "bench": "make -C bench"
   }
 }
