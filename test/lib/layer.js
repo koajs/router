@@ -6,7 +6,6 @@ const Koa = require('koa');
 const http = require('http');
 const request = require('supertest');
 const Router = require('../../lib/router');
-const should = require('should');
 const Layer = require('../../lib/layer');
 
 describe('Layer', () => {
@@ -76,7 +75,7 @@ describe('Layer', () => {
       const app = new Koa();
       const router = new Router();
       app.use(router.routes());
-      router.get(/^\/api\/([^\/]+)\/?/i, (ctx, next) => {
+      router.get(/^\/api\/([^/]+)\/?/i, (ctx, next) => {
         ctx.should.have.property('captures');
         ctx.captures.should.be.instanceOf(Array);
         ctx.captures.should.have.property(0, '1');
@@ -100,7 +99,7 @@ describe('Layer', () => {
       const app = new Koa();
       const router = new Router();
       app.use(router.routes());
-      router.get(/^\/api\/([^\/]+)\/?/i, (ctx, next) => {
+      router.get(/^\/api\/([^/]+)\/?/i, (ctx, next) => {
         ctx.should.have.property('captures');
         ctx.captures.should.be.type('object');
         ctx.captures.should.have.property(0, '101%');

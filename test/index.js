@@ -2,11 +2,10 @@
  * Module tests
  */
 
-const koa = require('koa');
 const should = require('should');
 
-describe('module', function() {
-  it('should expose Router', function(done) {
+describe('module', () => {
+  it('should expose Router', done => {
     const Router = require('..');
     should.exist(Router);
     Router.should.be.type('function');

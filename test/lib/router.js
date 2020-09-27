@@ -16,7 +16,6 @@ const assert = require('assert');
 
 describe('Router', () => {
   it('creates new router with koa app', done => {
-    const app = new Koa();
     const router = new Router();
     router.should.be.instanceOf(Router);
     done();
@@ -153,12 +152,11 @@ describe('Router', () => {
     }, nestedRouter.routes());
 
     app.use(parentRouter.routes());
-    app.should.be.ok;
+    app.should.be.ok();
     done();
   });
 
   it('exposes middleware factory', done => {
-    const app = new Koa();
     const router = new Router();
     router.should.have.property('routes');
     router.routes.should.be.type('function');
@@ -265,14 +263,12 @@ describe('Router', () => {
 
   it('nests routers with prefixes at root', done => {
     const app = new Koa();
-    const api = new Router();
     const forums = new Router({
       prefix: '/forums'
     });
     const posts = new Router({
       prefix: '/:fid/posts'
     });
-    let server;
 
     posts
       .get('/', (ctx, next) => {
@@ -286,7 +282,7 @@ describe('Router', () => {
 
     forums.use(posts.routes());
 
-    server = http.createServer(app.use(forums.routes()).callback());
+    const server = http.createServer(app.use(forums.routes()).callback());
 
     request(server)
       .get('/forums/1/posts')
@@ -316,14 +312,12 @@ describe('Router', () => {
 
   it('nests routers with prefixes at path', done => {
     const app = new Koa();
-    const api = new Router();
     const forums = new Router({
       prefix: '/api'
     });
     const posts = new Router({
       prefix: '/posts'
     });
-    let server;
 
     posts
       .get('/', (ctx, next) => {
@@ -337,7 +331,7 @@ describe('Router', () => {
 
     forums.use('/forums/:fid', posts.routes());
 
-    server = http.createServer(app.use(forums.routes()).callback());
+    const server = http.createServer(app.use(forums.routes()).callback());
 
     request(server)
       .get('/api/forums/1/posts')
@@ -1266,7 +1260,7 @@ describe('Router', () => {
       const router = new Router();
       router.should.have.property('register');
       router.register.should.be.type('function');
-      const route = router.register('/', ['GET', 'POST'], () => {});
+      router.register('/', ['GET', 'POST'], () => {});
       app.use(router.routes());
       router.stack.should.be.an.instanceOf(Array);
       router.stack.should.have.property('length', 1);
@@ -1309,7 +1303,6 @@ describe('Router', () => {
 
   describe('Router#route()', () => {
     it('inherits routes from nested router', () => {
-      const app = new Koa();
       const subrouter = Router().get('child', '/hello', ctx => {
         ctx.body = { hello: 'world' };
       });
@@ -1318,7 +1311,6 @@ describe('Router', () => {
     });
 
     it('should return false if no name matches', () => {
-      const app = new Koa();
       const value = Router().route('Picard');
       value.should.be.false();
     });
@@ -1399,7 +1391,6 @@ describe('Router', () => {
     });
 
     it('generates URL for given route name with params and query params', done => {
-      const app = new Koa();
       const router = new Router();
       router.get('books', '/books/:category/:id', ctx => {
         ctx.status = 204;
@@ -1426,18 +1417,18 @@ describe('Router', () => {
       router.get('books', '/books', ctx => {
         ctx.status = 204;
       });
-      var url = router.url('books');
+      let url = router.url('books');
       url.should.equal('/books');
-      var url = router.url('books');
+      url = router.url('books');
       url.should.equal('/books', {});
-      var url = router.url('books');
+      url = router.url('books');
       url.should.equal('/books', {}, {});
-      var url = router.url('books',
+      url = router.url('books',
         {},
         { query: { page: 3, limit: 10 } }
       );
       url.should.equal('/books?page=3&limit=10');
-      var url = router.url('books',
+      url = router.url('books',
         {},
         { query: 'page=3&limit=10' }
       );
