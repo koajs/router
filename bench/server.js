@@ -1,7 +1,10 @@
 const Koa = require('koa');
 const Router = require('../');
-const env = require('@ladjs/env')({path:'../.env', includeProcessEnv: true,
-assignToProcessEnv: true,});
+const env = require('@ladjs/env')({
+  path: '../.env',
+  includeProcessEnv: true,
+  assignToProcessEnv: true
+});
 
 const app = new Koa();
 const router = new Router();
@@ -31,7 +34,7 @@ grandchild.get('/:id/seven', ok);
 grandchild.get('/:id/seven(/eight)?', ok);
 
 for (let i = n; i > 0; i--) {
-  let child = new Router();
+  const child = new Router();
   if (useMiddleware) child.use((ctx, next) => next());
   child.get(`/:${''.padStart(i, 'a')}`, ok);
   child.middleware('/grandchild', grandchild);
