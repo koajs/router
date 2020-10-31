@@ -1305,6 +1305,36 @@ describe('Router', function () {
           done();
         });
     });
+
+    it('redirects to external sites', function (done) {
+      const app = new Koa();
+      const router = new Router();
+      app.use(router.routes());
+      router.redirect('/', 'https://www.example.com');
+      request(http.createServer(app.callback()))
+        .post('/')
+        .expect(301)
+        .end(function (err, res) {
+          if (err) return done(err);
+          res.header.should.have.property('location', 'https://www.example.com');
+          done();
+        });
+    });
+
+    it('redirects to any external protocol', function (done) {
+      const app = new Koa();
+      const router = new Router();
+      app.use(router.routes());
+      router.redirect('/', 'my-custom-app-protocol://www.example.com/foo');
+      request(http.createServer(app.callback()))
+        .post('/')
+        .expect(301)
+        .end(function (err, res) {
+          if (err) return done(err);
+          res.header.should.have.property('location', 'my-custom-app-protocol://www.example.com/foo');
+          done();
+        });
+    });
   });
 
   describe('Router#route()', function () {
