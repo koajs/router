@@ -1,7 +1,7 @@
 {
   "name": "@koa/router",
   "description": "Router middleware for koa. Provides RESTful resource routing.",
-  "version": "9.4.0",
+  "version": "10.0.0",
   "author": "Alex Mingoia <talk@alexmingoia.com>",
   "bugs": {
     "url": "https://github.com/koajs/router/issues",
