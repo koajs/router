@@ -15,15 +15,17 @@
     "path-to-regexp": "^6.1.0"
   },
   "devDependencies": {
-    "@ladjs/env": "^1.0.0",
+    "@ladjs/env": "^2.0.2",
+    "eslint-config-xo-lass": "^1.0.4",
     "expect.js": "^0.3.1",
-    "jsdoc-to-markdown": "^5.0.3",
+    "jsdoc-to-markdown": "^6.0.1",
     "koa": "^2.11.0",
     "mocha": "^7.0.1",
     "nyc": "^15.0.0",
     "should": "^13.2.3",
     "supertest": "^4.0.2",
-    "wrk": "^1.2.0"
+    "wrk": "^1.2.0",
+    "xo": "^0.34.1"
   },
   "engines": {
     "node": ">= 8.0.0"
@@ -48,6 +50,14 @@
     "docs": "NODE_ENV=test jsdoc2md -t ./lib/API_tpl.hbs --src ./lib/*.js  >| API.md",
     "test": "mocha test/**/*.js",
     "coverage": "nyc npm run test",
+    "lint": "xo",
     "bench": "make -C bench"
+  },
+  "xo": {
+    "prettier": true,
+    "space": true,
+    "extends": [
+      "xo-lass"
+    ]
   }
 }

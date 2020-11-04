@@ -9,8 +9,8 @@ const Router = require('../../lib/router');
 const should = require('should');
 const Layer = require('../../lib/layer');
 
-describe('Layer', function() {
-  it('composes multiple callbacks/middlware', function(done) {
+describe('Layer', function () {
+  it('composes multiple callbacks/middlware', function (done) {
     const app = new Koa();
     const router = new Router();
     app.use(router.routes());
@@ -26,16 +26,16 @@ describe('Layer', function() {
       }
     );
     request(http.createServer(app.callback()))
-    .get('/programming/how-to-node')
-    .expect(204)
-    .end(function(err) {
-      if (err) return done(err);
-      done();
-    });
+      .get('/programming/how-to-node')
+      .expect(204)
+      .end(function (err) {
+        if (err) return done(err);
+        done();
+      });
   });
 
-  describe('Layer#match()', function() {
-    it('captures URL path parameters', function(done) {
+  describe('Layer#match()', function () {
+    it('captures URL path parameters', function (done) {
       const app = new Koa();
       const router = new Router();
       app.use(router.routes());
@@ -47,15 +47,15 @@ describe('Layer', function() {
         ctx.status = 204;
       });
       request(http.createServer(app.callback()))
-      .get('/match/this')
-      .expect(204)
-      .end(function(err, res) {
-        if (err) return done(err);
-        done();
-      });
+        .get('/match/this')
+        .expect(204)
+        .end(function (err, res) {
+          if (err) return done(err);
+          done();
+        });
     });
 
-    it('return original path parameters when decodeURIComponent throw error', function(done) {
+    it('return original path parameters when decodeURIComponent throw error', function (done) {
       const app = new Koa();
       const router = new Router();
       app.use(router.routes());
@@ -67,178 +67,220 @@ describe('Layer', function() {
         ctx.status = 204;
       });
       request(http.createServer(app.callback()))
-      .get('/100%/101%')
-      .expect(204)
-      .end(done);
+        .get('/100%/101%')
+        .expect(204)
+        .end(done);
     });
 
-    it('populates ctx.captures with regexp captures', function(done) {
+    it('populates ctx.captures with regexp captures', function (done) {
       const app = new Koa();
       const router = new Router();
       app.use(router.routes());
-      router.get(/^\/api\/([^\/]+)\/?/i, function (ctx, next) {
-        ctx.should.have.property('captures');
-        ctx.captures.should.be.instanceOf(Array);
-        ctx.captures.should.have.property(0, '1');
-        return next();
-      }, function (ctx) {
-        ctx.should.have.property('captures');
-        ctx.captures.should.be.instanceOf(Array);
-        ctx.captures.should.have.property(0, '1');
-        ctx.status = 204;
-      });
+      router.get(
+        /^\/api\/([^/]+)\/?/i,
+        function (ctx, next) {
+          ctx.should.have.property('captures');
+          ctx.captures.should.be.instanceOf(Array);
+          ctx.captures.should.have.property(0, '1');
+          return next();
+        },
+        function (ctx) {
+          ctx.should.have.property('captures');
+          ctx.captures.should.be.instanceOf(Array);
+          ctx.captures.should.have.property(0, '1');
+          ctx.status = 204;
+        }
+      );
       request(http.createServer(app.callback()))
-      .get('/api/1')
-      .expect(204)
-      .end(function(err) {
-        if (err) return done(err);
-        done();
-      });
+        .get('/api/1')
+        .expect(204)
+        .end(function (err) {
+          if (err) return done(err);
+          done();
+        });
     });
 
-    it('return original ctx.captures when decodeURIComponent throw error', function(done) {
+    it('return original ctx.captures when decodeURIComponent throw error', function (done) {
       const app = new Koa();
       const router = new Router();
       app.use(router.routes());
-      router.get(/^\/api\/([^\/]+)\/?/i, function (ctx, next) {
-        ctx.should.have.property('captures');
-        ctx.captures.should.be.type('object');
-        ctx.captures.should.have.property(0, '101%');
-        return next();
-      }, function (ctx, next) {
-        ctx.should.have.property('captures');
-        ctx.captures.should.be.type('object');
-        ctx.captures.should.have.property(0, '101%');
-        ctx.status = 204;
-      });
+      router.get(
+        /^\/api\/([^/]+)\/?/i,
+        function (ctx, next) {
+          ctx.should.have.property('captures');
+          ctx.captures.should.be.type('object');
+          ctx.captures.should.have.property(0, '101%');
+          return next();
+        },
+        function (ctx, next) {
+          ctx.should.have.property('captures');
+          ctx.captures.should.be.type('object');
+          ctx.captures.should.have.property(0, '101%');
+          ctx.status = 204;
+        }
+      );
       request(http.createServer(app.callback()))
-      .get('/api/101%')
-      .expect(204)
-      .end(function(err) {
-        if (err) return done(err);
-        done();
-      });
+        .get('/api/101%')
+        .expect(204)
+        .end(function (err) {
+          if (err) return done(err);
+          done();
+        });
     });
 
-    it('populates ctx.captures with regexp captures include undefiend', function(done) {
+    it('populates ctx.captures with regexp captures include undefiend', function (done) {
       const app = new Koa();
       const router = new Router();
       app.use(router.routes());
-      router.get(/^\/api(\/.+)?/i, function (ctx, next) {
-        ctx.should.have.property('captures');
-        ctx.captures.should.be.type('object');
-        ctx.captures.should.have.property(0, undefined);
-        return next();
-      }, function (ctx) {
-        ctx.should.have.property('captures');
-        ctx.captures.should.be.type('object');
-        ctx.captures.should.have.property(0, undefined);
-        ctx.status = 204;
-      });
+      router.get(
+        /^\/api(\/.+)?/i,
+        function (ctx, next) {
+          ctx.should.have.property('captures');
+          ctx.captures.should.be.type('object');
+          ctx.captures.should.have.property(0, undefined);
+          return next();
+        },
+        function (ctx) {
+          ctx.should.have.property('captures');
+          ctx.captures.should.be.type('object');
+          ctx.captures.should.have.property(0, undefined);
+          ctx.status = 204;
+        }
+      );
       request(http.createServer(app.callback()))
-      .get('/api')
-      .expect(204)
-      .end(function(err) {
-        if (err) return done(err);
-        done();
-      });
+        .get('/api')
+        .expect(204)
+        .end(function (err) {
+          if (err) return done(err);
+          done();
+        });
     });
 
-    it('should throw friendly error message when handle not exists', function() {
+    it('should throw friendly error message when handle not exists', function () {
       const app = new Koa();
       const router = new Router();
       app.use(router.routes());
       const notexistHandle = undefined;
       (function () {
         router.get('/foo', notexistHandle);
-      }).should.throw('get `/foo`: `middleware` must be a function, not `undefined`');
+      }.should.throw(
+        'get `/foo`: `middleware` must be a function, not `undefined`'
+      ));
 
       (function () {
         router.get('foo router', '/foo', notexistHandle);
-      }).should.throw('get `foo router`: `middleware` must be a function, not `undefined`');
+      }.should.throw(
+        'get `foo router`: `middleware` must be a function, not `undefined`'
+      ));
 
       (function () {
-        router.post('/foo', function() {}, notexistHandle);
-      }).should.throw('post `/foo`: `middleware` must be a function, not `undefined`');
+        router.post('/foo', function () {}, notexistHandle);
+      }.should.throw(
+        'post `/foo`: `middleware` must be a function, not `undefined`'
+      ));
     });
   });
 
-  describe('Layer#param()', function() {
-    it('composes middleware for param fn', function(done) {
+  describe('Layer#param()', function () {
+    it('composes middleware for param fn', function (done) {
       const app = new Koa();
       const router = new Router();
-      const route = new Layer('/users/:user', ['GET'], [function (ctx) {
-        ctx.body = ctx.user;
-      }]);
+      const route = new Layer(
+        '/users/:user',
+        ['GET'],
+        [
+          function (ctx) {
+            ctx.body = ctx.user;
+          }
+        ]
+      );
       route.param('user', function (id, ctx, next) {
         ctx.user = { name: 'alex' };
-        if (!id) return ctx.status = 404;
+        if (!id) return (ctx.status = 404);
         return next();
       });
       router.stack.push(route);
       app.use(router.middleware());
       request(http.createServer(app.callback()))
-      .get('/users/3')
-      .expect(200)
-      .end(function(err, res) {
-        if (err) return done(err);
-        res.should.have.property('body');
-        res.body.should.have.property('name', 'alex');
-        done();
-      });
+        .get('/users/3')
+        .expect(200)
+        .end(function (err, res) {
+          if (err) return done(err);
+          res.should.have.property('body');
+          res.body.should.have.property('name', 'alex');
+          done();
+        });
     });
 
-    it('ignores params which are not matched', function(done) {
+    it('ignores params which are not matched', function (done) {
       const app = new Koa();
       const router = new Router();
-      const route = new Layer('/users/:user', ['GET'], [function (ctx) {
-        ctx.body = ctx.user;
-      }]);
+      const route = new Layer(
+        '/users/:user',
+        ['GET'],
+        [
+          function (ctx) {
+            ctx.body = ctx.user;
+          }
+        ]
+      );
       route.param('user', function (id, ctx, next) {
         ctx.user = { name: 'alex' };
-        if (!id) return ctx.status = 404;
+        if (!id) return (ctx.status = 404);
         return next();
       });
       route.param('title', function (id, ctx, next) {
         ctx.user = { name: 'mark' };
-        if (!id) return ctx.status = 404;
+        if (!id) return (ctx.status = 404);
         return next();
       });
       router.stack.push(route);
       app.use(router.middleware());
       request(http.createServer(app.callback()))
-      .get('/users/3')
-      .expect(200)
-      .end(function(err, res) {
-        if (err) return done(err);
-        res.should.have.property('body');
-        res.body.should.have.property('name', 'alex');
-        done();
-      });
+        .get('/users/3')
+        .expect(200)
+        .end(function (err, res) {
+          if (err) return done(err);
+          res.should.have.property('body');
+          res.body.should.have.property('name', 'alex');
+          done();
+        });
     });
 
     it('param with paramNames positive check', function () {
-      const route = new Layer('/:category/:title', ['get'], [function () {}], {name: 'books'});
-      route.paramNames = [{
-        name: 'category',
-      }]
-      const paramSet = route.params('/:category/:title', ['programming', 'ydkjs'], {'title': 'how-to-code'})
-      paramSet.should.have.property('title', 'how-to-code')
-      paramSet.should.have.property( 'category', 'programming' )
-    })
+      const route = new Layer('/:category/:title', ['get'], [function () {}], {
+        name: 'books'
+      });
+      route.paramNames = [
+        {
+          name: 'category'
+        }
+      ];
+      const parameterSet = route.params(
+        '/:category/:title',
+        ['programming', 'ydkjs'],
+        { title: 'how-to-code' }
+      );
+      parameterSet.should.have.property('title', 'how-to-code');
+      parameterSet.should.have.property('category', 'programming');
+    });
   });
 
-  describe('Layer#url()', function() {
-    it('generates route URL', function() {
-      const route = new Layer('/:category/:title', ['get'], [function () {}], {name: 'books'});
+  describe('Layer#url()', function () {
+    it('generates route URL', function () {
+      const route = new Layer('/:category/:title', ['get'], [function () {}], {
+        name: 'books'
+      });
       let url = route.url({ category: 'programming', title: 'how-to-node' });
       url.should.equal('/programming/how-to-node');
       url = route.url('programming', 'how-to-node');
       url.should.equal('/programming/how-to-node');
     });
 
-    it('escapes using encodeURIComponent()', function() {
-      const route = new Layer('/:category/:title', ['get'], [function () {}], {name: 'books'});
+    it('escapes using encodeURIComponent()', function () {
+      const route = new Layer('/:category/:title', ['get'], [function () {}], {
+        name: 'books'
+      });
       const url = route.url(
         { category: 'programming', title: 'how to node' },
         { encode: encodeURIComponent }
@@ -247,26 +289,32 @@ describe('Layer', function() {
     });
 
     it('setPrefix method checks Layer for path', function () {
-      const route = new Layer('/category', ['get'], [function () {}], {name: 'books'});
-      route.path = '/hunter2'
-      const prefix = route.setPrefix('TEST')
-      prefix.path.should.equal('TEST/hunter2')
+      const route = new Layer('/category', ['get'], [function () {}], {
+        name: 'books'
+      });
+      route.path = '/hunter2';
+      const prefix = route.setPrefix('TEST');
+      prefix.path.should.equal('TEST/hunter2');
     });
   });
 
   describe('Layer#prefix', () => {
     it('setPrefix method passes check Layer for path', function () {
-      const route = new Layer('/category', ['get'], [function () {}], {name: 'books'});
-      route.path = '/hunter2'
-      const prefix = route.setPrefix('/TEST')
-      prefix.path.should.equal('/TEST/hunter2')
+      const route = new Layer('/category', ['get'], [function () {}], {
+        name: 'books'
+      });
+      route.path = '/hunter2';
+      const prefix = route.setPrefix('/TEST');
+      prefix.path.should.equal('/TEST/hunter2');
     });
 
     it('setPrefix method fails check Layer for path', function () {
-      const route = new Layer(false, ['get'], [function () {}], {name: 'books'});
-      route.path = false
-      const prefix = route.setPrefix('/TEST')
-      prefix.path.should.equal(false)
+      const route = new Layer(false, ['get'], [function () {}], {
+        name: 'books'
+      });
+      route.path = false;
+      const prefix = route.setPrefix('/TEST');
+      prefix.path.should.equal(false);
     });
   });
 });

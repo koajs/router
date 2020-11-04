@@ -1,13 +1,16 @@
 const Koa = require('koa');
-const Router = require('../');
-const env = require('@ladjs/env')({path:'../.env', includeProcessEnv: true,
-assignToProcessEnv: true,});
+const Router = require('..');
+const env = require('@ladjs/env')({
+  path: '../.env',
+  includeProcessEnv: true,
+  assignToProcessEnv: true
+});
 
 const app = new Koa();
 const router = new Router();
 
-const ok = ctx => ctx.status = 200;
-const n = parseInt(env.FACTOR || '10', 10);
+const ok = (ctx) => (ctx.status = 200);
+const n = Number.parseInt(env.FACTOR || '10', 10);
 const useMiddleware = env.USE_MIDDLEWARE === 'true';
 
 router.get('/_health', ok);
@@ -31,7 +34,7 @@ grandchild.get('/:id/seven', ok);
 grandchild.get('/:id/seven(/eight)?', ok);
 
 for (let i = n; i > 0; i--) {
-  let child = new Router();
+  const child = new Router();
   if (useMiddleware) child.use((ctx, next) => next());
   child.get(`/:${''.padStart(i, 'a')}`, ok);
   child.middleware('/grandchild', grandchild);
