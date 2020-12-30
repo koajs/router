@@ -34,7 +34,9 @@ npm i @koa/router
 yarn add @koa/router
 ```
 
-## [API Reference](./API.md)
+## Documentation
+
+See [API Reference](./API.md).
 
 ## Contributing
 
