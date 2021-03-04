@@ -424,7 +424,7 @@ router
 
 ### Router.url(path, params) ⇒ <code>String</code>
 
-Generate URL from url pattern and given `params`.
+Generate URL from url pattern and given `params`. This method URL-encodes the parameters before including them in the URL.
 
 **Kind**: static method of <code>[Router](#exp_module_koa-router--Router)</code>
 
