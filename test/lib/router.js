@@ -1501,6 +1501,14 @@ describe('Router', function () {
         .url("Picard", "Enterprise")
         .should.Error();
     });
+
+    it('escapes using encodeURIComponent()', function() {
+      const url = Router.url(
+        '/:category/:title',
+        { category: 'programming', title: 'how to node & js/ts' }
+      );
+      url.should.equal('/programming/how%20to%20node%20%26%20js%2Fts');
+    });
   });
 
   describe('Router#param()', function () {

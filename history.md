@@ -1,3 +1,10 @@
+Next
+==================
+
+- [Breaking] URL-encode parameters passed to `Router.url` with `encodeURIComponent`.
+  - Previously, the parameters to insert in a URL were not encoded: `Router.url('/:x', { x: 'hello world' })` produced `"/hello world"` and `Router.url('/:x', { x: 'a/test?param#' })` would throw an error.
+  - Now, all parameters are safely URL-encoded by default: `Router.url('/:x', { x: 'hello world' })` produces `"/hello%20world"` and `Router.url('/:x', { x: 'a/test?param#' })` produces `"/a%2Ftest%3Fparam%23"`.
+
 9.0.0 / 2020-04-09
 ==================
 
