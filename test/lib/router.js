@@ -2235,4 +2235,49 @@ describe('Router', function () {
         done();
     });
   });
+
+  describe('Support host', function () {
+    it('should support host match', function (done) {
+      const app = new Koa();
+      const router = new Router({
+        host: 'test.domain'
+      });
+      router.get('/', (ctx) => {
+        ctx.body = {
+          url: '/'
+        };
+      });
+      app.use(router.routes());
+      request(http.createServer(app.callback()))
+          .get('/')
+          .set('Host', 'test.domain')
+          .expect(200)
+          .end(function (err, res) {
+            if (err) return done(err);
+            expect(res.body.url).to.eql("/");
+            done();
+          });
+    });
+    it('should not match host unexpected', function (done) {
+      const app = new Koa();
+      const router = new Router({
+        host: 'test.domain'
+      });
+      router.get('/', (ctx) => {
+        ctx.body = {
+          url: '/'
+        };
+      });
+      app.use(router.routes());
+      request(http.createServer(app.callback()))
+          .get('/')
+          .set('Host', 'a.domain')
+          .expect(404)
+          .end(function (err, res) {
+            if (err) return done(err);
+            expect(res.body.url).to.be(undefined);
+            done();
+          });
+    })
+  })
 });
