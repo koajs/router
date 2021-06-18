@@ -7,6 +7,7 @@
   * [new Router(\[opts\])](#new-routeropts)
   * [router.get|put|post|patch|delete|del ⇒ <code>Router</code>](#routergetputpostpatchdeletedel--coderoutercode)
   * [Named routes](#named-routes)
+  * [Match host](#match-host)
   * [Multiple middleware](#multiple-middleware)
 * [Nested routers](#nested-routers)
   * [Router prefixes](#router-prefixes)
@@ -30,11 +31,12 @@
 
 Create a new router.
 
-| Param            | Type                 | Description                                                              |
-| ---------------- | -------------------- | ------------------------------------------------------------------------ |
-| [opts]           | <code>Object</code>  |                                                                          |
-| [opts.prefix]    | <code>String</code>  | prefix router paths                                                      |
-| [opts.exclusive] | <code>Boolean</code> | only run last matched route's controller when there are multiple matches |
+| Param            | Type                       | Description                                                              |
+| ---------------- | -------------------------- | ------------------------------------------------------------------------ |
+| [opts]           | <code>Object</code>        |                                                                          |
+| [opts.prefix]    | <code>String</code>        | prefix router paths                                                      |
+| [opts.exclusive] | <code>Boolean</code>       | only run last matched route's controller when there are multiple matches |
+| [opts.host]      | <code>String/Regexp</code> | hostname to match for all routes                                         |
 
 **Example**
 Basic usage:
@@ -104,6 +106,28 @@ router.get('user', '/users/:id', (ctx, next) => {
 
 router.url('user', 3);
 // => "/users/3"
+```
+
+### Match host
+
+Routers can match against a specific host by using the `host` property.
+
+```javascript
+const routerA = new Router({
+  host: 'hosta.com' // only match if request host exactly equal `hosta.com`
+});
+
+router.get('/', (ctx, next) => {
+  // Response for hosta.com
+});
+
+const routerB = new Router({
+  host: /^(.*\.)?hostb\.com$/ // match all subdomains of hostb.com, including hostb.com, www.hostb.com, etc.
+});
+
+router.get('/', (ctx, next) => {
+  // Response index for matched hosts
+});
 ```
 
 ### Multiple middleware

@@ -25,6 +25,7 @@
 * Express-style routing (`app.get`, `app.put`, `app.post`, etc.)
 * Named URL parameters
 * Named routes with URL generation
+* Match routes with specific host
 * Responds to `OPTIONS` requests with allowed methods
 * Support for `405 Method Not Allowed` and `501 Not Implemented`
 * Multiple route middleware
