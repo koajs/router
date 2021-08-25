@@ -246,6 +246,56 @@ describe('Router', function () {
       })
   });
 
+  it('runs multiple controllers when there are multiple matches', function (done) {
+    const app = new Koa();
+    const router = new Router();
+
+    router
+      .get('users_single', '/users/:id(.*)', function (ctx, next) {
+        ctx.body = { single: true };
+        next();
+      })
+      .get('users_all', '/users/all', function (ctx, next) {
+        ctx.body = Object.assign({}, ctx.body, { all: true });
+        next();
+      });
+
+    request(http.createServer(app.use(router.routes()).callback()))
+      .get('/users/all')
+      .expect(200)
+      .end(function (err, res) {
+        if (err) return done(err);
+        expect(res.body).to.have.property('single', true);
+        expect(res.body).to.have.property('all', true);
+        done();
+      })
+  });
+
+  it('runs only the last match when the \'exclusive\' option is enabled', function (done) {
+    const app = new Koa();
+    const router = new Router({ exclusive: true });
+
+    router
+      .get('users_single', '/users/:id(.*)', function (ctx, next) {
+        ctx.body = { single: true };
+        next();
+      })
+      .get('users_all', '/users/all', function (ctx, next) {
+        ctx.body = Object.assign({}, ctx.body, { all: true });
+        next();
+      });
+
+    request(http.createServer(app.use(router.routes()).callback()))
+      .get('/users/all')
+      .expect(200)
+      .end(function (err, res) {
+        if (err) return done(err);
+        expect(res.body).to.not.have.property('single');
+        expect(res.body).to.have.property('all', true);
+        done();
+      })
+  });
+
   it('does not run subsequent middleware without calling next', function (done) {
     const app = new Koa();
     const router = new Router();

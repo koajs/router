@@ -31,6 +31,7 @@ Create a new router.
 | --- | --- | --- |
 | [opts] | <code>Object</code> |  |
 | [opts.prefix] | <code>String</code> | prefix router paths |
+| [opts.exclusive] | <code>Boolean</code> | only run last matched route's controller when there are multiple matches |
 
 **Example**  
 Basic usage:
