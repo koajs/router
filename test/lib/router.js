@@ -1888,6 +1888,95 @@ describe('Router', function () {
           done();
         });
     });
+
+    it('places the most specific `_matchedRoute` and `_matchedRouteName` value on the context when using wildcard routes', function (done) {
+      const app = new Koa();
+      const router = new Router();
+      let matchedRoute = null;
+      let _matchedRouteName = null;
+      router.use(function (ctx, next) {
+        expect(ctx._matchedRoute).to.be(matchedRoute);
+        expect(ctx._matchedRouteName).to.be(_matchedRouteName);
+        return next();
+      });
+  
+      router.get('foo', '/foo', function (ctx,) {
+        expect(ctx._matchedRoute).to.be('/foo');
+        expect(ctx._matchedRouteName).to.be('foo');
+        ctx.status = 200;
+      });
+  
+      router.get('wildcard', '(.*)', function (ctx) {
+        expect(ctx._matchedRoute).to.be('(.*)');
+        expect(ctx._matchedRouteName).to.be('wildcard');
+        ctx.status = 200;
+      });
+
+      app.use(router.routes());
+
+      const server = http.createServer(app.callback());
+      matchedRoute = '/foo';
+      _matchedRouteName = 'foo';
+      request(server)
+        .get('/foo')
+        .expect(200)
+        .end(function (err) {
+          if (err) done(err);
+          matchedRoute = '(.*)';
+          _matchedRouteName = 'wildcard';
+          request(server)
+            .get('/bar')
+            .expect(200)
+            .end(done);
+        });
+    });
+
+    it('places the most specific `_matchedRoute` and `_matchedRouteName` value on the context when using multiple routers', function (done) {
+      const app = new Koa();
+      const router = new Router();
+      const router1 = new Router();
+      const router2 = new Router();
+      let matchedRoute = null;
+      let _matchedRouteName = null;
+      router.use(function (ctx, next) {
+        expect(ctx._matchedRoute).to.be(matchedRoute);
+        expect(ctx._matchedRouteName).to.be(_matchedRouteName);
+        return next();
+      });
+
+      router1.get('foo', '/foo', function (ctx) {
+        expect(ctx._matchedRoute).to.be('/foo');
+        expect(ctx._matchedRouteName).to.be('foo');
+        ctx.status = 200;
+      });
+
+      router2.get('bar', '/bar', function (ctx) {
+        expect(ctx._matchedRoute).to.be('/bar');
+        expect(ctx._matchedRouteName).to.be('bar');
+        ctx.status = 200;
+      });
+
+      router.use(router1.routes());
+      router.use(router2.routes());
+
+      app.use(router.routes());
+
+      const server = http.createServer(app.callback());
+      matchedRoute = '/foo';
+      _matchedRouteName = 'foo';
+      request(server)
+        .get('/foo')
+        .expect(200)
+        .end(function (err) {
+          if (err) done(err);
+          matchedRoute = '/bar';
+          _matchedRouteName = 'bar';
+          request(server)
+            .get('/bar')
+            .expect(200)
+            .end(done);
+        });
+    });
   });
 
   describe('If no HEAD method, default to GET', function () {
