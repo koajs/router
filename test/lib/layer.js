@@ -178,12 +178,40 @@ describe('Layer', function() {
       router.stack.push(route);
       app.use(router.middleware());
       request(http.createServer(app.callback()))
+        .get('/users/3')
+        .expect(200)
+        .end(function(err, res) {
+          if (err) return done(err);
+          res.should.have.property('body');
+          res.body.should.have.property('name', 'alex');
+          done();
+        });
+    });
+
+    it('composes middleware for generic param fn', function(done) {
+      const app = new Koa();
+      const router = new Router();
+      const route = new Layer('/users/:user', ['GET'], [function (ctx) {
+        ctx.body = ctx.user;
+      }]);
+      route.param('user', constructFromParam);
+
+      function constructFromParam (id, ctx, next) {
+        ctx[this.param] = { name: 'alex', fromParam: this.param}
+        if (!id) return ctx.status = 404
+        return next()
+      }
+
+      router.stack.push(route);
+      app.use(router.middleware());
+      request(http.createServer(app.callback()))
       .get('/users/3')
       .expect(200)
       .end(function(err, res) {
         if (err) return done(err);
         res.should.have.property('body');
         res.body.should.have.property('name', 'alex');
+        res.body.should.have.property('fromParam', 'user');
         done();
       });
     });
