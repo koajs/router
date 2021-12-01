@@ -34,6 +34,15 @@ npm i @koa/router
 yarn add @koa/router
 ```
 
+To install types:
+
+```bash
+# npm .. 
+npm i @types/koa__router
+# yarn .. 
+yarn add @types/koa__router
+```
+
 ## [API Reference](./API.md)
 
 ## Contributing
