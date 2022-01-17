@@ -34,9 +34,20 @@ npm i @koa/router
 yarn add @koa/router
 ```
 
-## Documentation
+## Typescript Support
 
-See [API Reference](./API.md).
+To install types:
+
+```bash
+# npm .. 
+npm i @types/koa__router
+# yarn .. 
+yarn add @types/koa__router
+```
+
+## API Reference
+
+See [API Reference](./API.md) for more documentation.
 
 ## Contributing
 
