@@ -1867,6 +1867,32 @@ describe('Router', function () {
         });
     });
 
+    it('restore a `routerPath` value after layers match', function (done) {
+      const app = new Koa();
+      const router1 = new Router();
+      const router2 = new Router();
+
+      router1.get('/users/:userId', function (ctx, next) {
+        expect(ctx.routerPath).to.be('/users/:userId')
+        next()
+      });
+      router2.get('/users/:id', function (ctx) {
+        expect(ctx.routerPath).to.be('/users/:id')
+        ctx.body = 'hello, user is ' + ctx.params.id;
+      });
+
+      app.use(router1.routes());
+      app.use(router2.routes());
+      request(http.createServer(app.callback()))
+        .get('/users/123')
+        .expect(200)
+        .end(function (err, res) {
+          if (err) return done(err);
+          res.text.should.equal('hello, user is 123');
+          done();
+        });
+    });
+
     it('places a `_matchedRoute` value on the context for current route', function (done) {
       const app = new Koa();
       const router = new Router();
