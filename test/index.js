@@ -2,7 +2,6 @@
  * Module tests
  */
 
-const koa = require('koa');
 const should = require('should');
 
 describe('module', function() {
