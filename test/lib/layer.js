@@ -48,7 +48,7 @@ describe('Layer', function() {
       request(http.createServer(app.callback()))
       .get('/match/this')
       .expect(204)
-      .end(function(err, res) {
+      .end(function(err) {
         if (err) return done(err);
         done();
       });
@@ -104,7 +104,7 @@ describe('Layer', function() {
         ctx.captures.should.be.type('object');
         ctx.captures.should.have.property(0, '101%');
         return next();
-      }, function (ctx, next) {
+      }, function (ctx) {
         ctx.should.have.property('captures');
         ctx.captures.should.be.type('object');
         ctx.captures.should.have.property(0, '101%');
@@ -215,16 +215,53 @@ describe('Layer', function() {
         done();
       });
     });
+  });
 
-    it('param with paramNames positive check', function () {
-      const route = new Layer('/:category/:title', ['get'], [function () {}], {name: 'books'});
-      route.paramNames = [{
-        name: 'category',
-      }]
-      const paramSet = route.params('/:category/:title', ['programming', 'ydkjs'], {'title': 'how-to-code'})
-      paramSet.should.have.property('title', 'how-to-code')
-      paramSet.should.have.property( 'category', 'programming' )
-    })
+  describe('Layer#params()', function () {
+    let route;
+
+    before(function() {
+      route = new Layer('/:category', ['GET'], [function() {}]);
+    });
+
+    it('should return an empty object if params were not pass', function() {
+      const params = route.params('', []);
+
+      params.should.deepEqual({});
+    });
+
+    it('should return empty object if params is empty string', function() {
+      const params = route.params('', ['']);
+
+      params.should.deepEqual({});
+    });
+
+    it('should return an object with escaped params', function() {
+      const params = route.params('', ['how%20to%20node'])
+
+      params.should.deepEqual({ category: 'how to node' });
+    });
+
+    it('should return an object with the same params if an error occurs', function() {
+      const params = route.params('', ['%E0%A4%A'])
+
+      params.should.deepEqual({ category: '%E0%A4%A' });
+    });
+
+    it('should return an object with data if params were pass', function() {
+      const params = route.params('', ['programming']);
+
+      params.should.deepEqual({ category: 'programming' });
+    });
+
+
+    it('should return empty object if params were not pass', function() {
+      route.paramNames = [];
+      const params = route.params('', ['programming']);
+
+      params.should.deepEqual({});
+    });
+
   });
 
   describe('Layer#url()', function() {
@@ -234,15 +271,6 @@ describe('Layer', function() {
       url.should.equal('/programming/how-to-node');
       url = route.url('programming', 'how-to-node');
       url.should.equal('/programming/how-to-node');
-    });
-
-    it('escapes using encodeURIComponent()', function() {
-      const route = new Layer('/:category/:title', ['get'], [function () {}], {name: 'books'});
-      const url = route.url(
-        { category: 'programming', title: 'how to node' },
-        { encode: encodeURIComponent }
-      );
-      url.should.equal('/programming/how%20to%20node');
     });
 
     it('setPrefix method checks Layer for path', function () {

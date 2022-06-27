@@ -1,21 +1,24 @@
 
 ## API Reference
   
-* [koa-router](#module_koa-router)
-    * [Router](#exp_module_koa-router--Router) ⏏
-        * [new Router([opts])](#new_module_koa-router--Router_new)
-        * _instance_
-            * [.get|put|post|patch|delete|del](#module_koa-router--Router+get|put|post|patch|delete|del) ⇒ <code>Router</code>
-            * [.routes](#module_koa-router--Router+routes) ⇒ <code>function</code>
-            * [.use([path], middleware)](#module_koa-router--Router+use) ⇒ <code>Router</code>
-            * [.prefix(prefix)](#module_koa-router--Router+prefix) ⇒ <code>Router</code>
-            * [.allowedMethods([options])](#module_koa-router--Router+allowedMethods) ⇒ <code>function</code>
-            * [.redirect(source, destination, [code])](#module_koa-router--Router+redirect) ⇒ <code>Router</code>
-            * [.route(name)](#module_koa-router--Router+route) ⇒ <code>Layer</code> &#124; <code>false</code>
-            * [.url(name, params, [options])](#module_koa-router--Router+url) ⇒ <code>String</code> &#124; <code>Error</code>
-            * [.param(param, middleware)](#module_koa-router--Router+param) ⇒ <code>Router</code>
-        * _static_
-            * [.url(path, params)](#module_koa-router--Router.url) ⇒ <code>String</code>
+- [API Reference](#api-reference)
+  - [Router ⏏](#router-)
+    - [new Router([opts])](#new-routeropts)
+    - [router.get|put|post|patch|delete|del ⇒ <code>Router</code>](#routergetputpostpatchdeletedel--router)
+    - [Named routes](#named-routes)
+    - [Multiple middleware](#multiple-middleware)
+  - [Nested routers](#nested-routers)
+    - [Router prefixes](#router-prefixes)
+    - [URL parameters](#url-parameters)
+    - [router.routes ⇒ <code>function</code>](#routerroutes--function)
+    - [router.use([path], middleware) ⇒ <code>Router</code>](#routerusepath-middleware--router)
+    - [router.prefix(prefix) ⇒ <code>Router</code>](#routerprefixprefix--router)
+    - [router.allowedMethods([options]) ⇒ <code>function</code>](#routerallowedmethodsoptions--function)
+    - [router.redirect(source, destination, [code]) ⇒ <code>Router</code>](#routerredirectsource-destination-code--router)
+    - [router.route(name) ⇒ <code>Layer</code> &#124; <code>false</code>](#routerroutename--layer--false)
+    - [router.url(name, params, [options]) ⇒ <code>String</code> &#124; <code>Error</code>](#routerurlname-params-options--string--error)
+    - [router.param(param, middleware) ⇒ <code>Router</code>](#routerparamparam-middleware--router)
+    - [Router.url(path, params) ⇒ <code>String</code>](#routerurlpath-params--string)
 
 <a name="exp_module_koa-router--Router"></a>
 
@@ -224,8 +227,20 @@ Set the path prefix for a Router instance that was already initialized.
 
 **Example**  
 ```javascript
-router.prefix('/things/:thing_id')
+const router = new Router({
+  prefix: '/categories'
+});
+
+router.get('/', ...); // respond "/categories"
+
+router.prefix('/users');
+
+router.get('/', ...); // responds to "/users"
+router.get('/:id', ...); // responds to "/users/:id"
 ```
+
+**Note**: prefix always should start from `/` otherwise it won't work.
+
 <a name="module_koa-router--Router+allowedMethods"></a>
 
 #### router.allowedMethods([options]) ⇒ <code>function</code>
