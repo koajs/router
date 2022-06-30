@@ -994,7 +994,7 @@ describe('Router', function () {
         });
     });
     
-    it ('correctly returns an error when not passed a path for verb-specific registration (gh-148)', function () {
+    it ('correctly returns an error when not passed a path for verb-specific registration (gh-147)', function () {
       const router = new Router();
       try {
         router.get(function (ctx, next) {});
@@ -1003,7 +1003,7 @@ describe('Router', function () {
       }
     });
 
-    it ('correctly returns an error when not passed a path for "all" registration (gh-148)', function () {
+    it ('correctly returns an error when not passed a path for "all" registration (gh-147)', function () {
       const router = new Router();
       try {
         router.all(function (ctx, next) {});
