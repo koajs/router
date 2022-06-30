@@ -993,7 +993,30 @@ describe('Router', function () {
           done();
         });
     });
+    
+    it ('correctly returns an error when not passed a path for verb-specific registration (gh-148)', function () {
+      const app = new Koa();
+      const router = new Router();
+      let error = false;
+      try {
+        router.get(function (ctx, next) {});
+      } catch (err) {
+        error = err.message;
+      }
+      expect(error).to.eql('You have to provide a path when adding a get handler');
+    });
 
+    it ('correctly returns an error when not passed a path for "all" registration (gh-148)', function () {
+      const app = new Koa();
+      const router = new Router();
+      let error = false;
+      try {
+        router.all(function (ctx, next) {});
+      } catch (err) {
+        error = err.message;
+      }
+      expect(error).to.eql('You have to provide a path when adding an all handler');
+    });
   });
 
   describe('Router#use()', function () {
