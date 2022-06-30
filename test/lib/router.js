@@ -995,27 +995,21 @@ describe('Router', function () {
     });
     
     it ('correctly returns an error when not passed a path for verb-specific registration (gh-148)', function () {
-      const app = new Koa();
       const router = new Router();
-      let error = false;
       try {
         router.get(function (ctx, next) {});
-      } catch (err) {
-        error = err.message;
+      } catch (e) {
+        expect(e.message).to.be('You have to provide a path when adding a get handler');
       }
-      expect(error).to.eql('You have to provide a path when adding a get handler');
     });
 
     it ('correctly returns an error when not passed a path for "all" registration (gh-148)', function () {
-      const app = new Koa();
       const router = new Router();
-      let error = false;
       try {
         router.all(function (ctx, next) {});
-      } catch (err) {
-        error = err.message;
+      } catch (e) {
+        expect(e.message).to.be('You have to provide a path when adding an all handler');
       }
-      expect(error).to.eql('You have to provide a path when adding an all handler');
     });
   });
 
