@@ -2410,4 +2410,85 @@ describe('Router', function () {
       done();
     });
   });
+
+  describe('Support host', function () {
+    it('should support host match', function (done) {
+      const app = new Koa();
+      const router = new Router({
+        host: 'test.domain'
+      });
+      router.get('/', (ctx) => {
+        ctx.body = {
+          url: '/'
+        };
+      });
+      app.use(router.routes());
+
+      const server = http.createServer(app.callback());
+
+      request(server)
+        .get('/')
+        .set('Host', 'test.domain')
+        .expect(200)
+        .end(function (err, res) {
+          if (err) return done(err);
+
+          request(server)
+            .get('/')
+            .set('Host', 'a.domain')
+            .expect(404)
+            .end(function (err, res) {
+              if (err) return done(err);
+              done();
+            });
+        });
+    });
+    it('should support host match regexp', function (done) {
+      const app = new Koa();
+      const router = new Router({
+        host: /^(.*\.)?test\.domain/
+      });
+      router.get('/', (ctx) => {
+        ctx.body = {
+          url: '/'
+        };
+      });
+      app.use(router.routes());
+      const server = http.createServer(app.callback());
+
+      request(server)
+        .get('/')
+        .set('Host', 'test.domain')
+        .expect(200)
+        .end(function (err, res) {
+          if (err) return done(err);
+
+          request(server)
+            .get('/')
+            .set('Host', 'www.test.domain')
+            .expect(200)
+            .end(function (err, res) {
+              if (err) return done(err);
+
+              request(server)
+                .get('/')
+                .set('Host', 'any.sub.test.domain')
+                .expect(200)
+                .end(function (err, res) {
+                  if (err) return done(err);
+
+                  request(server)
+                    .get('/')
+                    .set('Host', 'sub.anytest.domain')
+                    .expect(404)
+                    .end(function (err, res) {
+                      if (err) return done(err);
+
+                      done();
+                    });
+                });
+            });
+        });
+    });
+  });
 });
