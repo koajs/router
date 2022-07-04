@@ -1,29 +1,44 @@
 {
   "name": "@koa/router",
-  "description": "Router middleware for koa. Provides RESTful resource routing.",
+  "description": "Router middleware for koa. Maintained by Forward Email and Lad.",
   "version": "10.1.1",
   "author": "Alex Mingoia <talk@alexmingoia.com>",
   "bugs": {
     "url": "https://github.com/koajs/router/issues",
     "email": "niftylettuce@gmail.com"
   },
+  "contributors": [
+    "Alex Mingoia <talk@alexmingoia.com>",
+    "@koajs"
+  ],
   "dependencies": {
-    "debug": "^4.3.4",
-    "http-errors": "^1.7.3",
+    "http-errors": "^2.0.0",
     "koa-compose": "^4.1.0",
     "methods": "^1.1.2",
     "path-to-regexp": "^6.2.1"
   },
   "devDependencies": {
-    "@ladjs/env": "^1.0.0",
+    "@commitlint/cli": "^17.0.3",
+    "@commitlint/config-conventional": "^17.0.3",
+    "@ladjs/env": "^3.0.0",
+    "ava": "^4.3.0",
+    "cross-env": "^7.0.3",
+    "eslint": "^8.19.0",
+    "eslint-config-xo-lass": "^2.0.1",
     "expect.js": "^0.3.1",
-    "jsdoc-to-markdown": "^5.0.3",
+    "fixpack": "^4.0.0",
+    "husky": "^8.0.1",
+    "jsdoc-to-markdown": "^7.1.1",
     "koa": "^2.13.4",
+    "lint-staged": "^13.0.3",
     "mocha": "^10.0.0",
     "nyc": "^15.1.0",
+    "remark-cli": "^11.0.0",
+    "remark-preset-github": "^4.0.4",
     "should": "^13.2.3",
-    "supertest": "^6.2.3",
-    "wrk": "^1.2.1"
+    "supertest": "^6.2.4",
+    "wrk": "^1.2.1",
+    "xo": "^0.50.0"
   },
   "engines": {
     "node": ">= 12"
@@ -45,10 +60,13 @@
     "url": "https://github.com/koajs/router.git"
   },
   "scripts": {
-    "docs": "NODE_ENV=test jsdoc2md -t ./lib/API_tpl.hbs --src ./lib/*.js  >| API.md",
-    "test": "mocha test/**/*.js",
-    "test:watch": "mocha test/**/*.js --watch",
+    "bench": "make -C bench",
     "coverage": "nyc npm run test",
-    "bench": "make -C bench"
+    "docs": "NODE_ENV=test jsdoc2md -t ./lib/API_tpl.hbs --src ./lib/*.js  >| API.md",
+    "lint": "xo --fix && remark . -qfo && fixpack",
+    "prepare": "husky install",
+    "pretest": "npm run lint",
+    "test": "mocha test/**/*.js",
+    "test:watch": "mocha test/**/*.js --watch"
   }
 }

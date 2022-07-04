@@ -1,12 +1,26 @@
 # [@koa/router](https://github.com/koajs/router)
 
-> Router middleware for [Koa](https://github.com/koajs/koa).
+> Router middleware for [Koa](https://github.com/koajs/koa). Maintained by [Forward Email][forward-email] and [Lad][].
 
-[![NPM version](https://img.shields.io/npm/v/@koa/router.svg?style=flat)](https://npmjs.org/package/@koa/router) 
-[![NPM Downloads](https://img.shields.io/npm/dm/@koa/router.svg?style=flat)](https://npmjs.org/package/@koa/router) 
-[![Node.js Version](https://img.shields.io/node/v/@koa/router.svg?style=flat)](http://nodejs.org/download/)
-[![Build Status](https://img.shields.io/travis/koajs/router.svg?style=flat)](http://travis-ci.org/koajs/router)
-[![gitter](https://img.shields.io/gitter/room/koajs/koa.svg?style=flat)](https://gitter.im/koajs/koa)
+[![build status](https://github.com/koajs/router/actions/workflows/ci.yml/badge.svg)](https://github.com/koajs/router/actions/workflows/ci.yml)
+[![code style](https://img.shields.io/badge/code_style-XO-5ed9c7.svg)](https://github.com/sindresorhus/xo)
+[![styled with prettier](https://img.shields.io/badge/styled_with-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
+[![made with lass](https://img.shields.io/badge/made_with-lass-95CC28.svg)](https://lass.js.org)
+[![license](https://img.shields.io/github/license/koajs/router.svg)](LICENSE)
+
+
+## Table of Contents
+
+* [Features](#features)
+* [Migrating to 7 / Koa 2](#migrating-to-7--koa-2)
+* [Install](#install)
+* [Typescript Support](#typescript-support)
+* [API Reference](#api-reference)
+* [Contributors](#contributors)
+* [License](#license)
+
+
+## Features
 
 * Express-style routing (`app.get`, `app.put`, `app.post`, etc.)
 * Named URL parameters
@@ -17,52 +31,54 @@
 * Multiple and nestable routers
 * `async/await` support
 
+
 ## Migrating to 7 / Koa 2
 
-- The API has changed to match the new promise-based middleware
+* The API has changed to match the new promise-based middleware
   signature of koa 2. See the [koa 2.x readme](https://github.com/koajs/koa/tree/2.0.0-alpha.3) for more
   information.
-- Middleware is now always run in the order declared by `.use()` (or `.get()`,
+* Middleware is now always run in the order declared by `.use()` (or `.get()`,
   etc.), which matches Express 4 API.
 
-## Installation
 
-```bash
-# npm .. 
-npm i @koa/router
-# yarn .. 
-yarn add @koa/router
+## Install
+
+[npm][]:
+
+```sh
+npm install @koa/router
 ```
+
 
 ## Typescript Support
 
-To install types:
-
-```bash
-# npm .. 
-npm i @types/koa__router
-# yarn .. 
-yarn add @types/koa__router
+```sh
+npm install @types/koa__router
 ```
+
 
 ## API Reference
 
 See [API Reference](./API.md) for more documentation.
 
-## Contributing
 
-Please submit all issues and pull requests to the [koajs/router](http://github.com/koajs/router) repository!
+## Contributors
 
-## Support
+| Name             |
+| ---------------- |
+| **Alex Mingoia** |
+| **@koajs**       |
 
-If you have any problem or suggestion please open an issue [here](https://github.com/koajs/router/issues).
 
-## Call for Maintainers
+## License
 
-This module is forked from the original [koa-router](https://github.com/ZijianHe/koa-router) due to its lack of activity. `koa-router` is the most widely used router module in the Koa community and we need maintainers. If you're interested in fixing bugs or implementing new features feel free to open a pull request. We'll be adding active contributors as collaborators.
+[MIT](LICENSE) © Alex Mingoia
 
-Thanks to the original authors @alexmingoia and the original team for their great work.
 
-### License
+##
 
-[MIT](LICENSE)
+[forward-email]: https://forwardemail.net
+
+[lad]: https://lad.js.org
+
+[npm]: https//www.npmjs.com

@@ -4,15 +4,15 @@
 
 const fs = require('fs');
 const http = require('http');
+const path = require('path');
+const assert = require('assert');
 const Koa = require('koa');
 const methods = require('methods');
-const path = require('path');
 const request = require('supertest');
-const Router = require('../../lib/router');
-const Layer = require('../../lib/layer');
 const expect = require('expect.js');
 const should = require('should');
-const assert = require('assert');
+const Router = require('../../lib/router');
+const Layer = require('../../lib/layer');
 
 describe('Router', function () {
   it('creates new router with koa app', function (done) {
@@ -21,7 +21,7 @@ describe('Router', function () {
     done();
   });
 
-  it('should', function(done) {
+  it('should', function (done) {
     const router = new Router();
     console.info(router.params);
 
@@ -68,10 +68,14 @@ describe('Router', function () {
         return next();
       });
 
-    parentRouter.use('/parent-route', function (ctx, next) {
-      ctx.n = ctx.n ? (ctx.n + 1) : 1;
-      return next();
-    }, nestedRouter.routes());
+    parentRouter.use(
+      '/parent-route',
+      function (ctx, next) {
+        ctx.n = ctx.n ? ctx.n + 1 : 1;
+        return next();
+      },
+      nestedRouter.routes()
+    );
 
     app.use(parentRouter.routes());
 
@@ -99,7 +103,7 @@ describe('Router', function () {
       .expect(200)
       .end(function (err, res) {
         if (err) return done(err);
-        expect(res.body.url).to.eql("/");
+        expect(res.body.url).to.eql('/');
         done();
       });
   });
@@ -108,23 +112,28 @@ describe('Router', function () {
     const app = new Koa();
     const router = new Router();
 
-    router.get('/double', function (ctx, next) {
-      return new Promise(function (resolve) {
-        setTimeout(function () {
-          ctx.body = { message: 'Hello' };
-          resolve(next());
-        }, 1);
-      });
-    }, function (ctx, next) {
-      return new Promise(function (resolve) {
-        setTimeout(function () {
-          ctx.body.message += ' World';
-          resolve(next());
-        }, 1);
-      });
-    }, function (ctx) {
-      ctx.body.message += '!';
-    });
+    router.get(
+      '/double',
+      function (ctx, next) {
+        return new Promise(function (resolve) {
+          setTimeout(function () {
+            ctx.body = { message: 'Hello' };
+            resolve(next());
+          }, 1);
+        });
+      },
+      function (ctx, next) {
+        return new Promise(function (resolve) {
+          setTimeout(function () {
+            ctx.body.message += ' World';
+            resolve(next());
+          }, 1);
+        });
+      },
+      function (ctx) {
+        ctx.body.message += '!';
+      }
+    );
 
     app.use(router.routes());
 
@@ -154,9 +163,13 @@ describe('Router', function () {
         return next();
       });
 
-    parentRouter.use('/parent-route', function (ctx, next) {
-      return next();
-    }, nestedRouter.routes());
+    parentRouter.use(
+      '/parent-route',
+      function (ctx, next) {
+        return next();
+      },
+      nestedRouter.routes()
+    );
 
     app.use(parentRouter.routes());
     app.should.be.ok();
@@ -223,7 +236,7 @@ describe('Router', function () {
         expect(res.body).to.have.property('foo', 'bar');
         expect(res.body).to.not.have.property('bar');
         done();
-      })
+      });
   });
 
   it('matches first to last', function (done) {
@@ -248,7 +261,7 @@ describe('Router', function () {
         if (err) return done(err);
         expect(res.body).to.have.property('order', 1);
         done();
-      })
+      });
   });
 
   it('runs multiple controllers when there are multiple matches', function (done) {
@@ -261,7 +274,7 @@ describe('Router', function () {
         next();
       })
       .get('users_all', '/users/all', function (ctx, next) {
-        ctx.body = Object.assign({}, ctx.body, { all: true });
+        ctx.body = { ...ctx.body, all: true };
         next();
       });
 
@@ -273,10 +286,10 @@ describe('Router', function () {
         expect(res.body).to.have.property('single', true);
         expect(res.body).to.have.property('all', true);
         done();
-      })
+      });
   });
 
-  it('runs only the last match when the \'exclusive\' option is enabled', function (done) {
+  it("runs only the last match when the 'exclusive' option is enabled", function (done) {
     const app = new Koa();
     const router = new Router({ exclusive: true });
 
@@ -286,7 +299,7 @@ describe('Router', function () {
         next();
       })
       .get('users_all', '/users/all', function (ctx, next) {
-        ctx.body = Object.assign({}, ctx.body, { all: true });
+        ctx.body = { ...ctx.body, all: true };
         next();
       });
 
@@ -298,24 +311,28 @@ describe('Router', function () {
         expect(res.body).to.not.have.property('single');
         expect(res.body).to.have.property('all', true);
         done();
-      })
+      });
   });
 
   it('does not run subsequent middleware without calling next', function (done) {
     const app = new Koa();
     const router = new Router();
 
-    router
-      .get('user_page', '/user/(.*).jsx', function () {
+    router.get(
+      'user_page',
+      '/user/(.*).jsx',
+      function () {
         // no next()
-      }, function (ctx) {
+      },
+      function (ctx) {
         ctx.body = { order: 1 };
-      });
+      }
+    );
 
     request(http.createServer(app.use(router.routes()).callback()))
       .get('/user/account.jsx')
       .expect(404)
-      .end(done)
+      .end(done);
   });
 
   it('nests routers with prefixes at root', function (done) {
@@ -447,10 +464,9 @@ describe('Router', function () {
 
   it('runs parent middleware for subrouter routes', function (done) {
     const app = new Koa();
-    const subrouter = Router()
-      .get('/sub', function (ctx) {
-        ctx.body = { msg: ctx.msg };
-      });
+    const subrouter = Router().get('/sub', function (ctx) {
+      ctx.body = { msg: ctx.msg };
+    });
     const router = Router()
       .use(function (ctx, next) {
         ctx.msg = 'router';
@@ -523,7 +539,7 @@ describe('Router', function () {
     router.get('/resources/:id{.:ext}?', function (ctx) {
       ctx.should.have.property('params');
       ctx.params.should.have.property('id', id);
-      if (ctx.params.ext) ctx.params.ext.should.be.equal(ext.substring(1));
+      if (ctx.params.ext) ctx.params.ext.should.be.equal(ext.slice(1));
       ctx.status = 204;
     });
     const server = http.createServer(app.callback());
@@ -555,18 +571,22 @@ describe('Router', function () {
       ctx.bar = 'baz';
       return next();
     });
-    router.get('/:category/:title', function (ctx, next) {
-      ctx.foo = 'bar';
-      return next();
-    }, function (ctx) {
-      ctx.should.have.property('bar', 'baz');
-      ctx.should.have.property('foo', 'bar');
-      ctx.should.have.property('app');
-      ctx.should.have.property('req');
-      ctx.should.have.property('res');
-      ctx.status = 204;
-      done();
-    });
+    router.get(
+      '/:category/:title',
+      function (ctx, next) {
+        ctx.foo = 'bar';
+        return next();
+      },
+      function (ctx) {
+        ctx.should.have.property('bar', 'baz');
+        ctx.should.have.property('foo', 'bar');
+        ctx.should.have.property('app');
+        ctx.should.have.property('req');
+        ctx.should.have.property('res');
+        ctx.status = 204;
+        done();
+      }
+    );
     request(http.createServer(app.callback()))
       .get('/match/this')
       .expect(204)
@@ -611,18 +631,19 @@ describe('Router', function () {
         });
       });
     };
-    router
-      .get('/', function (ctx, next) {
+
+    router.get(
+      '/',
+      function (ctx, next) {
         return next();
-      }, function (ctx) {
+      },
+      function (ctx) {
         return readVersion().then(function () {
           ctx.status = 204;
         });
-      });
-    request(http.createServer(app.callback()))
-      .get('/')
-      .expect(204)
-      .end(done);
+      }
+    );
+    request(http.createServer(app.callback())).get('/').expect(204).end(done);
   });
 
   describe('Router#allowedMethods()', function () {
@@ -631,8 +652,8 @@ describe('Router', function () {
       const router = new Router();
       app.use(router.routes());
       app.use(router.allowedMethods());
-      router.get('/users', function () { });
-      router.put('/users', function () { });
+      router.get('/users', function () {});
+      router.put('/users', function () {});
       request(http.createServer(app.callback()))
         .options('/users')
         .expect(200)
@@ -647,9 +668,9 @@ describe('Router', function () {
     it('responds with 405 Method Not Allowed', function (done) {
       const app = new Koa();
       const router = new Router();
-      router.get('/users', function () { });
-      router.put('/users', function () { });
-      router.post('/events', function () { });
+      router.get('/users', function () {});
+      router.put('/users', function () {});
+      router.post('/events', function () {});
       app.use(router.routes());
       app.use(router.allowedMethods());
       request(http.createServer(app.callback()))
@@ -678,9 +699,9 @@ describe('Router', function () {
         });
       });
       app.use(router.allowedMethods({ throw: true }));
-      router.get('/users', function () { });
-      router.put('/users', function () { });
-      router.post('/events', function () { });
+      router.get('/users', function () {});
+      router.put('/users', function () {});
+      router.post('/events', function () {});
       request(http.createServer(app.callback()))
         .post('/users')
         .expect(405)
@@ -707,23 +728,25 @@ describe('Router', function () {
           ctx.status = err.statusCode;
         });
       });
-      app.use(router.allowedMethods({
-        throw: true,
-        methodNotAllowed: function () {
-          const notAllowedErr = new Error('Custom Not Allowed Error');
-          notAllowedErr.type = 'custom';
-          notAllowedErr.statusCode = 405;
-          notAllowedErr.body = {
-            error: 'Custom Not Allowed Error',
-            statusCode: 405,
-            otherStuff: true
-          };
-          return notAllowedErr;
-        }
-      }));
-      router.get('/users', function () { });
-      router.put('/users', function () { });
-      router.post('/events', function () { });
+      app.use(
+        router.allowedMethods({
+          throw: true,
+          methodNotAllowed() {
+            const notAllowedErr = new Error('Custom Not Allowed Error');
+            notAllowedErr.type = 'custom';
+            notAllowedErr.statusCode = 405;
+            notAllowedErr.body = {
+              error: 'Custom Not Allowed Error',
+              statusCode: 405,
+              otherStuff: true
+            };
+            return notAllowedErr;
+          }
+        })
+      );
+      router.get('/users', function () {});
+      router.put('/users', function () {});
+      router.post('/events', function () {});
       request(http.createServer(app.callback()))
         .post('/users')
         .expect(405)
@@ -745,8 +768,8 @@ describe('Router', function () {
       const router = new Router();
       app.use(router.routes());
       app.use(router.allowedMethods());
-      router.get('/users', function () { });
-      router.put('/users', function () { });
+      router.get('/users', function () {});
+      router.put('/users', function () {});
       request(http.createServer(app.callback()))
         .search('/users')
         .expect(501)
@@ -772,8 +795,8 @@ describe('Router', function () {
         });
       });
       app.use(router.allowedMethods({ throw: true }));
-      router.get('/users', function () { });
-      router.put('/users', function () { });
+      router.get('/users', function () {});
+      router.put('/users', function () {});
       request(http.createServer(app.callback()))
         .search('/users')
         .expect(501)
@@ -801,22 +824,24 @@ describe('Router', function () {
           ctx.status = err.statusCode;
         });
       });
-      app.use(router.allowedMethods({
-        throw: true,
-        notImplemented: function () {
-          const notImplementedErr = new Error('Custom Not Implemented Error');
-          notImplementedErr.type = 'custom';
-          notImplementedErr.statusCode = 501;
-          notImplementedErr.body = {
-            error: 'Custom Not Implemented Error',
-            statusCode: 501,
-            otherStuff: true
-          };
-          return notImplementedErr;
-        }
-      }));
-      router.get('/users', function () { });
-      router.put('/users', function () { });
+      app.use(
+        router.allowedMethods({
+          throw: true,
+          notImplemented() {
+            const notImplementedErr = new Error('Custom Not Implemented Error');
+            notImplementedErr.type = 'custom';
+            notImplementedErr.statusCode = 501;
+            notImplementedErr.body = {
+              error: 'Custom Not Implemented Error',
+              statusCode: 501,
+              otherStuff: true
+            };
+            return notImplementedErr;
+          }
+        })
+      );
+      router.get('/users', function () {});
+      router.put('/users', function () {});
       request(http.createServer(app.callback()))
         .search('/users')
         .expect(501)
@@ -857,7 +882,7 @@ describe('Router', function () {
       app.use(router.routes());
       app.use(router.allowedMethods());
 
-      router.get('/', function () { });
+      router.get('/', function () {});
 
       request(http.createServer(app.callback()))
         .options('/')
@@ -865,15 +890,16 @@ describe('Router', function () {
         .end(function (err, res) {
           if (err) return done(err);
           res.header.should.have.property('allow', 'HEAD, GET');
-          let allowHeaders = res.res.rawHeaders.filter((item) => item === 'Allow');
+          const allowHeaders = res.res.rawHeaders.filter(
+            (item) => item === 'Allow'
+          );
           expect(allowHeaders.length).to.eql(1);
           done();
         });
     });
-
   });
 
-  it("allowedMethods check if flow (allowedArr.length)", function (done) {
+  it('allowedMethods check if flow (allowedArr.length)', function (done) {
     const app = new Koa();
     const router = new Router();
     app.use(router.routes());
@@ -907,13 +933,13 @@ describe('Router', function () {
       .expect('GET /users', done);
   });
 
-  it("parameter added to request in ctx", function (done) {
+  it('parameter added to request in ctx', function (done) {
     const app = new Koa();
     const router = new Router();
-    router.get("/echo/:saying", function (ctx) {
+    router.get('/echo/:saying', function (ctx) {
       try {
-        expect(ctx.params.saying).eql("helloWorld");
-        expect(ctx.request.params.saying).eql("helloWorld");
+        expect(ctx.params.saying).eql('helloWorld');
+        expect(ctx.request.params.saying).eql('helloWorld');
         ctx.body = { echo: ctx.params.saying };
       } catch (err) {
         ctx.status = 500;
@@ -922,16 +948,16 @@ describe('Router', function () {
     });
     app.use(router.routes());
     request(http.createServer(app.callback()))
-      .get("/echo/helloWorld")
+      .get('/echo/helloWorld')
       .expect(200)
       .end(function (err, res) {
         if (err) return done(err);
-        expect(res.body).to.eql({ echo: "helloWorld" });
+        expect(res.body).to.eql({ echo: 'helloWorld' });
         done();
       });
   });
 
-  it("parameter added to request in ctx with sub router", function (done) {
+  it('parameter added to request in ctx with sub router', function (done) {
     const app = new Koa();
     const router = new Router();
     const subrouter = new Router();
@@ -941,17 +967,16 @@ describe('Router', function () {
       return next();
     });
 
-    subrouter
-      .get('/:saying', function (ctx) {
-        try {
-          expect(ctx.params.saying).eql("helloWorld");
-          expect(ctx.request.params.saying).eql("helloWorld");
-          ctx.body = { echo: ctx.params.saying };
-        } catch (err) {
-          ctx.status = 500;
-          ctx.body = err.message;
-        }
-      });
+    subrouter.get('/:saying', function (ctx) {
+      try {
+        expect(ctx.params.saying).eql('helloWorld');
+        expect(ctx.request.params.saying).eql('helloWorld');
+        ctx.body = { echo: ctx.params.saying };
+      } catch (err) {
+        ctx.status = 500;
+        ctx.body = err.message;
+      }
+    });
 
     router.use('/echo', subrouter.routes());
     app.use(router.routes());
@@ -960,7 +985,7 @@ describe('Router', function () {
       .expect(200)
       .end(function (err, res) {
         if (err) return done(err);
-        expect(res.body).to.eql({ echo: "helloWorld" });
+        expect(res.body).to.eql({ echo: 'helloWorld' });
         done();
       });
   });
@@ -970,40 +995,41 @@ describe('Router', function () {
       const app = new Koa();
       const router = new Router();
       app.use(router.routes());
-      methods.forEach(function (method) {
+      for (const method of methods) {
         router.should.have.property(method);
         router[method].should.be.type('function');
-        router[method]('/', function () { });
-      });
+        router[method]('/', function () {});
+      }
+
       router.stack.should.have.length(methods.length);
     });
 
     it('registers route with a regexp path', function () {
       const router = new Router();
-      methods.forEach(function (method) {
-        router[method](/^\/\w$/i, function () { }).should.equal(router);
-      });
+      for (const method of methods) {
+        router[method](/^\/\w$/i, function () {}).should.equal(router);
+      }
     });
 
     it('registers route with a given name', function () {
       const router = new Router();
-      methods.forEach(function (method) {
-        router[method](method, '/', function () { }).should.equal(router);
-      });
+      for (const method of methods) {
+        router[method](method, '/', function () {}).should.equal(router);
+      }
     });
 
     it('registers route with with a given name and regexp path', function () {
       const router = new Router();
-      methods.forEach(function (method) {
-        router[method](method, /^\/$/i, function () { }).should.equal(router);
-      });
+      for (const method of methods) {
+        router[method](method, /^\/$/i, function () {}).should.equal(router);
+      }
     });
 
     it('enables route chaining', function () {
       const router = new Router();
-      methods.forEach(function (method) {
-        router[method]('/', function () { }).should.equal(router);
-      });
+      for (const method of methods) {
+        router[method]('/', function () {}).should.equal(router);
+      }
     });
 
     it('registers array of paths (gh-203)', function () {
@@ -1022,13 +1048,13 @@ describe('Router', function () {
 
       router.get('/notparameter', function (ctx) {
         ctx.body = {
-          param: ctx.params.parameter,
+          param: ctx.params.parameter
         };
       });
 
       router.get('/:parameter', function (ctx) {
         ctx.body = {
-          param: ctx.params.parameter,
+          param: ctx.params.parameter
         };
       });
 
@@ -1043,24 +1069,28 @@ describe('Router', function () {
           done();
         });
     });
-    
-    it ('correctly returns an error when not passed a path for verb-specific registration (gh-147)', function () {
+
+    it('correctly returns an error when not passed a path for verb-specific registration (gh-147)', function () {
       const router = new Router();
-      for (let el of methods) {
-          try {
-            router[el](function () {});
-          } catch (e) {
-            expect(e.message).to.be(`You have to provide a path when adding a ${el} handler`);
-          }
+      for (const el of methods) {
+        try {
+          router[el](function () {});
+        } catch (err) {
+          expect(err.message).to.be(
+            `You have to provide a path when adding a ${el} handler`
+          );
+        }
       }
     });
 
-    it ('correctly returns an error when not passed a path for "all" registration (gh-147)', function () {
+    it('correctly returns an error when not passed a path for "all" registration (gh-147)', function () {
       const router = new Router();
       try {
         router.all(function () {});
-      } catch (e) {
-        expect(e.message).to.be('You have to provide a path when adding an all handler');
+      } catch (err) {
+        expect(err.message).to.be(
+          'You have to provide a path when adding an all handler'
+        );
       }
     });
   });
@@ -1262,34 +1292,43 @@ describe('Router', function () {
       const nested = new Router({ prefix: '/qux' });
       const pathList = ['/foo', '/bar'];
 
-      nested.get('/baz', ctx => {
+      nested.get('/baz', (ctx) => {
         ctx.body = {
           foo: ctx.foo,
           bar: ctx.bar,
           baz: 'baz'
-        }
+        };
       });
 
-      base.use(pathList, (ctx, next) => {
-        ctx.foo = 'foo';
-        ctx.bar = 'bar';
+      base.use(
+        pathList,
+        (ctx, next) => {
+          ctx.foo = 'foo';
+          ctx.bar = 'bar';
 
-        return next();
-      }, nested.routes());
+          return next();
+        },
+        nested.routes()
+      );
 
       app.use(base.routes());
 
-      Promise.all(pathList.map(pathname => {
-        return request(http.createServer(app.callback()))
-          .get(`/api${pathname}/qux/baz`)
-          .expect(200);
-      })).then((resList) => {
-        resList.forEach(res => {
-          assert.deepEqual(res.body, { foo: 'foo', bar: 'bar', baz: 'baz' });
-        });
+      Promise.all(
+        pathList.map((pathname) => {
+          return request(http.createServer(app.callback()))
+            .get(`/api${pathname}/qux/baz`)
+            .expect(200);
+        })
+      ).then(
+        (resList) => {
+          for (const res of resList) {
+            assert.deepEqual(res.body, { foo: 'foo', bar: 'bar', baz: 'baz' });
+          }
 
-        done();
-      }, error => done(error));
+          done();
+        },
+        (err) => done(err)
+      );
     });
 
     it('uses a same router middleware at given paths continuously - ZijianHe/koa-router#gh-244 gh-18', function (done) {
@@ -1297,41 +1336,54 @@ describe('Router', function () {
       const base = new Router({ prefix: '/api' });
       const nested = new Router({ prefix: '/qux' });
 
-      nested.get('/baz', ctx => {
+      nested.get('/baz', (ctx) => {
         ctx.body = {
           foo: ctx.foo,
           bar: ctx.bar,
           baz: 'baz'
-        }
+        };
       });
 
       base
-        .use('/foo', (ctx, next) => {
-          ctx.foo = 'foo';
-          ctx.bar = 'bar';
+        .use(
+          '/foo',
+          (ctx, next) => {
+            ctx.foo = 'foo';
+            ctx.bar = 'bar';
 
-          return next();
-        }, nested.routes())
-        .use('/bar', (ctx, next) => {
-          ctx.foo = 'foo';
-          ctx.bar = 'bar';
+            return next();
+          },
+          nested.routes()
+        )
+        .use(
+          '/bar',
+          (ctx, next) => {
+            ctx.foo = 'foo';
+            ctx.bar = 'bar';
 
-          return next();
-        }, nested.routes());
+            return next();
+          },
+          nested.routes()
+        );
 
       app.use(base.routes());
 
-      Promise.all(['/foo', '/bar'].map(pathname => {
-        return request(http.createServer(app.callback()))
-          .get(`/api${pathname}/qux/baz`)
-          .expect(200);
-      })).then((resList) => {
-        resList.forEach(res => {
-          assert.deepEqual(res.body, { foo: 'foo', bar: 'bar', baz: 'baz' });
-        });
+      Promise.all(
+        ['/foo', '/bar'].map((pathname) => {
+          return request(http.createServer(app.callback()))
+            .get(`/api${pathname}/qux/baz`)
+            .expect(200);
+        })
+      ).then(
+        (resList) => {
+          for (const res of resList) {
+            assert.deepEqual(res.body, { foo: 'foo', bar: 'bar', baz: 'baz' });
+          }
 
-        done();
-      }, error => done(error));
+          done();
+        },
+        (err) => done(err)
+      );
     });
   });
 
@@ -1341,7 +1393,7 @@ describe('Router', function () {
       const router = new Router();
       router.should.have.property('register');
       router.register.should.be.type('function');
-      router.register('/', ['GET', 'POST'], function () { });
+      router.register('/', ['GET', 'POST'], function () {});
       app.use(router.routes());
       router.stack.should.be.an.instanceOf(Array);
       router.stack.should.have.property('length', 1);
@@ -1368,8 +1420,8 @@ describe('Router', function () {
       const app = new Koa();
       const router = new Router();
       app.use(router.routes());
-      router.get('home', '/', function () { });
-      router.get('sign-up-form', '/sign-up-form', function () { });
+      router.get('home', '/', function () {});
+      router.get('sign-up-form', '/sign-up-form', function () {});
       router.redirect('home', 'sign-up-form');
       request(http.createServer(app.callback()))
         .post('/')
@@ -1387,8 +1439,8 @@ describe('Router', function () {
       app.use(router.routes());
       const homeSymbol = Symbol('home');
       const signUpFormSymbol = Symbol('sign-up-form');
-      router.get(homeSymbol, '/', function () { });
-      router.get(signUpFormSymbol, '/sign-up-form', function () { });
+      router.get(homeSymbol, '/', function () {});
+      router.get(signUpFormSymbol, '/sign-up-form', function () {});
       router.redirect(homeSymbol, signUpFormSymbol);
       request(http.createServer(app.callback()))
         .post('/')
@@ -1404,8 +1456,12 @@ describe('Router', function () {
       const router = new Router();
       expect(() => router.redirect('missing', '/destination')).to.throwError();
       expect(() => router.redirect('/source', 'missing')).to.throwError();
-      expect(() => router.redirect(Symbol('missing'), '/destination')).to.throwError();
-      expect(() => router.redirect('/source', Symbol('missing'))).to.throwError();
+      expect(() =>
+        router.redirect(Symbol('missing'), '/destination')
+      ).to.throwError();
+      expect(() =>
+        router.redirect('/source', Symbol('missing'))
+      ).to.throwError();
     });
 
     it('redirects to external sites', function (done) {
@@ -1418,7 +1474,10 @@ describe('Router', function () {
         .expect(301)
         .end(function (err, res) {
           if (err) return done(err);
-          res.header.should.have.property('location', 'https://www.example.com');
+          res.header.should.have.property(
+            'location',
+            'https://www.example.com'
+          );
           done();
         });
     });
@@ -1433,7 +1492,10 @@ describe('Router', function () {
         .expect(301)
         .end(function (err, res) {
           if (err) return done(err);
-          res.header.should.have.property('location', 'my-custom-app-protocol://www.example.com/foo');
+          res.header.should.have.property(
+            'location',
+            'my-custom-app-protocol://www.example.com/foo'
+          );
           done();
         });
     });
@@ -1485,7 +1547,7 @@ describe('Router', function () {
       );
       url.should.equal('/programming/how%20to%20node');
       url = router.url('books', 'programming', 'how to node', {
-        encode: encodeURIComponent,
+        encode: encodeURIComponent
       });
       url.should.equal('/programming/how%20to%20node');
       done();
@@ -1494,15 +1556,19 @@ describe('Router', function () {
     it('generates URL for given route name within embedded routers', function (done) {
       const app = new Koa();
       const router = new Router({
-        prefix: "/books"
+        prefix: '/books'
       });
 
       const embeddedRouter = new Router({
-        prefix: "/chapters"
+        prefix: '/chapters'
       });
-      embeddedRouter.get('chapters', '/:chapterName/:pageNumber', function (ctx) {
-        ctx.status = 204;
-      });
+      embeddedRouter.get(
+        'chapters',
+        '/:chapterName/:pageNumber',
+        function (ctx) {
+          ctx.status = 204;
+        }
+      );
       router.use(embeddedRouter.routes());
       app.use(router.routes());
       let url = router.url(
@@ -1512,7 +1578,7 @@ describe('Router', function () {
       );
       url.should.equal('/books/chapters/Learning%20ECMA6/123');
       url = router.url('chapters', 'Learning ECMA6', 123, {
-        encode: encodeURIComponent,
+        encode: encodeURIComponent
       });
       url.should.equal('/books/chapters/Learning%20ECMA6/123');
       done();
@@ -1521,13 +1587,13 @@ describe('Router', function () {
     it('generates URL for given route name within two embedded routers', function (done) {
       const app = new Koa();
       const router = new Router({
-        prefix: "/books"
+        prefix: '/books'
       });
       const embeddedRouter = new Router({
-        prefix: "/chapters"
+        prefix: '/chapters'
       });
       const embeddedRouter2 = new Router({
-        prefix: "/:chapterName/pages"
+        prefix: '/:chapterName/pages'
       });
       embeddedRouter2.get('chapters', '/:pageNumber', function (ctx) {
         ctx.status = 204;
@@ -1553,18 +1619,16 @@ describe('Router', function () {
       });
       let url = router.url('books', 'programming', 4, { query });
       url.should.equal('/books/programming/4?page=3&limit=10');
-      url = router.url('books',
-        { category: 'programming', id: 4 },
-        { query }
-      );
+      url = router.url('books', { category: 'programming', id: 4 }, { query });
       url.should.equal('/books/programming/4?page=3&limit=10');
-      url = router.url('books',
+      url = router.url(
+        'books',
         { category: 'programming', id: 4 },
         { query: 'page=3&limit=10' }
       );
       url.should.equal('/books/programming/4?page=3&limit=10');
       done();
-    })
+    });
 
     it('generates URL for given route name without params and query params', function (done) {
       const router = new Router();
@@ -1577,19 +1641,12 @@ describe('Router', function () {
       url.should.equal('/books', {});
       var url = router.url('books');
       url.should.equal('/books', {}, {});
-      var url = router.url('books',
-        {},
-        { query: { page: 3, limit: 10 } }
-      );
+      var url = router.url('books', {}, { query: { page: 3, limit: 10 } });
       url.should.equal('/books?page=3&limit=10');
-      var url = router.url('books',
-        {},
-        { query: 'page=3&limit=10' }
-      );
+      var url = router.url('books', {}, { query: 'page=3&limit=10' });
       url.should.equal('/books?page=3&limit=10');
       done();
-    })
-
+    });
 
     it('generates URL for given route name without params and query params', function (done) {
       const router = new Router();
@@ -1601,7 +1658,7 @@ describe('Router', function () {
       });
       url.should.equal('/category?page=3&limit=10');
       done();
-    })
+    });
 
     it('returns an Error if no route is found for name', function () {
       const app = new Koa();
@@ -1627,7 +1684,7 @@ describe('Router', function () {
       router
         .param('user', function (id, ctx, next) {
           ctx.user = { name: 'alex' };
-          if (!id) return ctx.status = 404;
+          if (!id) return (ctx.status = 404);
           return next();
         })
         .get('/users/:user', function (ctx) {
@@ -1653,7 +1710,8 @@ describe('Router', function () {
           if (ctx.ranFirst) {
             ctx.user.ordered = 'parameters';
           }
-          if (!id) return ctx.status = 404;
+
+          if (!id) return (ctx.status = 404);
           return next();
         })
         .param('first', function (id, ctx, next) {
@@ -1661,17 +1719,15 @@ describe('Router', function () {
           if (ctx.user) {
             ctx.ranFirst = false;
           }
-          if (!id) return ctx.status = 404;
+
+          if (!id) return (ctx.status = 404);
           return next();
         })
         .get('/:first/users/:user', function (ctx) {
           ctx.body = ctx.user;
         });
 
-      request(http.createServer(
-        app
-          .use(router.routes())
-          .callback()))
+      request(http.createServer(app.use(router.routes()).callback()))
         .get('/first/users/3')
         .expect(200)
         .end(function (err, res) {
@@ -1708,10 +1764,7 @@ describe('Router', function () {
           ctx.body = ctx.state.loaded;
         });
 
-      request(http.createServer(
-        app
-          .use(router.routes())
-          .callback()))
+      request(http.createServer(app.use(router.routes()).callback()))
         .get('/1/2/3/4')
         .expect(200)
         .end(function (err, res) {
@@ -1735,7 +1788,7 @@ describe('Router', function () {
       router
         .param('id', function (id, ctx, next) {
           ctx.params.id = 'ran';
-          if (!id) return ctx.status = 404;
+          if (!id) return (ctx.status = 404);
           return next();
         })
         .use('/:id/children', subrouter.routes());
@@ -1762,10 +1815,7 @@ describe('Router', function () {
       router.get('/info', function (ctx) {
         ctx.body = 'hello';
       });
-      request(http.createServer(
-        app
-          .use(router.routes())
-          .callback()))
+      request(http.createServer(app.use(router.routes()).callback()))
         .get('/info')
         .expect(200)
         .end(function (err, res) {
@@ -1803,10 +1853,7 @@ describe('Router', function () {
       router.get('/info', function (ctx) {
         ctx.body = 'hello';
       });
-      request(http.createServer(
-        app
-          .use(router.routes())
-          .callback()))
+      request(http.createServer(app.use(router.routes()).callback()))
         .get('/info/')
         .expect(404)
         .end(function (err) {
@@ -1824,11 +1871,8 @@ describe('Router', function () {
       });
       router.get('/info', function (ctx) {
         ctx.body = 'hello';
-      })
-      request(http.createServer(
-        app
-          .use(router.routes())
-          .callback()))
+      });
+      request(http.createServer(app.use(router.routes()).callback()))
         .get('/info')
         .expect(200)
         .end(function (err, res) {
@@ -1845,11 +1889,8 @@ describe('Router', function () {
       });
       router.get('/info', function (ctx) {
         ctx.body = 'hello';
-      })
-      request(http.createServer(
-        app
-          .use(router.routes())
-          .callback()))
+      });
+      request(http.createServer(app.use(router.routes()).callback()))
         .get('/info/')
         .expect(404)
         .end(function (err, res) {
@@ -1868,6 +1909,7 @@ describe('Router', function () {
         middlewareCount++;
         return next();
       };
+
       const middlewareB = function (ctx, next) {
         middlewareCount++;
         return next();
@@ -1883,10 +1925,7 @@ describe('Router', function () {
 
       expect(routerMiddleware).to.be.a('function');
 
-      request(http.createServer(
-        app
-          .use(routerMiddleware)
-          .callback()))
+      request(http.createServer(app.use(routerMiddleware).callback()))
         .get('/users/1')
         .expect(200)
         .end(function (err, res) {
@@ -1903,22 +1942,19 @@ describe('Router', function () {
       const router = new Router();
       const middleware = function (ctx, next) {
         next();
-        expect(ctx._matchedRoute).to.be('/users/:id')
+        expect(ctx._matchedRoute).to.be('/users/:id');
       };
 
       router.use(middleware);
       router.get('/users/:id', function (ctx) {
-        expect(ctx._matchedRoute).to.be('/users/:id')
+        expect(ctx._matchedRoute).to.be('/users/:id');
         should.exist(ctx.params.id);
         ctx.body = { hello: 'world' };
       });
 
       const routerMiddleware = router.routes();
 
-      request(http.createServer(
-        app
-          .use(routerMiddleware)
-          .callback()))
+      request(http.createServer(app.use(routerMiddleware).callback()))
         .get('/users/1')
         .expect(200)
         .end(function (err) {
@@ -1932,8 +1968,8 @@ describe('Router', function () {
       const router = new Router();
 
       router.get('users#show', '/users/:id', function (ctx) {
-        expect(ctx._matchedRouteName).to.be('users#show')
-        ctx.status = 200
+        expect(ctx._matchedRouteName).to.be('users#show');
+        ctx.status = 200;
       });
 
       request(http.createServer(app.use(router.routes()).callback()))
@@ -1950,8 +1986,8 @@ describe('Router', function () {
       const router = new Router();
 
       router.get('/users/:id', function (ctx) {
-        expect(ctx._matchedRouteName).to.be(undefined)
-        ctx.status = 200
+        expect(ctx._matchedRouteName).to.be(undefined);
+        ctx.status = 200;
       });
 
       request(http.createServer(app.use(router.routes()).callback()))
@@ -1968,8 +2004,8 @@ describe('Router', function () {
       const router = new Router();
 
       router.get('/users/:id', function (ctx) {
-        expect(ctx.routerPath).to.be('/users/:id')
-        ctx.status = 200
+        expect(ctx.routerPath).to.be('/users/:id');
+        ctx.status = 200;
       });
 
       request(http.createServer(app.use(router.routes()).callback()))
@@ -1986,12 +2022,12 @@ describe('Router', function () {
       const router = new Router();
 
       router.get('/users/list', function (ctx) {
-        expect(ctx._matchedRoute).to.be('/users/list')
-        ctx.status = 200
+        expect(ctx._matchedRoute).to.be('/users/list');
+        ctx.status = 200;
       });
       router.get('/users/:id', function (ctx) {
-        expect(ctx._matchedRoute).to.be('/users/:id')
-        ctx.status = 200
+        expect(ctx._matchedRoute).to.be('/users/:id');
+        ctx.status = 200;
       });
 
       request(http.createServer(app.use(router.routes()).callback()))
@@ -2012,10 +2048,7 @@ describe('Router', function () {
         should.exist(ctx.params.id);
         ctx.body = 'hello';
       });
-      request(http.createServer(
-        app
-          .use(router.routes())
-          .callback()))
+      request(http.createServer(app.use(router.routes()).callback()))
         .head('/users/1')
         .expect(200)
         .end(function (err, res) {
@@ -2031,11 +2064,8 @@ describe('Router', function () {
       router.get('/users/:id', function (ctx) {
         should.exist(ctx.params.id);
         ctx.body = 'hello';
-      })
-      request(http.createServer(
-        app
-          .use(router.routes())
-          .callback()))
+      });
+      request(http.createServer(app.use(router.routes()).callback()))
         .head('/users/1')
         .expect(200)
         .end(function (err, res) {
@@ -2058,7 +2088,7 @@ describe('Router', function () {
       const router = Router();
       router.get('/users/:id', function (ctx) {
         ctx.body = 'test';
-      })
+      });
       router.prefix('/things/:thing_id');
       const route = router.stack[0];
       expect(route.path).to.equal('/things/:thing_id/users/:id');
@@ -2066,7 +2096,6 @@ describe('Router', function () {
       expect(route.paramNames[0]).to.have.property('name', 'thing_id');
       expect(route.paramNames[1]).to.have.property('name', 'id');
     });
-
 
     it('populates ctx.params correctly for router prefix (including use)', function (done) {
       const app = new Koa();
@@ -2138,7 +2167,7 @@ describe('Router', function () {
           ctx.should.have.property('params');
           ctx.params.should.be.type('object');
           ctx.params.should.have.property('ping', 'pingKey');
-          ctx.body = ctx.params
+          ctx.body = ctx.params;
         });
       request(http.createServer(app.callback()))
         .get('/pingKey/pong')
@@ -2277,7 +2306,7 @@ describe('Router', function () {
               done();
             });
         });
-      }
+      };
     }
 
     it(`prefix and '/' route behavior`, function (done) {
@@ -2290,7 +2319,7 @@ describe('Router', function () {
       const strictRouter = new Router({
         strict: true,
         prefix: '/bar'
-      })
+      });
 
       router.get('/', function (ctx) {
         ctx.body = '';
@@ -2333,12 +2362,15 @@ describe('Router', function () {
                 });
             });
         });
-    })
+    });
   });
 
   describe('Static Router#url()', function () {
     it('generates route URL', function () {
-      const url = Router.url('/:category/:title', { category: 'programming', title: 'how-to-node' });
+      const url = Router.url('/:category/:title', {
+        category: 'programming',
+        title: 'how-to-node'
+      });
       url.should.equal('/programming/how-to-node');
     });
 
@@ -2355,12 +2387,14 @@ describe('Router', function () {
       const query = { page: 3, limit: 10 };
       let url = Router.url('/books/:category/:id', 'programming', 4, { query });
       url.should.equal('/books/programming/4?page=3&limit=10');
-      url = Router.url('/books/:category/:id',
+      url = Router.url(
+        '/books/:category/:id',
         { category: 'programming', id: 4 },
         { query }
       );
       url.should.equal('/books/programming/4?page=3&limit=10');
-      url = Router.url('/books/:category/:id',
+      url = Router.url(
+        '/books/:category/:id',
         { category: 'programming', id: 4 },
         { query: 'page=3&limit=10' }
       );
