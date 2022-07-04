@@ -1331,6 +1331,33 @@ describe('Router', function () {
         });
     });
 
+    it('redirects using symbols as route names', function (done) {
+      const app = new Koa();
+      const router = new Router();
+      app.use(router.routes());
+      const homeSymbol = Symbol('home');
+      const signUpFormSymbol = Symbol('sign-up-form');
+      router.get(homeSymbol, '/', function () { });
+      router.get(signUpFormSymbol, '/sign-up-form', function () { });
+      router.redirect(homeSymbol, signUpFormSymbol);
+      request(http.createServer(app.callback()))
+        .post('/')
+        .expect(301)
+        .end(function (err, res) {
+          if (err) return done(err);
+          res.header.should.have.property('location', '/sign-up-form');
+          done();
+        });
+    });
+
+    it('throws an error if no route is found for name', function () {
+      const router = new Router();
+      expect(() => router.redirect('missing', '/destination')).to.throwError();
+      expect(() => router.redirect('/source', 'missing')).to.throwError();
+      expect(() => router.redirect(Symbol('missing'), '/destination')).to.throwError();
+      expect(() => router.redirect('/source', Symbol('missing'))).to.throwError();
+    });
+
     it('redirects to external sites', function (done) {
       const app = new Koa();
       const router = new Router();
@@ -1371,10 +1398,26 @@ describe('Router', function () {
       expect(router.route('child')).to.have.property('name', 'child');
     });
 
-    it('should return false if no name matches', function () {
-      const value = Router().route('Picard')
-      value.should.be.false()
-    })
+    it('supports symbols as names', function () {
+      const childSymbol = Symbol('child');
+      const subrouter = Router().get(childSymbol, '/hello', function (ctx) {
+        ctx.body = { hello: 'world' };
+      });
+      const router = Router().use(subrouter.routes());
+      expect(router.route(childSymbol)).to.have.property('name', childSymbol);
+    });
+
+    it('returns false if no name matches', function () {
+      const router = new Router();
+      router.get('books', '/books', function (ctx) {
+        ctx.status = 204;
+      });
+      router.get(Symbol('Picard'), '/enterprise', function (ctx) {
+        ctx.status = 204;
+      });
+      router.route('Picard').should.be.false();
+      router.route(Symbol('books')).should.be.false();
+    });
   });
 
   describe('Router#url()', function () {
@@ -1510,17 +1553,19 @@ describe('Router', function () {
       done();
     })
 
-    it("should test Error flow if no route is found for name", function () {
+    it('returns an Error if no route is found for name', function () {
       const app = new Koa();
       const router = new Router();
       app.use(router.routes());
-      router.get("books", "/:category/:title", function (ctx) {
+      router.get('books', '/books', function (ctx) {
+        ctx.status = 204;
+      });
+      router.get(Symbol('Picard'), '/enterprise', function (ctx) {
         ctx.status = 204;
       });
 
-      router
-        .url("Picard", "Enterprise")
-        .should.Error();
+      router.url('Picard').should.be.Error();
+      router.url(Symbol('books')).should.be.Error();
     });
   });
 
