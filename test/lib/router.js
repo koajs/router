@@ -993,7 +993,26 @@ describe('Router', function () {
           done();
         });
     });
+    
+    it ('correctly returns an error when not passed a path for verb-specific registration (gh-147)', function () {
+      const router = new Router();
+      for (let el of methods) {
+          try {
+            router[el](function () {});
+          } catch (e) {
+            expect(e.message).to.be(`You have to provide a path when adding a ${el} handler`);
+          }
+      }
+    });
 
+    it ('correctly returns an error when not passed a path for "all" registration (gh-147)', function () {
+      const router = new Router();
+      try {
+        router.all(function () {});
+      } catch (e) {
+        expect(e.message).to.be('You have to provide a path when adding an all handler');
+      }
+    });
   });
 
   describe('Router#use()', function () {
