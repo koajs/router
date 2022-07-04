@@ -27,10 +27,10 @@ npm/yarn and version:
 #### Code sample:
 
 <!-- 
-Provide a code sapmle with THE MINIMUM amount of code to reproduce your issue. 
+Provide a code sample with THE MINIMUM amount of code to reproduce your issue. 
 If you cannot provide a succinct example, please create a small test app that exhibits
 the issue you're experiencing. If you cannot provide this, your issue may not be
-able to be reproduced and thus, we will be unabled to address it.
+able to be reproduced and thus, we will be unable to address it.
 -->
 
 ```js

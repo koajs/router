@@ -5,12 +5,11 @@
 const Koa = require('koa');
 const http = require('http');
 const request = require('supertest');
-const should = require('should');
 const Router = require('../../lib/router');
 const Layer = require('../../lib/layer');
 
 describe('Layer', function() {
-  it('composes multiple callbacks/middlware', function(done) {
+  it('composes multiple callbacks/middleware', function(done) {
     const app = new Koa();
     const router = new Router();
     app.use(router.routes());
@@ -120,7 +119,7 @@ describe('Layer', function() {
       });
     });
 
-    it('populates ctx.captures with regexp captures include undefiend', function(done) {
+    it('populates ctx.captures with regexp captures include undefined', function(done) {
       const app = new Koa();
       const router = new Router();
       app.use(router.routes());

@@ -159,7 +159,7 @@ describe('Router', function () {
     }, nestedRouter.routes());
 
     app.use(parentRouter.routes());
-    app.should.be.ok;
+    app.should.be.ok();
     done();
   });
 
@@ -865,7 +865,7 @@ describe('Router', function () {
         .end(function (err, res) {
           if (err) return done(err);
           res.header.should.have.property('allow', 'HEAD, GET');
-          let allowHeaders = res.res.rawHeaders.filter((item) => item == 'Allow');
+          let allowHeaders = res.res.rawHeaders.filter((item) => item === 'Allow');
           expect(allowHeaders.length).to.eql(1);
           done();
         });
@@ -1567,7 +1567,7 @@ describe('Router', function () {
     })
 
     it('generates URL for given route name without params and query params', function (done) {
-      var router = new Router();
+      const router = new Router();
       router.get('books', '/books', function (ctx) {
         ctx.status = 204;
       });
@@ -1592,7 +1592,7 @@ describe('Router', function () {
 
 
     it('generates URL for given route name without params and query params', function (done) {
-      var router = new Router();
+      const router = new Router();
       router.get('category', '/category', function (ctx) {
         ctx.status = 204;
       });
@@ -2069,8 +2069,8 @@ describe('Router', function () {
 
 
     it('populates ctx.params correctly for router prefix (including use)', function (done) {
-      var app = new Koa();
-      var router = new Router({ prefix: '/:category' });
+      const app = new Koa();
+      const router = new Router({ prefix: '/:category' });
       app.use(router.routes());
       router
         .use((ctx, next) => {
@@ -2095,8 +2095,8 @@ describe('Router', function () {
     });
 
     it('populates ctx.params correctly for more complex router prefix (including use)', function (done) {
-      var app = new Koa();
-      var router = new Router({ prefix: '/:category/:color' });
+      const app = new Koa();
+      const router = new Router({ prefix: '/:category/:color' });
       app.use(router.routes());
       router
         .use((ctx, next) => {
@@ -2124,8 +2124,8 @@ describe('Router', function () {
     });
 
     it('populates ctx.params correctly for dynamic and static prefix (including async use)', function (done) {
-      var app = new Koa();
-      var router = new Router({ prefix: '/:ping/pong' });
+      const app = new Koa();
+      const router = new Router({ prefix: '/:ping/pong' });
       app.use(router.routes());
       router
         .use(async (ctx, next) => {
@@ -2150,8 +2150,8 @@ describe('Router', function () {
     });
 
     it('populates ctx.params correctly for static prefix', function (done) {
-      var app = new Koa();
-      var router = new Router({ prefix: '/all' });
+      const app = new Koa();
+      const router = new Router({ prefix: '/all' });
       app.use(router.routes());
       router
         .use((ctx, next) => {
