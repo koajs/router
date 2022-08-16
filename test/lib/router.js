@@ -918,7 +918,7 @@ describe('Router', function () {
     app.use(function (ctx, next) {
       // bind helloworld.example.com/users => example.com/helloworld/users
       const appname = ctx.request.hostname.split('.', 1)[0];
-      ctx.routerPath = '/' + appname + ctx.path;
+      ctx.newRouterPath = '/' + appname + ctx.path;
       return next();
     });
     app.use(router.routes());
@@ -947,6 +947,42 @@ describe('Router', function () {
       }
     });
     app.use(router.routes());
+    request(http.createServer(app.callback()))
+      .get('/echo/helloWorld')
+      .expect(200)
+      .end(function (err, res) {
+        if (err) return done(err);
+        expect(res.body).to.eql({ echo: 'helloWorld' });
+        done();
+      });
+  });
+
+  it('two routes with the same path', function (done) {
+    const app = new Koa();
+    const router1 = new Router();
+    const router2 = new Router();
+    router1.get('/echo/:saying', function (ctx, next) {
+      try {
+        expect(ctx.params.saying).eql('helloWorld');
+        expect(ctx.request.params.saying).eql('helloWorld');
+        next();
+      } catch (err) {
+        ctx.status = 500;
+        ctx.body = err.message;
+      }
+    });
+    router2.get('/echo/:saying', function (ctx) {
+      try {
+        expect(ctx.params.saying).eql('helloWorld');
+        expect(ctx.request.params.saying).eql('helloWorld');
+        ctx.body = { echo: ctx.params.saying };
+      } catch (err) {
+        ctx.status = 500;
+        ctx.body = err.message;
+      }
+    });
+    app.use(router1.routes());
+    app.use(router2.routes());
     request(http.createServer(app.callback()))
       .get('/echo/helloWorld')
       .expect(200)
