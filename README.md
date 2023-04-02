@@ -54,7 +54,7 @@ npm install @koa/router
 ## Typescript Support
 
 ```sh
-npm install @types/koa__router
+npm install --save-dev @types/koa__router
 ```
 
 
