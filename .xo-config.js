@@ -30,6 +30,7 @@ module.exports = {
     'prefer-rest-params': 'warn',
     'prefer-spread': 'warn',
     'unicorn/explicit-length-check': 'warn',
+    'unicorn/expiring-todo-comments': 'off',
     'unicorn/no-array-reduce': 'warn',
     'unicorn/prefer-spread': 'warn'
   }

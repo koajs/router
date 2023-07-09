@@ -162,21 +162,21 @@ describe('Layer', function () {
       const notexistHandle = undefined;
       (function () {
         router.get('/foo', notexistHandle);
-      }.should.throw(
+      }).should.throw(
         'get `/foo`: `middleware` must be a function, not `undefined`'
-      ));
+      );
 
       (function () {
         router.get('foo router', '/foo', notexistHandle);
-      }.should.throw(
+      }).should.throw(
         'get `foo router`: `middleware` must be a function, not `undefined`'
-      ));
+      );
 
       (function () {
         router.post('/foo', function () {}, notexistHandle);
-      }.should.throw(
+      }).should.throw(
         'post `/foo`: `middleware` must be a function, not `undefined`'
-      ));
+      );
     });
   });
 
