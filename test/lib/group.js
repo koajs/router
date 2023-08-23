@@ -29,4 +29,27 @@ describe('Group', function () {
       done(err);
     }
   });
+
+  it('Should build a router with a single get verb', function (done) {
+    function foo() {}
+
+    const router = new Router.Group().get('/hello', foo).build();
+
+    expect(router).to.be.ok();
+    expect(router.stack[0].path).to.eql('/hello');
+    expect(router.stack[0].stack[0]).to.eql(foo);
+    done();
+  });
+
+  it('Should build a router with a single path and a get verb', function (done) {
+    function foo() {}
+
+    const group = new Router.Group().path('/hello').get(foo).end();
+    const router = group.build();
+
+    expect(router).to.be.ok();
+    expect(router.stack[0].path).to.eql('/hello');
+    expect(router.stack[0].stack[0]).to.eql(foo);
+    done();
+  });
 });
