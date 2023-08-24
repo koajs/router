@@ -1,9 +1,26 @@
-/**
- * Group tests
- */
+/* eslint ava/no-import-test-files: 0 */
 const expect = require('expect.js');
 const { Group } = require('../../lib/group');
 const Router = require('../../lib/router');
+
+const {
+  routeExpect,
+  list,
+  create,
+  find,
+  update,
+  del,
+  loginRequest,
+  signupRequest,
+  ifAuthenticated,
+  listAccountsRequest,
+  ifAllowed,
+  insertAccountRequest,
+  findAccountRequest,
+  updateAccountRequest,
+  delAccountRequest,
+  listTransactionsRequest
+} = require('./fixtures');
 
 describe('Group', function () {
   it('Should build a router from a group', function (done) {
@@ -68,12 +85,6 @@ describe('Group', function () {
   });
 
   it('should nest paths correctly', function (done) {
-    function list() {}
-    function find() {}
-    function create() {}
-    function update() {}
-    function del() {}
-
     const group = new Group().path('/users', (group) => {
       group.get(list);
       group.post(create);
@@ -90,53 +101,16 @@ describe('Group', function () {
     expect(router.stack.map((layer) => layer.path)).to.contain('/users');
     expect(router.stack.map((layer) => layer.path)).to.contain('/users/:id');
 
-    expect(
-      router.stack
-        .filter((layer) => layer.path === '/users')
-        .map((layer) => layer.stack)
-        .flat(Number.POSITIVE_INFINITY)
-    ).to.contain(list);
-    expect(
-      router.stack
-        .filter((layer) => layer.path === '/users')
-        .map((layer) => layer.stack)
-        .flat(Number.POSITIVE_INFINITY)
-    ).to.contain(create);
-
-    expect(
-      router.stack
-        .filter((layer) => layer.path === '/users/:id')
-        .map((layer) => layer.stack)
-        .flat(Number.POSITIVE_INFINITY)
-    ).to.contain(find);
-    expect(
-      router.stack
-        .filter((layer) => layer.path === '/users/:id')
-        .map((layer) => layer.stack)
-        .flat(Number.POSITIVE_INFINITY)
-    ).to.contain(update);
-    expect(
-      router.stack
-        .filter((layer) => layer.path === '/users/:id')
-        .map((layer) => layer.stack)
-        .flat(Number.POSITIVE_INFINITY)
-    ).to.contain(del);
+    routeExpect(router, 'GET', '/users', list);
+    routeExpect(router, 'POST', '/users', create);
+    routeExpect(router, 'GET', '/users/:id', find);
+    routeExpect(router, 'PUT', '/users/:id', update);
+    routeExpect(router, 'DELETE', '/users/:id', del);
 
     done();
   });
 
   it('Should build complex apis', function (done) {
-    function loginRequest() {}
-    function signupRequest() {}
-    function ifAuthenticated() {}
-    function listAccountsRequest() {}
-    function ifAllowed() {}
-    function insertAccountRequest() {}
-    function findAccountRequest() {}
-    function updateAccountRequest() {}
-    function delAccountRequest() {}
-    function listTransactionsRequest() {}
-
     const group = new Router.Group().path('/', (group) => {
       group.post('login', loginRequest);
       group.post('signup', signupRequest);
@@ -154,28 +128,28 @@ describe('Group', function () {
     // then we build our api definition into a router
     const router = group.build();
     // TODO more assertions
-
+    routeExpect(router, 'POST', '/login', loginRequest);
+    routeExpect(router, 'POST', '/signup', signupRequest);
+    routeExpect(
+      router,
+      'GET',
+      '/user/:userId/accounts',
+      ifAuthenticated,
+      listAccountsRequest
+    );
     done();
   });
 
-  it('should support destructuring for even cleaner syntax sugar', function (done) {
-    function loginRequest() {}
-    function signupRequest() {}
-    function ifAuthenticated() {}
-    function listAccountsRequest() {}
-    function ifAllowed() {}
-    function insertAccountRequest() {}
-    function findAccountRequest() {}
-    function updateAccountRequest() {}
-    function delAccountRequest() {}
-    function listTransactionsRequest() {}
-
-    const group = new Router.Group().path(({ path, get, post, put, del }) => {
-      post('/login', loginRequest);
-      post('/signup', signupRequest);
-    });
-    // FIXME using this syntax we lose the "this reference"
-    const router = group.build();
-    done();
+  it('should NOT support destructuring', function (done) {
+    const group = new Router.Group();
+    // would be nice, but it doesn't work
+    try {
+      group.path(({ path, get, post, put, del }) => {
+        post('/login', loginRequest);
+        post('/signup', signupRequest);
+      });
+    } finally {
+      done();
+    }
   });
 });
