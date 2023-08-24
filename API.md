@@ -101,7 +101,7 @@ renaming of URLs during development.
 
 ```javascript
 router.get('user', '/users/:id', (ctx, next) => {
- // ...
+  // ...
 });
 
 router.url('user', 3);
@@ -418,8 +418,8 @@ router
       ctx.body = friends;
     });
   })
-  // /users/3 => {"id": 3, "name": "Alex"}
-  // /users/3/friends => [{"id": 4, "name": "TJ"}]
+// /users/3 => {"id": 3, "name": "Alex"}
+// /users/3/friends => [{"id": 4, "name": "TJ"}]
 ```
 
 ### Router.url(path, params) ⇒ <code>String</code>
