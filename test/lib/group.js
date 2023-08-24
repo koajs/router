@@ -124,4 +124,58 @@ describe('Group', function () {
 
     done();
   });
+
+  it('Should build complex apis', function (done) {
+    function loginRequest() {}
+    function signupRequest() {}
+    function ifAuthenticated() {}
+    function listAccountsRequest() {}
+    function ifAllowed() {}
+    function insertAccountRequest() {}
+    function findAccountRequest() {}
+    function updateAccountRequest() {}
+    function delAccountRequest() {}
+    function listTransactionsRequest() {}
+
+    const group = new Router.Group().path('/', (group) => {
+      group.post('login', loginRequest);
+      group.post('signup', signupRequest);
+      group.path('user/:userId/accounts', ifAuthenticated, (group) => {
+        group.get(listAccountsRequest);
+        group.post(ifAllowed, insertAccountRequest);
+        group.path('/:accountId', (group) => {
+          group.get(findAccountRequest);
+          group.put(updateAccountRequest);
+          group.del(ifAllowed, delAccountRequest);
+          group.get('/transactions', listTransactionsRequest);
+        });
+      });
+    });
+    // then we build our api definition into a router
+    const router = group.build();
+    // TODO more assertions
+
+    done();
+  });
+
+  it('should support destructuring for even cleaner syntax sugar', function (done) {
+    function loginRequest() {}
+    function signupRequest() {}
+    function ifAuthenticated() {}
+    function listAccountsRequest() {}
+    function ifAllowed() {}
+    function insertAccountRequest() {}
+    function findAccountRequest() {}
+    function updateAccountRequest() {}
+    function delAccountRequest() {}
+    function listTransactionsRequest() {}
+
+    const group = new Router.Group().path(({ path, get, post, put, del }) => {
+      post('/login', loginRequest);
+      post('/signup', signupRequest);
+    });
+    // FIXME using this syntax we lose the "this reference"
+    const router = group.build();
+    done();
+  });
 });
