@@ -1131,6 +1131,53 @@ describe('Router', function () {
     });
   });
 
+  describe('Router#verbs()', function () {
+    it('correctly returns an error when not passed a verbs for "verbs"', function () {
+      const router = new Router();
+      try {
+        router.verbs(function () {});
+      } catch (err) {
+        expect(err.message).to.be(
+          'You have to provide a list of verbs when adding an verbs handler'
+        );
+      }
+    });
+
+    it('registers multiple verbs for one route', function (done) {
+      const app = new Koa();
+      const router = new Router();
+
+      const verbs = ['get', 'post']
+
+      router.verbs(
+        verbs,
+        '/route',
+        function (ctx) {
+          ctx.body = { message: ctx.method };
+        }
+      );
+
+      app.use(router.routes());
+
+      Promise.all(
+        verbs.map((verb) => {
+          return request(http.createServer(app.callback()))
+            [verb](`/route`)
+            .expect(200);
+        })
+      ).then(
+        (resList) => {
+          for (const res of resList) {
+            assert.strictEqual(verbs.includes(res.body.message.toLowerCase()), true);
+          }
+
+          done();
+        },
+        (err) => done(err)
+      );
+    });
+  })
+
   describe('Router#use()', function () {
     it('uses router middleware without path', function (done) {
       const app = new Koa();
