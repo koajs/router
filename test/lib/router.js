@@ -161,7 +161,7 @@ describe('Router', function () {
 
     const T = Type.Object({
       x: Type.Number(),
-    })
+    }, { additionalProperties: false })
 
 
     router.post(
@@ -191,8 +191,22 @@ describe('Router', function () {
       .end(function (err, res) {
         if (err) return done(err);
         expect(res.body.message).to.eql('User added!');
+      });
+
+
+    request(http.createServer(app.callback()))
+      .post('/user')
+      .send({
+        x: 'ahh',
+        y: 1
+      })
+      .expect(400)
+      .end(function (err, res) {
+        if (err) return done(err);
+        expect(res.body.message).to.eql('body/y Unexpected property, body/x Expected number');
         done();
       });
+
 
   });
 
