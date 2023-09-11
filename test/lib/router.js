@@ -11,12 +11,9 @@ const methods = require('methods');
 const request = require('supertest');
 const expect = require('expect.js');
 const should = require('should');
+const { bodyParser } = require('@koa/bodyparser');
 const Router = require('../../lib/router');
 const Layer = require('../../lib/layer');
-const Typebox = require('@sinclair/typebox');
-const bodyParser = require("@koa/bodyparser").bodyParser;
-
-
 
 describe('Router', function () {
   it('creates new router with koa app', function (done) {
@@ -152,22 +149,23 @@ describe('Router', function () {
   });
 
   it('should run request body validator with schema', function (done) {
-
-    const { Type, Static } = Typebox;
-
     const app = new Koa();
     app.use(bodyParser());
     const router = new Router();
 
-    const T = Type.Object({
-      x: Type.Number(),
-    }, { additionalProperties: false })
-
+    const schema = {
+      type: 'object',
+      properties: {
+        x: { type: 'integer' }
+      },
+      required: ['x'],
+      additionalProperties: false
+    };
 
     router.post(
       '/user',
       {
-        body: T
+        body: schema
       },
       function (ctx, next) {
         return new Promise(function (resolve) {
@@ -185,7 +183,7 @@ describe('Router', function () {
     request(http.createServer(app.callback()))
       .post('/user')
       .send({
-        x: 1,
+        x: 1
       })
       .expect(201)
       .end(function (err, res) {
@@ -193,23 +191,18 @@ describe('Router', function () {
         expect(res.body.message).to.eql('User added!');
       });
 
-
     request(http.createServer(app.callback()))
       .post('/user')
       .send({
-        x: 'ahh',
-        y: 1
+        x: 'ahh'
       })
       .expect(400)
       .end(function (err, res) {
         if (err) return done(err);
-        expect(res.body.message).to.eql('body/y Unexpected property, body/x Expected number');
+        expect(res.body.message).to.eql('body/x must be integer');
         done();
       });
-
-
   });
-
 
   it('does not break when nested-routes use regexp paths', function (done) {
     const app = new Koa();
@@ -716,8 +709,8 @@ describe('Router', function () {
       const router = new Router();
       app.use(router.routes());
       app.use(router.allowedMethods());
-      router.get('/users', function () { });
-      router.put('/users', function () { });
+      router.get('/users', function () {});
+      router.put('/users', function () {});
       request(http.createServer(app.callback()))
         .options('/users')
         .expect(200)
@@ -732,9 +725,9 @@ describe('Router', function () {
     it('responds with 405 Method Not Allowed', function (done) {
       const app = new Koa();
       const router = new Router();
-      router.get('/users', function () { });
-      router.put('/users', function () { });
-      router.post('/events', function () { });
+      router.get('/users', function () {});
+      router.put('/users', function () {});
+      router.post('/events', function () {});
       app.use(router.routes());
       app.use(router.allowedMethods());
       request(http.createServer(app.callback()))
@@ -763,9 +756,9 @@ describe('Router', function () {
         });
       });
       app.use(router.allowedMethods({ throw: true }));
-      router.get('/users', function () { });
-      router.put('/users', function () { });
-      router.post('/events', function () { });
+      router.get('/users', function () {});
+      router.put('/users', function () {});
+      router.post('/events', function () {});
       request(http.createServer(app.callback()))
         .post('/users')
         .expect(405)
@@ -808,9 +801,9 @@ describe('Router', function () {
           }
         })
       );
-      router.get('/users', function () { });
-      router.put('/users', function () { });
-      router.post('/events', function () { });
+      router.get('/users', function () {});
+      router.put('/users', function () {});
+      router.post('/events', function () {});
       request(http.createServer(app.callback()))
         .post('/users')
         .expect(405)
@@ -832,8 +825,8 @@ describe('Router', function () {
       const router = new Router();
       app.use(router.routes());
       app.use(router.allowedMethods());
-      router.get('/users', function () { });
-      router.put('/users', function () { });
+      router.get('/users', function () {});
+      router.put('/users', function () {});
       request(http.createServer(app.callback()))
         .search('/users')
         .expect(501)
@@ -859,8 +852,8 @@ describe('Router', function () {
         });
       });
       app.use(router.allowedMethods({ throw: true }));
-      router.get('/users', function () { });
-      router.put('/users', function () { });
+      router.get('/users', function () {});
+      router.put('/users', function () {});
       request(http.createServer(app.callback()))
         .search('/users')
         .expect(501)
@@ -904,8 +897,8 @@ describe('Router', function () {
           }
         })
       );
-      router.get('/users', function () { });
-      router.put('/users', function () { });
+      router.get('/users', function () {});
+      router.put('/users', function () {});
       request(http.createServer(app.callback()))
         .search('/users')
         .expect(501)
@@ -946,7 +939,7 @@ describe('Router', function () {
       app.use(router.routes());
       app.use(router.allowedMethods());
 
-      router.get('/', function () { });
+      router.get('/', function () {});
 
       request(http.createServer(app.callback()))
         .options('/')
@@ -1098,7 +1091,7 @@ describe('Router', function () {
       for (const method of methods) {
         router.should.have.property(method);
         router[method].should.be.type('function');
-        router[method]('/', function () { });
+        router[method]('/', function () {});
       }
 
       router.stack.should.have.length(methods.length);
@@ -1107,28 +1100,28 @@ describe('Router', function () {
     it('registers route with a regexp path', function () {
       const router = new Router();
       for (const method of methods) {
-        router[method](/^\/\w$/i, function () { }).should.equal(router);
+        router[method](/^\/\w$/i, function () {}).should.equal(router);
       }
     });
 
     it('registers route with a given name', function () {
       const router = new Router();
       for (const method of methods) {
-        router[method](method, '/', function () { }).should.equal(router);
+        router[method](method, '/', function () {}).should.equal(router);
       }
     });
 
     it('registers route with with a given name and regexp path', function () {
       const router = new Router();
       for (const method of methods) {
-        router[method](method, /^\/$/i, function () { }).should.equal(router);
+        router[method](method, /^\/$/i, function () {}).should.equal(router);
       }
     });
 
     it('enables route chaining', function () {
       const router = new Router();
       for (const method of methods) {
-        router[method]('/', function () { }).should.equal(router);
+        router[method]('/', function () {}).should.equal(router);
       }
     });
 
@@ -1174,7 +1167,7 @@ describe('Router', function () {
       const router = new Router();
       for (const el of methods) {
         try {
-          router[el](function () { });
+          router[el](function () {});
         } catch (err) {
           expect(err.message).to.be(
             `You have to provide a path when adding a ${el} handler`
@@ -1186,7 +1179,7 @@ describe('Router', function () {
     it('correctly returns an error when not passed a path for "all" registration (gh-147)', function () {
       const router = new Router();
       try {
-        router.all(function () { });
+        router.all(function () {});
       } catch (err) {
         expect(err.message).to.be(
           'You have to provide a path when adding an all handler'
@@ -1493,7 +1486,7 @@ describe('Router', function () {
       const router = new Router();
       router.should.have.property('register');
       router.register.should.be.type('function');
-      router.register('/', ['GET', 'POST'], function () { });
+      router.register('/', ['GET', 'POST'], function () {});
       app.use(router.routes());
       router.stack.should.be.an.instanceOf(Array);
       router.stack.should.have.property('length', 1);
@@ -1520,8 +1513,8 @@ describe('Router', function () {
       const app = new Koa();
       const router = new Router();
       app.use(router.routes());
-      router.get('home', '/', function () { });
-      router.get('sign-up-form', '/sign-up-form', function () { });
+      router.get('home', '/', function () {});
+      router.get('sign-up-form', '/sign-up-form', function () {});
       router.redirect('home', 'sign-up-form');
       request(http.createServer(app.callback()))
         .post('/')
@@ -1539,8 +1532,8 @@ describe('Router', function () {
       app.use(router.routes());
       const homeSymbol = Symbol('home');
       const signUpFormSymbol = Symbol('sign-up-form');
-      router.get(homeSymbol, '/', function () { });
-      router.get(signUpFormSymbol, '/sign-up-form', function () { });
+      router.get(homeSymbol, '/', function () {});
+      router.get(signUpFormSymbol, '/sign-up-form', function () {});
       router.redirect(homeSymbol, signUpFormSymbol);
       request(http.createServer(app.callback()))
         .post('/')
