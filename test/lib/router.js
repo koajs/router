@@ -199,7 +199,69 @@ describe('Router', function () {
       .expect(400)
       .end(function (err, res) {
         if (err) return done(err);
-        expect(res.body.message).to.eql('body/x must be integer');
+        expect(res.body.message).to.eql('/body/x must be integer');
+        done();
+      });
+  });
+
+  it('should run request params validator with schema', function (done) {
+    const app = new Koa();
+    app.use(bodyParser());
+    const router = new Router();
+
+    const params = {
+      type: 'object',
+      properties: {
+        id: {
+          type: 'string',
+          pattern: '^[0-9]+$',
+          minLength: 1
+        }
+      },
+      required: ['id'],
+      additionalProperties: false
+    };
+
+    router.put(
+      '/user/:id',
+      {
+        params
+      },
+      function (ctx, next) {
+        return new Promise(function (resolve) {
+          setTimeout(function () {
+            ctx.status = 201;
+            ctx.body = { message: 'User added!' };
+            resolve(next());
+          }, 1);
+        });
+      }
+    );
+
+    app.use(router.routes());
+
+    request(http.createServer(app.callback()))
+      .put('/user/1')
+      .send({
+        x: 1
+      })
+      .expect(201)
+      .end(function (err, res) {
+        if (err) return done(err);
+        expect(res.body.message).to.eql('User added!');
+      });
+
+    request(http.createServer(app.callback()))
+      .put('/user/a')
+      .send({
+        x: 'ahh'
+      })
+      .expect(400)
+      .end(function (err, res) {
+        if (err) return done(err);
+        expect(res.body.message).to.eql(
+          '/params/id must match pattern "^[0-9]+$"'
+        );
         done();
       });
   });
