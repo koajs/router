@@ -31,6 +31,7 @@ module.exports = {
     'prefer-spread': 'warn',
     'unicorn/explicit-length-check': 'warn',
     'unicorn/no-array-reduce': 'warn',
-    'unicorn/prefer-spread': 'warn'
+    'unicorn/prefer-spread': 'warn',
+    'unicorn/prefer-node-protocol': 'off'
   }
 };
