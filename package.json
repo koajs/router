@@ -12,6 +12,7 @@
     "@koajs"
   ],
   "dependencies": {
+    "ajv": "^8.12.0",
     "http-errors": "^2.0.0",
     "koa-compose": "^4.1.0",
     "methods": "^1.1.2",
@@ -20,6 +21,7 @@
   "devDependencies": {
     "@commitlint/cli": "^17.0.3",
     "@commitlint/config-conventional": "^17.0.3",
+    "@koa/bodyparser": "^5.0.0",
     "@ladjs/env": "^3.0.0",
     "ava": "^4.3.0",
     "cross-env": "^7.0.3",
