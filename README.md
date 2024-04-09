@@ -82,4 +82,4 @@ See [API Reference](./API.md) for more documentation.
 
 [lad]: https://lad.js.org
 
-[npm]: https//www.npmjs.com
+[npm]: https://www.npmjs.com
