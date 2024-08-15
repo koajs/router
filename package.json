@@ -21,7 +21,6 @@
     }
   ],
   "dependencies": {
-    "debug": "^4.3.6",
     "http-errors": "^2.0.0",
     "koa-compose": "^4.1.0",
     "path-to-regexp": "^6.2.2"
@@ -45,7 +44,7 @@
     "xo": "0.53.1"
   },
   "engines": {
-    "node": ">= 20"
+    "node": ">= 18"
   },
   "files": [
     "lib"
