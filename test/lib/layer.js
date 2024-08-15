@@ -1,346 +1,324 @@
 /**
  * Route tests
  */
+const http = require('node:http');
+const assert = require('node:assert');
 
-const http = require('http');
 const Koa = require('koa');
 const request = require('supertest');
+
 const Router = require('../../lib/router');
 const Layer = require('../../lib/layer');
 
-describe('Layer', function () {
-  it('composes multiple callbacks/middleware', function (done) {
+describe('Layer', () => {
+  it('composes multiple callbacks/middleware', async () => {
     const app = new Koa();
     const router = new Router();
     app.use(router.routes());
     router.get(
       '/:category/:title',
-      function (ctx, next) {
+      (ctx, next) => {
         ctx.status = 500;
         return next();
       },
-      function (ctx, next) {
+      (ctx, next) => {
         ctx.status = 204;
         return next();
       }
     );
-    request(http.createServer(app.callback()))
+
+    await request(http.createServer(app.callback()))
       .get('/programming/how-to-node')
-      .expect(204)
-      .end(function (err) {
-        if (err) return done(err);
-        done();
-      });
+      .expect(204);
   });
 
-  describe('Layer#match()', function () {
-    it('captures URL path parameters', function (done) {
+  describe('Layer#match()', () => {
+    it('captures URL path parameters', async () => {
       const app = new Koa();
       const router = new Router();
       app.use(router.routes());
-      router.get('/:category/:title', function (ctx) {
-        ctx.should.have.property('params');
-        ctx.params.should.be.type('object');
-        ctx.params.should.have.property('category', 'match');
-        ctx.params.should.have.property('title', 'this');
+      router.get('/:category/:title', (ctx) => {
+        assert.strictEqual(typeof ctx.params, 'object');
+        assert.strictEqual(ctx.params.category, 'match');
+        assert.strictEqual(ctx.params.title, 'this');
         ctx.status = 204;
       });
-      request(http.createServer(app.callback()))
+      await request(http.createServer(app.callback()))
         .get('/match/this')
-        .expect(204)
-        .end(function (err) {
-          if (err) return done(err);
-          done();
-        });
+        .expect(204);
     });
 
-    it('return original path parameters when decodeURIComponent throw error', function (done) {
+    it('return original path parameters when decodeURIComponent throw error', async () => {
       const app = new Koa();
       const router = new Router();
       app.use(router.routes());
-      router.get('/:category/:title', function (ctx) {
-        ctx.should.have.property('params');
-        ctx.params.should.be.type('object');
-        ctx.params.should.have.property('category', '100%');
-        ctx.params.should.have.property('title', '101%');
+      router.get('/:category/:title', (ctx) => {
+        assert.strictEqual(typeof ctx.params, 'object');
+        assert.strictEqual(ctx.params.category, '100%');
+        assert.strictEqual(ctx.params.title, '101%');
         ctx.status = 204;
       });
-      request(http.createServer(app.callback()))
+      await request(http.createServer(app.callback()))
         .get('/100%/101%')
-        .expect(204)
-        .end(done);
+        .expect(204);
     });
 
-    it('populates ctx.captures with regexp captures', function (done) {
+    it('populates ctx.captures with regexp captures', async () => {
       const app = new Koa();
       const router = new Router();
       app.use(router.routes());
       router.get(
         /^\/api\/([^/]+)\/?/i,
-        function (ctx, next) {
-          ctx.should.have.property('captures');
-          ctx.captures.should.be.instanceOf(Array);
-          ctx.captures.should.have.property(0, '1');
+        (ctx, next) => {
+          assert.strictEqual(Array.isArray(ctx.captures), true);
+          assert.strictEqual(ctx.captures[0], '1');
           return next();
         },
-        function (ctx) {
-          ctx.should.have.property('captures');
-          ctx.captures.should.be.instanceOf(Array);
-          ctx.captures.should.have.property(0, '1');
+        (ctx) => {
+          assert.strictEqual(Array.isArray(ctx.captures), true);
+          assert.strictEqual(ctx.captures[0], '1');
           ctx.status = 204;
         }
       );
-      request(http.createServer(app.callback()))
+      await request(http.createServer(app.callback()))
         .get('/api/1')
-        .expect(204)
-        .end(function (err) {
-          if (err) return done(err);
-          done();
-        });
+        .expect(204);
     });
 
-    it('return original ctx.captures when decodeURIComponent throw error', function (done) {
+    it('return original ctx.captures when decodeURIComponent throw error', async () => {
       const app = new Koa();
       const router = new Router();
       app.use(router.routes());
       router.get(
         /^\/api\/([^/]+)\/?/i,
-        function (ctx, next) {
-          ctx.should.have.property('captures');
-          ctx.captures.should.be.type('object');
-          ctx.captures.should.have.property(0, '101%');
+        (ctx, next) => {
+          assert.strictEqual(typeof ctx.captures, 'object');
+          assert.strictEqual(ctx.captures[0], '101%');
           return next();
         },
-        function (ctx) {
-          ctx.should.have.property('captures');
-          ctx.captures.should.be.type('object');
-          ctx.captures.should.have.property(0, '101%');
+        (ctx) => {
+          assert.strictEqual(typeof ctx.captures, 'object');
+          assert.strictEqual(ctx.captures[0], '101%');
           ctx.status = 204;
         }
       );
-      request(http.createServer(app.callback()))
+      await request(http.createServer(app.callback()))
         .get('/api/101%')
-        .expect(204)
-        .end(function (err) {
-          if (err) return done(err);
-          done();
-        });
+        .expect(204);
     });
 
-    it('populates ctx.captures with regexp captures include undefined', function (done) {
+    it('populates ctx.captures with regexp captures include undefined', async () => {
       const app = new Koa();
       const router = new Router();
       app.use(router.routes());
       router.get(
         /^\/api(\/.+)?/i,
-        function (ctx, next) {
-          ctx.should.have.property('captures');
-          ctx.captures.should.be.type('object');
-          ctx.captures.should.have.property(0, undefined);
+        (ctx, next) => {
+          assert.strictEqual(typeof ctx.captures, 'object');
+          assert.strictEqual(ctx.captures[0], undefined);
           return next();
         },
-        function (ctx) {
-          ctx.should.have.property('captures');
-          ctx.captures.should.be.type('object');
-          ctx.captures.should.have.property(0, undefined);
+        (ctx) => {
+          assert.strictEqual(typeof ctx.captures, 'object');
+          assert.strictEqual(ctx.captures[0], undefined);
           ctx.status = 204;
         }
       );
-      request(http.createServer(app.callback()))
-        .get('/api')
-        .expect(204)
-        .end(function (err) {
-          if (err) return done(err);
-          done();
-        });
+      await request(http.createServer(app.callback())).get('/api').expect(204);
     });
 
-    it('should throw friendly error message when handle not exists', function () {
+    it('should throw friendly error message when handle not exists', () => {
       const app = new Koa();
       const router = new Router();
       app.use(router.routes());
       const notexistHandle = undefined;
-      (function () {
-        router.get('/foo', notexistHandle);
-      }).should.throw(
-        'get `/foo`: `middleware` must be a function, not `undefined`'
+      assert.throws(
+        () => router.get('/foo', notexistHandle),
+        new Error(
+          'get `/foo`: `middleware` must be a function, not `undefined`'
+        )
       );
 
-      (function () {
-        router.get('foo router', '/foo', notexistHandle);
-      }).should.throw(
-        'get `foo router`: `middleware` must be a function, not `undefined`'
+      assert.throws(
+        () => router.get('foo router', '/foo', notexistHandle),
+        new Error(
+          'get `foo router`: `middleware` must be a function, not `undefined`'
+        )
       );
 
-      (function () {
-        router.post('/foo', function () {}, notexistHandle);
-      }).should.throw(
-        'post `/foo`: `middleware` must be a function, not `undefined`'
+      assert.throws(
+        () => router.post('/foo', () => {}, notexistHandle),
+        new Error(
+          'post `/foo`: `middleware` must be a function, not `undefined`'
+        )
       );
     });
   });
 
-  describe('Layer#param()', function () {
-    it('composes middleware for param fn', function (done) {
+  describe('Layer#param()', () => {
+    it('composes middleware for param fn', async () => {
       const app = new Koa();
       const router = new Router();
       const route = new Layer(
         '/users/:user',
         ['GET'],
         [
-          function (ctx) {
+          (ctx) => {
             ctx.body = ctx.user;
           }
         ]
       );
-      route.param('user', function (id, ctx, next) {
+      route.param('user', (id, ctx, next) => {
         ctx.user = { name: 'alex' };
-        if (!id) return (ctx.status = 404);
+        if (!id) {
+          ctx.status = 404;
+          return;
+        }
+
         return next();
       });
       router.stack.push(route);
       app.use(router.middleware());
-      request(http.createServer(app.callback()))
+      const res = await request(http.createServer(app.callback()))
         .get('/users/3')
-        .expect(200)
-        .end(function (err, res) {
-          if (err) return done(err);
-          res.should.have.property('body');
-          res.body.should.have.property('name', 'alex');
-          done();
-        });
+        .expect(200);
+      assert.strictEqual(res.body.name, 'alex');
     });
 
-    it('ignores params which are not matched', function (done) {
+    it('ignores params which are not matched', async () => {
       const app = new Koa();
       const router = new Router();
       const route = new Layer(
         '/users/:user',
         ['GET'],
         [
-          function (ctx) {
+          (ctx) => {
             ctx.body = ctx.user;
           }
         ]
       );
-      route.param('user', function (id, ctx, next) {
+      route.param('user', (id, ctx, next) => {
         ctx.user = { name: 'alex' };
-        if (!id) return (ctx.status = 404);
+        if (!id) {
+          ctx.status = 404;
+          return;
+        }
+
         return next();
       });
-      route.param('title', function (id, ctx, next) {
+      route.param('title', (id, ctx, next) => {
         ctx.user = { name: 'mark' };
-        if (!id) return (ctx.status = 404);
+        if (!id) {
+          ctx.status = 404;
+          return;
+        }
+
         return next();
       });
       router.stack.push(route);
       app.use(router.middleware());
-      request(http.createServer(app.callback()))
+      const res = await request(http.createServer(app.callback()))
         .get('/users/3')
-        .expect(200)
-        .end(function (err, res) {
-          if (err) return done(err);
-          res.should.have.property('body');
-          res.body.should.have.property('name', 'alex');
-          done();
-        });
+        .expect(200);
+
+      assert.strictEqual(res.body.name, 'alex');
     });
   });
 
-  describe('Layer#params()', function () {
+  describe('Layer#params()', () => {
     let route;
 
-    before(function () {
-      route = new Layer('/:category', ['GET'], [function () {}]);
+    before(() => {
+      route = new Layer('/:category', ['GET'], [() => {}]);
     });
 
-    it('should return an empty object if params were not pass', function () {
+    it('should return an empty object if params were not pass', () => {
       const params = route.params('', []);
 
-      params.should.deepEqual({});
+      assert.deepStrictEqual(params, {});
     });
 
-    it('should return empty object if params is empty string', function () {
+    it('should return empty object if params is empty string', () => {
       const params = route.params('', ['']);
 
-      params.should.deepEqual({});
+      assert.deepStrictEqual(params, {});
     });
 
-    it('should return an object with escaped params', function () {
+    it('should return an object with escaped params', () => {
       const params = route.params('', ['how%20to%20node']);
 
-      params.should.deepEqual({ category: 'how to node' });
+      assert.deepStrictEqual(params, { category: 'how to node' });
     });
 
-    it('should return an object with the same params if an error occurs', function () {
+    it('should return an object with the same params if an error occurs', () => {
       const params = route.params('', ['%E0%A4%A']);
 
-      params.should.deepEqual({ category: '%E0%A4%A' });
+      assert.deepStrictEqual(params, { category: '%E0%A4%A' });
     });
 
-    it('should return an object with data if params were pass', function () {
+    it('should return an object with data if params were pass', () => {
       const params = route.params('', ['programming']);
 
-      params.should.deepEqual({ category: 'programming' });
+      assert.deepStrictEqual(params, { category: 'programming' });
     });
 
-    it('should return empty object if params were not pass', function () {
+    it('should return empty object if params were not pass', () => {
       route.paramNames = [];
       const params = route.params('', ['programming']);
 
-      params.should.deepEqual({});
+      assert.deepStrictEqual(params, {});
     });
   });
 
-  describe('Layer#url()', function () {
-    it('generates route URL', function () {
-      const route = new Layer('/:category/:title', ['get'], [function () {}], {
+  describe('Layer#url()', () => {
+    it('generates route URL', () => {
+      const route = new Layer('/:category/:title', ['get'], [() => {}], {
         name: 'books'
       });
       let url = route.url({ category: 'programming', title: 'how-to-node' });
-      url.should.equal('/programming/how-to-node');
+      assert.strictEqual(url, '/programming/how-to-node');
       url = route.url('programming', 'how-to-node');
-      url.should.equal('/programming/how-to-node');
+      assert.strictEqual(url, '/programming/how-to-node');
     });
 
-    it('escapes using encodeURIComponent()', function () {
-      const route = new Layer('/:category/:title', ['get'], [function () {}], {
+    it('escapes using encodeURIComponent()', () => {
+      const route = new Layer('/:category/:title', ['get'], [() => {}], {
         name: 'books'
       });
       const url = route.url({
         category: 'programming',
         title: 'how to node & js/ts'
       });
-      url.should.equal('/programming/how%20to%20node%20%26%20js%2Fts');
+      assert.strictEqual(url, '/programming/how%20to%20node%20%26%20js%2Fts');
     });
 
-    it('setPrefix method checks Layer for path', function () {
-      const route = new Layer('/category', ['get'], [function () {}], {
+    it('setPrefix method checks Layer for path', () => {
+      const route = new Layer('/category', ['get'], [() => {}], {
         name: 'books'
       });
       route.path = '/hunter2';
       const prefix = route.setPrefix('TEST');
-      prefix.path.should.equal('TEST/hunter2');
+      assert.strictEqual(prefix.path, 'TEST/hunter2');
     });
   });
 
   describe('Layer#prefix', () => {
-    it('setPrefix method passes check Layer for path', function () {
-      const route = new Layer('/category', ['get'], [function () {}], {
+    it('setPrefix method passes check Layer for path', () => {
+      const route = new Layer('/category', ['get'], [() => {}], {
         name: 'books'
       });
       route.path = '/hunter2';
       const prefix = route.setPrefix('/TEST');
-      prefix.path.should.equal('/TEST/hunter2');
+      assert.strictEqual(prefix.path, '/TEST/hunter2');
     });
 
-    it('setPrefix method fails check Layer for path', function () {
-      const route = new Layer(false, ['get'], [function () {}], {
+    it('setPrefix method fails check Layer for path', () => {
+      const route = new Layer(false, ['get'], [() => {}], {
         name: 'books'
       });
       route.path = false;
       const prefix = route.setPrefix('/TEST');
-      prefix.path.should.equal(false);
+      assert.strictEqual(prefix.path, false);
     });
   });
 });
