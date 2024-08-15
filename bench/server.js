@@ -1,15 +1,20 @@
-const Koa = require('koa');
-const Router = require('../');
+const process = require('node:process');
 const env = require('@ladjs/env')({
   path: '../.env',
   includeProcessEnv: true,
   assignToProcessEnv: true
 });
+const Koa = require('koa');
+
+const Router = require('../');
 
 const app = new Koa();
 const router = new Router();
 
-const ok = (ctx) => (ctx.status = 200);
+const ok = (ctx) => {
+  ctx.status = 200;
+};
+
 const n = Number.parseInt(env.FACTOR || '10', 10);
 const useMiddleware = env.USE_MIDDLEWARE === 'true';
 

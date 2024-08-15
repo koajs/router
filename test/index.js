@@ -1,14 +1,12 @@
 /**
  * Module tests
  */
+const assert = require('node:assert');
 
-const should = require('should');
-
-describe('module', function () {
-  it('should expose Router', function (done) {
+describe('module', () => {
+  it('should expose Router', () => {
     const Router = require('..');
-    should.exist(Router);
-    Router.should.be.type('function');
-    done();
+    assert.strictEqual(Boolean(Router), true);
+    assert.strictEqual(typeof Router, 'function');
   });
 });

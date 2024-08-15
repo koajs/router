@@ -69,6 +69,7 @@ See [API Reference](./API.md) for more documentation.
 | ---------------- |
 | **Alex Mingoia** |
 | **@koajs**       |
+| **Imed Jaberi**  |
 
 
 ## License

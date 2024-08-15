@@ -8,41 +8,44 @@
     "email": "niftylettuce@gmail.com"
   },
   "contributors": [
-    "Alex Mingoia <talk@alexmingoia.com>",
-    "@koajs"
+    {
+      "name": "Alex Mingoia",
+      "email": "talk@alexmingoia.com"
+    },
+    {
+      "name": "@koajs"
+    },
+    {
+      "name": "Imed Jaberi",
+      "email": "imed-jaberi@outlook.com"
+    }
   ],
   "dependencies": {
-    "debug": "^4.3.4",
+    "debug": "^4.3.6",
     "http-errors": "^2.0.0",
     "koa-compose": "^4.1.0",
-    "methods": "^1.1.2",
-    "path-to-regexp": "^6.3.0"
+    "path-to-regexp": "^6.2.2"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.7.2",
     "@commitlint/config-conventional": "^17.7.0",
     "@ladjs/env": "^4.0.0",
-    "ava": "^5.3.1",
-    "cross-env": "^7.0.3",
-    "eslint": "8.39.0",
+    "eslint": "^8.39.0",
     "eslint-config-xo-lass": "^2.0.1",
-    "expect.js": "^0.3.1",
     "fixpack": "^4.0.0",
     "husky": "^8.0.3",
     "jsdoc-to-markdown": "^8.0.0",
-    "koa": "^2.14.2",
+    "koa": "^2.15.3",
     "lint-staged": "^14.0.1",
-    "mocha": "^10.2.0",
-    "nyc": "^15.1.0",
+    "mocha": "^10.7.3",
+    "nyc": "^17.0.0",
     "remark-cli": "11",
     "remark-preset-github": "^4.0.4",
-    "should": "^13.2.3",
-    "supertest": "^6.3.3",
-    "wrk": "^1.2.1",
+    "supertest": "^7.0.0",
     "xo": "0.53.1"
   },
   "engines": {
-    "node": ">= 12"
+    "node": ">= 20"
   },
   "files": [
     "lib"
