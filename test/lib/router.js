@@ -1512,7 +1512,7 @@ describe('Router', function () {
           if (err) return done(err);
           res.header.should.have.property(
             'location',
-            'https://www.example.com'
+            'https://www.example.com/'
           );
           done();
         });
