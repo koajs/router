@@ -258,6 +258,7 @@ describe('Router', () => {
     )
       .get('/users/all')
       .expect(200);
+
     assert.strictEqual('single' in res.body, true);
     assert.strictEqual('all' in res.body, true);
   });
@@ -416,6 +417,7 @@ it('runs parent middleware for subrouter routes', async () => {
   )
     .get('/parent/sub')
     .expect(200);
+
   assert.strictEqual(res.body.msg, 'router');
 });
 
