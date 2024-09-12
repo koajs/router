@@ -220,15 +220,27 @@ describe('Router', () => {
     const router = new Router();
 
     router
-      .get('user_page', '/user/(.*).jsx', (ctx) => {
-        ctx.body = { order: 1 };
-      })
-      .all('app', '/app/(.*).jsx', (ctx) => {
-        ctx.body = { order: 2 };
-      })
-      .all('view', '(.*).jsx', (ctx) => {
-        ctx.body = { order: 3 };
-      });
+      .get(
+        'user_page',
+        new RegExp('/user/(.*).jsx'), // eslint-disable-line prefer-regex-literals
+        (ctx) => {
+          ctx.body = { order: 1 };
+        }
+      )
+      .all(
+        'app',
+        new RegExp('/app/(.*).jsx'), // eslint-disable-line prefer-regex-literals
+        (ctx) => {
+          ctx.body = { order: 2 };
+        }
+      )
+      .all(
+        'view',
+        new RegExp('(.*).jsx'), // eslint-disable-line prefer-regex-literals
+        (ctx) => {
+          ctx.body = { order: 3 };
+        }
+      );
 
     const res = await request(
       http.createServer(app.use(router.routes()).callback())
@@ -244,7 +256,7 @@ describe('Router', () => {
     const router = new Router();
 
     router
-      .get('users_single', '/users/:id(.*)', (ctx, next) => {
+      .get('users_single', '/users/:id{/*path}', (ctx, next) => {
         ctx.body = { single: true };
         next();
       })
@@ -258,7 +270,6 @@ describe('Router', () => {
     )
       .get('/users/all')
       .expect(200);
-
     assert.strictEqual('single' in res.body, true);
     assert.strictEqual('all' in res.body, true);
   });
@@ -268,10 +279,14 @@ describe('Router', () => {
     const router = new Router({ exclusive: true });
 
     router
-      .get('users_single', '/users/:id(.*)', (ctx, next) => {
-        ctx.body = { single: true };
-        next();
-      })
+      .get(
+        'users_single',
+        new RegExp('/users/:id(.*)'), // eslint-disable-line prefer-regex-literals
+        (ctx, next) => {
+          ctx.body = { single: true };
+          next();
+        }
+      )
       .get('users_all', '/users/all', (ctx, next) => {
         ctx.body = { ...ctx.body, all: true };
         next();
@@ -293,7 +308,7 @@ describe('Router', () => {
 
     router.get(
       'user_page',
-      '/user/(.*).jsx',
+      new RegExp('/user/(.*).jsx'), // eslint-disable-line prefer-regex-literals
       () => {
         // no next()
       },
@@ -413,7 +428,6 @@ it('runs parent middleware for subrouter routes', async () => {
   )
     .get('/parent/sub')
     .expect(200);
-
   assert.strictEqual(res.body.msg, 'router');
 });
 
@@ -458,7 +472,7 @@ it('matches corresponding requests with optional route parameter', async () => {
   });
   const id = '10';
   const ext = '.json';
-  router.get('/resources/:id{.:ext}?', (ctx) => {
+  router.get('/resources/:id{.:ext}', (ctx) => {
     assert.strictEqual('params' in ctx, true);
     assert.strictEqual(ctx.params.id, id);
     if (ctx.params.ext) assert.strictEqual(ctx.params.ext, ext.slice(1));
@@ -1653,7 +1667,7 @@ describe('Router#opts', () => {
   it('responds with 200', async () => {
     const app = new Koa();
     const router = new Router({
-      strict: true
+      trailing: false
     });
     router.get('/info', (ctx) => {
       ctx.body = 'hello';
@@ -1685,7 +1699,7 @@ describe('Router#opts', () => {
   it('responds with 404 when has a trailing slash', async () => {
     const app = new Koa();
     const router = new Router({
-      strict: true
+      trailing: false
     });
     router.get('/info', (ctx) => {
       ctx.body = 'hello';
@@ -1700,7 +1714,7 @@ describe('use middleware with opts', () => {
   it('responds with 200', async () => {
     const app = new Koa();
     const router = new Router({
-      strict: true
+      trailing: false
     });
     router.get('/info', (ctx) => {
       ctx.body = 'hello';
@@ -1716,7 +1730,7 @@ describe('use middleware with opts', () => {
   it('responds with 404 when has a trailing slash', async () => {
     const app = new Koa();
     const router = new Router({
-      strict: true
+      trailing: false
     });
     router.get('/info', (ctx) => {
       ctx.body = 'hello';
