@@ -220,27 +220,15 @@ describe('Router', () => {
     const router = new Router();
 
     router
-      .get(
-        'user_page',
-        new RegExp('/user/(.*).jsx'), // eslint-disable-line prefer-regex-literals
-        (ctx) => {
-          ctx.body = { order: 1 };
-        }
-      )
-      .all(
-        'app',
-        new RegExp('/app/(.*).jsx'), // eslint-disable-line prefer-regex-literals
-        (ctx) => {
-          ctx.body = { order: 2 };
-        }
-      )
-      .all(
-        'view',
-        new RegExp('(.*).jsx'), // eslint-disable-line prefer-regex-literals
-        (ctx) => {
-          ctx.body = { order: 3 };
-        }
-      );
+      .get('user_page', '/user/{*any}.jsx', (ctx) => {
+        ctx.body = { order: 1 };
+      })
+      .all('app', '/app/{*any}.jsx', (ctx) => {
+        ctx.body = { order: 2 };
+      })
+      .all('view', '{*any}.jsx', (ctx) => {
+        ctx.body = { order: 3 };
+      });
 
     const res = await request(
       http.createServer(app.use(router.routes()).callback())
@@ -308,7 +296,7 @@ describe('Router', () => {
 
     router.get(
       'user_page',
-      new RegExp('/user/(.*).jsx'), // eslint-disable-line prefer-regex-literals
+      '/user/{*any}.jsx',
       () => {
         // no next()
       },
