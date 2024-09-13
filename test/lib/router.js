@@ -1657,7 +1657,7 @@ describe('Router#opts', () => {
   it('responds with 200', async () => {
     const app = new Koa();
     const router = new Router({
-      trailing: false
+      strict: true
     });
     router.get('/info', (ctx) => {
       ctx.body = 'hello';
@@ -1689,7 +1689,7 @@ describe('Router#opts', () => {
   it('responds with 404 when has a trailing slash', async () => {
     const app = new Koa();
     const router = new Router({
-      trailing: false
+      strict: true
     });
     router.get('/info', (ctx) => {
       ctx.body = 'hello';
@@ -1704,7 +1704,7 @@ describe('use middleware with opts', () => {
   it('responds with 200', async () => {
     const app = new Koa();
     const router = new Router({
-      trailing: false
+      strict: true
     });
     router.get('/info', (ctx) => {
       ctx.body = 'hello';
@@ -1720,7 +1720,7 @@ describe('use middleware with opts', () => {
   it('responds with 404 when has a trailing slash', async () => {
     const app = new Koa();
     const router = new Router({
-      trailing: false
+      strict: true
     });
     router.get('/info', (ctx) => {
       ctx.body = 'hello';
