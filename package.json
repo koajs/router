@@ -23,7 +23,7 @@
   "dependencies": {
     "http-errors": "^2.0.0",
     "koa-compose": "^4.1.0",
-    "path-to-regexp": "^6.3.0"
+    "path-to-regexp": "^8.1.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.7.2",
