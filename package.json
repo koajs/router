@@ -60,7 +60,7 @@
   "main": "lib/router.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/koajs/router.git"
+    "url": "git+https://github.com/koajs/router.git"
   },
   "scripts": {
     "bench": "make -C bench",
