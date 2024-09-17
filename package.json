@@ -1,7 +1,7 @@
 {
   "name": "@koa/router",
   "description": "Router middleware for koa. Maintained by Forward Email and Lad.",
-  "version": "12.0.1",
+  "version": "12.0.2",
   "author": "Alex Mingoia <talk@alexmingoia.com>",
   "bugs": {
     "url": "https://github.com/koajs/router/issues",
@@ -66,7 +66,7 @@
     "docs": "NODE_ENV=test jsdoc2md -t ./lib/API_tpl.hbs --src ./lib/*.js  >| API.md",
     "lint": "xo --fix && remark . -qfo && fixpack",
     "prepare": "husky install",
-    "pretest": "npm run lint",
+    "prextest": "npm run lint",
     "test": "mocha test/**/*.js",
     "test:watch": "mocha test/**/*.js --watch"
   }
