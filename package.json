@@ -1,7 +1,7 @@
 {
   "name": "@koa/router",
   "description": "Router middleware for koa. Maintained by Forward Email and Lad.",
-  "version": "13.0.0",
+  "version": "13.1.0",
   "author": "Alex Mingoia <talk@alexmingoia.com>",
   "bugs": {
     "url": "https://github.com/koajs/router/issues",
