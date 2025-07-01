@@ -78,6 +78,6 @@ for (i = 0; i < operations; i++) {
   router.match('/very/deeply/nested/route/hello/there', 'GET')
   router.match('/static/index.html', 'GET')
 }
-print('all together:', time)
+const output = print('all together:', time)
 
-require('fs').writeFileSync('bench-result.txt', String(time))
+require('fs').writeFileSync('bench-result.txt', String(output))

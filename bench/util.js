@@ -10,11 +10,13 @@ function now () {
 }
 
 function getOpsSec (ms) {
-  return Number(((operations * 1000) / ms).toFixed()).toLocaleString()
+  return Number(((operations * 1000) / ms).toFixed())
 }
 
 function print (name, time) {
-  console.log(chalk.yellow(name), getOpsSec(now() - time), 'ops/sec')
+  const opsSec = getOpsSec(now() - time)
+  console.log(chalk.yellow(name), opsSec.toLocaleString(), 'ops/sec')
+  return Number(opsSec)
 }
 
 function title (name) {
