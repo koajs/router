@@ -30,6 +30,7 @@
     "@commitlint/cli": "^17.7.2",
     "@commitlint/config-conventional": "^17.7.0",
     "@ladjs/env": "^4.0.0",
+    "chalk": "^5.4.1",
     "eslint": "^8.39.0",
     "eslint-config-xo-lass": "^2.0.1",
     "fixpack": "^4.0.0",
@@ -65,6 +66,7 @@
   },
   "scripts": {
     "bench": "make -C bench",
+    "benchmark": "node bench/run.js",
     "coverage": "nyc npm run test",
     "docs": "NODE_ENV=test jsdoc2md -t ./lib/API_tpl.hbs --src ./lib/*.js  >| API.md",
     "lint": "xo --fix && remark . -qfo && fixpack",
