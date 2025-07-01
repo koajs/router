@@ -79,6 +79,6 @@ jobs:
             echo "Benchmark difference exceeds threshold of $THRESHOLD"
             exit 1
           else
-            echo "Benchmark difference is within acceptable limits."
+            echo "Benchmark difference is within acceptable limit (< $THRESHOLD)."
           fi
           
