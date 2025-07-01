@@ -53,8 +53,6 @@ jobs:
       # Now checkout the PR branch and run benchmarks
       - name: Checkout PR branch
         uses: actions/checkout@v3
-        with:
-          ref: ${{ github.head_ref }}
 
       - name: Install dependencies
         run: npm install
