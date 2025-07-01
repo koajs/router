@@ -1,6 +1,6 @@
 'use strict'
 
-const chalk = require('chalk')
+const chalk = require('chalk').default
 
 const operations = 1000000
 
