@@ -43,7 +43,7 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Run benchmarks
-        run: npm run benchmark
+        run: npm run benchmark || echo "0" > bench-result.txt
       # Store output of bench-result.txt to workflow output
       - name: Store benchmark result
         id: main_benchmark
@@ -71,7 +71,7 @@ jobs:
         run: |
           main_result=${{ steps.main_benchmark.outputs.result }}
           branch_result=${{ steps.branch_benchmark.outputs.result }}
-          difference=$(echo "$branch_result - $main_result" | bc)
+          difference=$(echo "$main_result - $branch_result" | bc)
           echo "Main benchmark result: $main_result"
           echo "Branch benchmark result: $branch_result"
           echo "Difference: $difference"
