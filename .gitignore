@@ -13,3 +13,4 @@ tmp/
 temp/
 *.lcov
 .env
+bench-result.txt

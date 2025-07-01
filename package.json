@@ -65,6 +65,7 @@
   },
   "scripts": {
     "bench": "make -C bench",
+    "benchmark": "node bench/run.js",
     "coverage": "nyc npm run test",
     "docs": "NODE_ENV=test jsdoc2md -t ./lib/API_tpl.hbs --src ./lib/*.js  >| API.md",
     "lint": "xo --fix && remark . -qfo && fixpack",
