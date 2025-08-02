@@ -1,9 +1,9 @@
-'use strict'
+'use strict';
 
-const { now, print, operations } = require('./util')
-const KoaRouter = require('../lib/router')
+const KoaRouter = require('../lib/router');
+const { now, print, operations } = require('./util');
 
-const router = new KoaRouter()
+const router = new KoaRouter();
 
 const routes = [
   { method: 'GET', url: '/user' },
@@ -18,66 +18,73 @@ const routes = [
   { method: 'GET', url: '/status' },
   { method: 'GET', url: '/very/deeply/nested/route/hello/there' },
   { method: 'GET', url: '/static/(.*)' }
-]
+];
 
-function noop () {}
+function noop() {}
 
-var i = 0
-var time = 0
+let i = 0;
+let time = 0;
 
-routes.forEach(route => {
+for (const route of routes) {
   if (route.method === 'GET') {
-    router.get(route.url, noop)
+    router.get(route.url, noop);
   } else {
-    router.post(route.url, noop)
+    router.post(route.url, noop);
   }
-})
-
-time = now()
-for (i = 0; i < operations; i++) {
-  router.match('/user', 'GET')
 }
-print('short static:', time)
 
-time = now()
+time = now();
 for (i = 0; i < operations; i++) {
-  router.match('/user/comments', 'GET')
+  router.match('/user', 'GET');
 }
-print('static with same radix:', time)
 
-time = now()
+print('short static:', time);
+
+time = now();
 for (i = 0; i < operations; i++) {
-  router.match('/user/lookup/username/john', 'GET')
+  router.match('/user/comments', 'GET');
 }
-print('dynamic route:', time)
 
-time = now()
+print('static with same radix:', time);
+
+time = now();
 for (i = 0; i < operations; i++) {
-  router.match('/event/abcd1234/comments', 'GET')
+  router.match('/user/lookup/username/john', 'GET');
 }
-print('mixed static dynamic:', time)
 
-time = now()
+print('dynamic route:', time);
+
+time = now();
 for (i = 0; i < operations; i++) {
-  router.match('/very/deeply/nested/route/hello/there', 'GET')
+  router.match('/event/abcd1234/comments', 'GET');
 }
-print('long static:', time)
 
-time = now()
+print('mixed static dynamic:', time);
+
+time = now();
 for (i = 0; i < operations; i++) {
-  router.match('/static/index.html', 'GET')
+  router.match('/very/deeply/nested/route/hello/there', 'GET');
 }
-print('wildcard:', time)
 
-time = now()
+print('long static:', time);
+
+time = now();
 for (i = 0; i < operations; i++) {
-  router.match('/user', 'GET')
-  router.match('/user/comments', 'GET')
-  router.match('/user/lookup/username/john', 'GET')
-  router.match('/event/abcd1234/comments', 'GET')
-  router.match('/very/deeply/nested/route/hello/there', 'GET')
-  router.match('/static/index.html', 'GET')
+  router.match('/static/index.html', 'GET');
 }
-const output = print('all together:', time)
 
-require('fs').writeFileSync('bench-result.txt', String(output))
+print('wildcard:', time);
+
+time = now();
+for (i = 0; i < operations; i++) {
+  router.match('/user', 'GET');
+  router.match('/user/comments', 'GET');
+  router.match('/user/lookup/username/john', 'GET');
+  router.match('/event/abcd1234/comments', 'GET');
+  router.match('/very/deeply/nested/route/hello/there', 'GET');
+  router.match('/static/index.html', 'GET');
+}
+
+const output = print('all together:', time);
+
+require('fs').writeFileSync('bench-result.txt', String(output));

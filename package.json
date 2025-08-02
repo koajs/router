@@ -24,7 +24,7 @@
     "debug": "^4.4.1",
     "http-errors": "^2.0.0",
     "koa-compose": "^4.1.0",
-    "path-to-regexp": "^8.1.0"
+    "path-to-regexp": "^8.2.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^17.7.2",
@@ -34,11 +34,11 @@
     "eslint": "^8.39.0",
     "eslint-config-xo-lass": "^2.0.1",
     "fixpack": "^4.0.0",
-    "husky": "^8.0.3",
+    "husky": "^9.1.7",
     "jsdoc-to-markdown": "^8.0.0",
-    "koa": "^2.15.3",
+    "koa": "^3.0.1",
     "lint-staged": "^14.0.1",
-    "mocha": "^10.7.3",
+    "mocha": "^11.7.1",
     "nyc": "^17.0.0",
     "remark-cli": "11",
     "remark-preset-github": "^4.0.4",
