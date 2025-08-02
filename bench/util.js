@@ -1,51 +1,55 @@
-'use strict'
+'use strict';
 
-const chalk = require('chalk').default
+const process = require('node:process');
 
-const operations = 1000000
+const chalk = require('chalk').default;
 
-function now () {
-  var ts = process.hrtime()
-  return (ts[0] * 1e3) + (ts[1] / 1e6)
+const operations = 1000000;
+
+function now() {
+  const ts = process.hrtime();
+  return ts[0] * 1e3 + ts[1] / 1e6;
 }
 
-function getOpsSec (ms) {
-  return Number(((operations * 1000) / ms).toFixed())
+function getOpsSec(ms) {
+  return Number(((operations * 1000) / ms).toFixed(0));
 }
 
-function print (name, time) {
-  const opsSec = getOpsSec(now() - time)
-  console.log(chalk.yellow(name), opsSec.toLocaleString(), 'ops/sec')
-  return Number(opsSec)
+function print(name, time) {
+  const opsSec = getOpsSec(now() - time);
+  console.log(chalk.yellow(name), opsSec.toLocaleString(), 'ops/sec');
+  return Number(opsSec);
 }
 
-function title (name) {
-  console.log(chalk.green(`
+function title(name) {
+  console.log(
+    chalk.green(`
 ${'='.repeat(name.length + 2)}
  ${name}
-${'='.repeat(name.length + 2)}`))
+${'='.repeat(name.length + 2)}`)
+  );
 }
 
-function Queue () {
-  this.q = []
-  this.running = false
+function Queue() {
+  this.q = [];
+  this.running = false;
 }
 
-Queue.prototype.add = function add (job) {
-  this.q.push(job)
-  if (!this.running) this.run()
-}
+Queue.prototype.add = function add(job) {
+  this.q.push(job);
+  if (!this.running) this.run();
+};
 
-Queue.prototype.run = function run () {
-  this.running = true
-  const job = this.q.shift()
+Queue.prototype.run = function run() {
+  this.running = true;
+  const job = this.q.shift();
   job(() => {
-    if (this.q.length) {
-      this.run()
+    if (this.q.length > 0) {
+      this.run();
     } else {
-      this.running = false
+      this.running = false;
     }
-  })
-}
+  });
+};
 
-module.exports = { now, getOpsSec, print, title, Queue, operations }
+module.exports = { now, getOpsSec, print, title, Queue, operations };
