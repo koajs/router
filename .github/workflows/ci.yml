@@ -24,3 +24,59 @@ jobs:
         run: npm install
       - name: Run tests
         run: npm run test
+
+  benchmarks:
+    runs-on: ubuntu-latest
+    env:
+      THRESHOLD: 50000
+    steps:
+      - name: Setup node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+      # First checkout master and run benchmarks
+      - name: Checkout master branch
+        uses: actions/checkout@v3
+        with:
+          ref: master
+
+      - name: Install dependencies
+        run: npm install
+      - name: Run benchmarks
+        run: npm run benchmark || echo "0" > bench-result.txt
+      # Store output of bench-result.txt to workflow output
+      - name: Store benchmark result
+        id: main_benchmark
+        run: |
+          echo "result=$(cat bench-result.txt)" >> $GITHUB_OUTPUT
+
+      # Now checkout the PR branch and run benchmarks
+      - name: Checkout PR branch
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: npm install
+      - name: Run benchmarks
+        run: npm run benchmark
+      # Store output of bench-result.txt to workflow output
+      - name: Store benchmark result
+        id: branch_benchmark
+        run: |
+          echo "result=$(cat bench-result.txt)" >> $GITHUB_OUTPUT
+
+      # Verify difference between main and branch benchmark outputs aren't greater than THRESHOLD env var
+      - name: Verify benchmark results
+        run: |
+          main_result=${{ steps.main_benchmark.outputs.result }}
+          branch_result=${{ steps.branch_benchmark.outputs.result }}
+          difference=$(echo "$main_result - $branch_result" | bc)
+          echo "Main benchmark result: $main_result"
+          echo "Branch benchmark result: $branch_result"
+          echo "Difference: $difference"
+          if (( $(echo "$difference > $THRESHOLD" | bc -l) )); then
+            echo "Benchmark difference exceeds threshold of $THRESHOLD"
+            exit 1
+          else
+            echo "Benchmark difference is within acceptable limit (< $THRESHOLD)."
+          fi
+          

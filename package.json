@@ -1,7 +1,7 @@
 {
   "name": "@koa/router",
   "description": "Router middleware for koa. Maintained by Forward Email and Lad.",
-  "version": "13.1.0",
+  "version": "13.1.1",
   "author": "Alex Mingoia <talk@alexmingoia.com>",
   "bugs": {
     "url": "https://github.com/koajs/router/issues",
@@ -21,6 +21,7 @@
     }
   ],
   "dependencies": {
+    "debug": "^4.4.1",
     "http-errors": "^2.0.0",
     "koa-compose": "^4.1.0",
     "path-to-regexp": "^6.3.0"
@@ -29,6 +30,7 @@
     "@commitlint/cli": "^17.7.2",
     "@commitlint/config-conventional": "^17.7.0",
     "@ladjs/env": "^4.0.0",
+    "chalk": "^5.4.1",
     "eslint": "^9.10.0",
     "eslint-config-xo-lass": "^2.0.1",
     "eslint-plugin-unicorn": "55.0.0",
@@ -64,6 +66,7 @@
   },
   "scripts": {
     "bench": "make -C bench",
+    "benchmark": "node bench/run.js",
     "coverage": "nyc npm run test",
     "docs": "NODE_ENV=test jsdoc2md -t ./lib/API_tpl.hbs --src ./lib/*.js  >| API.md",
     "lint": "eslint . && remark . -qfo && fixpack",
