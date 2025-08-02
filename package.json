@@ -31,8 +31,8 @@
     "@commitlint/config-conventional": "^17.7.0",
     "@ladjs/env": "^4.0.0",
     "chalk": "^5.4.1",
-    "eslint": "^8.39.0",
-    "eslint-config-xo-lass": "^2.0.1",
+    "eslint": "^9.32.0",
+    "eslint-plugin-unicorn": "^60.0.0",
     "fixpack": "^4.0.0",
     "husky": "^9.1.7",
     "jsdoc-to-markdown": "^8.0.0",
@@ -42,11 +42,10 @@
     "nyc": "^17.0.0",
     "remark-cli": "11",
     "remark-preset-github": "^4.0.4",
-    "supertest": "^7.0.0",
-    "xo": "0.53.1"
+    "supertest": "^7.0.0"
   },
   "engines": {
-    "node": ">= 18"
+    "node": ">= 20"
   },
   "files": [
     "lib"
@@ -69,7 +68,7 @@
     "benchmark": "node bench/run.js",
     "coverage": "nyc npm run test",
     "docs": "NODE_ENV=test jsdoc2md -t ./lib/API_tpl.hbs --src ./lib/*.js  >| API.md",
-    "lint": "xo --fix && remark . -qfo && fixpack",
+    "lint": "eslint . --fix && remark . -qfo && fixpack",
     "prepare": "husky install",
     "pretest": "npm run lint",
     "test": "mocha test/**/*.js",

@@ -270,7 +270,7 @@ describe('Router', () => {
     router
       .get(
         'users_single',
-        new RegExp('/users/:id(.*)'), // eslint-disable-line prefer-regex-literals
+        new RegExp('/users/:id(.*)'),  
         (ctx, next) => {
           ctx.body = { single: true };
           next();
