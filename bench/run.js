@@ -17,7 +17,7 @@ const routes = [
   { method: 'GET', url: '/map/:location/events' },
   { method: 'GET', url: '/status' },
   { method: 'GET', url: '/very/deeply/nested/route/hello/there' },
-  { method: 'GET', url: '/static/(.*)' }
+  { method: 'GET', url: '/static/{/*path}' }
 ];
 
 function noop() {}
