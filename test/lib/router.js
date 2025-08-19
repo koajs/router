@@ -1932,17 +1932,20 @@ describe('Router#prefix', () => {
         assert.strictEqual('params' in ctx, true);
         assert.strictEqual(typeof ctx.params, 'object');
         assert.strictEqual(ctx.params.category, 'cats');
+        ctx.category = ctx.params.category;
         return next();
       })
       .get('/suffixHere', (ctx) => {
         assert.strictEqual('params' in ctx, true);
         assert.strictEqual(typeof ctx.params, 'object');
         assert.strictEqual(ctx.params.category, 'cats');
-        ctx.status = 204;
+        ctx.status = 200;
+        ctx.body = ctx.category;
       });
-    await request(http.createServer(app.callback()))
+    const res = await request(http.createServer(app.callback()))
       .get('/cats/suffixHere')
-      .expect(204);
+      .expect(200);
+    assert.strictEqual(res.text, 'cats');
   });
 
   it('populates ctx.params correctly for more complex router prefix (including use)', async () => {

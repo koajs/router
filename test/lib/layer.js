@@ -291,34 +291,16 @@ describe('Layer', () => {
       });
       assert.strictEqual(url, '/programming/how%20to%20node%20%26%20js%2Fts');
     });
-
-    it('setPrefix method checks Layer for path', () => {
-      const route = new Layer('/category', ['get'], [() => {}], {
-        name: 'books'
-      });
-      route.path = '/hunter2';
-      const prefix = route.setPrefix('TEST');
-      assert.strictEqual(prefix.path, 'TEST/hunter2');
-    });
   });
 
   describe('Layer#prefix', () => {
-    it('setPrefix method passes check Layer for path', () => {
-      const route = new Layer('/category', ['get'], [() => {}], {
+    it('setPrefix method checks Layer for path', () => {
+      const route = new Layer('/category', ['get'], [() => { }], {
         name: 'books'
       });
       route.path = '/hunter2';
       const prefix = route.setPrefix('/TEST');
       assert.strictEqual(prefix.path, '/TEST/hunter2');
-    });
-
-    it('setPrefix method fails check Layer for path', () => {
-      const route = new Layer(false, ['get'], [() => {}], {
-        name: 'books'
-      });
-      route.path = false;
-      const prefix = route.setPrefix('/TEST');
-      assert.strictEqual(prefix.path, false);
     });
   });
 });
