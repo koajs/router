@@ -1048,6 +1048,27 @@ describe('Router#use()', () => {
     assert.strictEqual(res.body.foobar, 'foobar');
   });
 
+  it('uses router middleware at given path with parameters - koajs/router#gh-202', async () => {
+    const app = new Koa();
+    const router = new Router();
+    router.use('/:foo/:bar', (ctx, next) => {
+      ctx.foo = ctx.params.foo;
+      ctx.bar = ctx.params.bar;
+      return next();
+    });
+    router.get('/:foo/:bar', (ctx) => {
+      ctx.body = {
+        foobar: ctx.foo + ctx.bar
+      };
+    });
+    app.use(router.routes());
+    const res = await request(http.createServer(app.callback()))
+      .get('/qux/baz')
+      .expect(200);
+
+    assert.strictEqual(res.body.foobar, 'quxbaz');
+  });
+
   it('runs router middleware before subrouter middleware', async () => {
     const app = new Koa();
     const router = new Router();
@@ -1911,17 +1932,20 @@ describe('Router#prefix', () => {
         assert.strictEqual('params' in ctx, true);
         assert.strictEqual(typeof ctx.params, 'object');
         assert.strictEqual(ctx.params.category, 'cats');
+        ctx.category = ctx.params.category;
         return next();
       })
       .get('/suffixHere', (ctx) => {
         assert.strictEqual('params' in ctx, true);
         assert.strictEqual(typeof ctx.params, 'object');
         assert.strictEqual(ctx.params.category, 'cats');
-        ctx.status = 204;
+        ctx.status = 200;
+        ctx.body = ctx.category;
       });
-    await request(http.createServer(app.callback()))
+    const res = await request(http.createServer(app.callback()))
       .get('/cats/suffixHere')
-      .expect(204);
+      .expect(200);
+    assert.strictEqual(res.text, 'cats');
   });
 
   it('populates ctx.params correctly for more complex router prefix (including use)', async () => {
