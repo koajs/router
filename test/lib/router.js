@@ -1048,6 +1048,27 @@ describe('Router#use()', () => {
     assert.strictEqual(res.body.foobar, 'foobar');
   });
 
+  it('uses router middleware at given path with parameters - koajs/router#gh-202', async () => {
+    const app = new Koa();
+    const router = new Router();
+    router.use('/:foo/:bar', (ctx, next) => {
+      ctx.foo = ctx.params.foo;
+      ctx.bar = ctx.params.bar;
+      return next();
+    });
+    router.get('/:foo/:bar', (ctx) => {
+      ctx.body = {
+        foobar: ctx.foo + ctx.bar
+      };
+    });
+    app.use(router.routes());
+    const res = await request(http.createServer(app.callback()))
+      .get('/qux/baz')
+      .expect(200);
+
+    assert.strictEqual(res.body.foobar, 'quxbaz');
+  });
+
   it('runs router middleware before subrouter middleware', async () => {
     const app = new Koa();
     const router = new Router();
@@ -1991,6 +2012,27 @@ describe('Router#prefix', () => {
     await request(http.createServer(app.callback()))
       .get('/all/true/suffixHere')
       .expect(204);
+  });
+
+  describe('when prefix conatins parameters', () => {
+    it('runs middlewares in .use() - koajs/router#gh-202', async () => {
+      const app = new Koa();
+      const router = new Router({ prefix: '/:category' });
+      app.use(router.routes());
+      router
+        .use((ctx, next) => {
+          ctx.category = ctx.params.category;
+          return next();
+        })
+        .get('/suffixHere', (ctx) => {
+          ctx.status = 200;
+          ctx.body = ctx.category;
+        });
+      const res = await request(http.createServer(app.callback()))
+        .get('/cats/suffixHere')
+        .expect(200);
+      assert.strictEqual(res.text, 'cats');
+    });
   });
 
   describe('when used with .use(fn) - gh-247', () => {
