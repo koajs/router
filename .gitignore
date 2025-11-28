@@ -1,16 +1,25 @@
+#       OS        #
+###################
 .DS_Store
-*.log
 .idea
-node_modules
-coverage
-.nyc_output
-locales/
-package-lock.json
-yarn.lock
-
 Thumbs.db
 tmp/
 temp/
-*.lcov
-.env
 bench-result.txt
+docs/
+
+#     Node.js     #
+###################
+node_modules
+
+
+#      Build      #
+###################
+dist
+build
+
+#       NYC       #
+###################
+coverage
+*.lcov
+.nyc_output

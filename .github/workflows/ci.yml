@@ -10,40 +10,76 @@ jobs:
         os:
           - ubuntu-latest
         node_version:
-          - 20
-          - 22
-          - 24
+          - '20'
+          - '22'
+          - '24'
+          - '25'
     name: Node ${{ matrix.node_version }} on ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Setup node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node_version }}
+          cache: 'yarn'
       - name: Install dependencies
-        run: npm install
-      - name: Run tests
-        run: npm run test
+        run: yarn install --frozen-lockfile
+      - name: Run lint
+        run: yarn run lint
+      - name: Run test coverage
+        run: yarn run test:coverage
 
   benchmarks:
     runs-on: ubuntu-latest
     env:
       THRESHOLD: 50000
     steps:
-      - name: Setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20
+      - name: Install wrk
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wrk
+      - name: Verify wrk installation
+        run: |
+          if ! command -v wrk &> /dev/null; then
+            echo "Error: wrk installation failed"
+            exit 1
+          fi
+          echo "wrk installed successfully: $(wrk --version 2>&1 | head -1)"
       # First checkout master and run benchmarks
       - name: Checkout master branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: master
-
+      - name: Check if yarn.lock exists
+        id: check-yarn-lock
+        run: |
+          if [ -f yarn.lock ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "yarn.lock found: $(wc -l < yarn.lock) lines"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "yarn.lock not found on master branch"
+          fi
+      - name: Setup node
+        if: steps.check-yarn-lock.outputs.exists == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'yarn'
+      - name: Setup node without cache
+        if: steps.check-yarn-lock.outputs.exists == 'false'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
       - name: Install dependencies
-        run: npm install
+        run: |
+          if [ -f yarn.lock ]; then
+            yarn install --frozen-lockfile
+          else
+            yarn install
+          fi
       - name: Run benchmarks
-        run: npm run benchmark || echo "0" > bench-result.txt
+        run: yarn run benchmark || echo "0" > bench-result.txt
       # Store output of bench-result.txt to workflow output
       - name: Store benchmark result
         id: main_benchmark
@@ -52,12 +88,16 @@ jobs:
 
       # Now checkout the PR branch and run benchmarks
       - name: Checkout PR branch
-        uses: actions/checkout@v3
-
+        uses: actions/checkout@v4
+      - name: Setup node for PR branch
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'yarn'
       - name: Install dependencies
-        run: npm install
+        run: yarn install --frozen-lockfile
       - name: Run benchmarks
-        run: npm run benchmark
+        run: yarn run benchmark
       # Store output of bench-result.txt to workflow output
       - name: Store benchmark result
         id: branch_benchmark
@@ -79,4 +119,3 @@ jobs:
           else
             echo "Benchmark difference is within acceptable limit (< $THRESHOLD)."
           fi
-          
