@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noImplicitAny": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "strictNullChecks": false,
+    "strictPropertyInitialization": false,
+    "strictFunctionTypes": false
+  },
+  "ts-node": {
+    "transpileOnly": true,
+    "files": true,
+    "include": ["recipes/**/*.ts", "src/**/*.ts"]
+  },
+  "include": ["recipes/**/*.ts", "src/**/*.ts"]
+}

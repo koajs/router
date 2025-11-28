@@ -1,31 +1,42 @@
 const js = require('@eslint/js');
-const eslintPluginUnicorn = require('eslint-plugin-unicorn');
+const unicorn = require('eslint-plugin-unicorn');
+const tsPlugin = require('@typescript-eslint/eslint-plugin');
+const tsParser = require('@typescript-eslint/parser');
+
+const unicornPlugin = unicorn.default || unicorn;
 
 module.exports = [
-  js.configs.recommended,
   {
+    ignores: [
+      'node_modules/**',
+      'coverage/**',
+      'dist/**',
+      'bench/**',
+      'examples/**',
+      'recipes/*.ts'
+    ]
+  },
+  // JavaScript files
+  {
+    files: ['**/*.{js,cjs,mjs}'],
+    ...js.configs.recommended,
+    plugins: { unicorn: unicornPlugin },
+    rules: unicornPlugin.configs.recommended.rules
+  },
+  // TypeScript source files
+  {
+    files: ['src/**/*.ts'],
     languageOptions: {
-      ecmaVersion: 2022,
-      sourceType: 'commonjs',
-      globals: {
-        console: true,
-        setTimeout: true,
-        __dirname: true,
-        // Mocha globals
-        before: true,
-        after: true,
-        beforeEach: true,
-        describe: true,
-        it: true
-      }
+      parser: tsParser,
+      parserOptions: { project: './tsconfig.json' }
     },
-    plugins: {
-      unicorn: eslintPluginUnicorn,
-    },
-    rules: {
-      'promise/prefer-await-to-then': 0,
-      'logical-assignment-operators': 0,
-      'arrow-body-style': 0,
-    }
+    plugins: { '@typescript-eslint': tsPlugin, unicorn: unicornPlugin },
+    rules: unicornPlugin.configs.recommended.rules
+  },
+  // TypeScript test files (relaxed)
+  {
+    files: ['test/**/*.ts', 'recipes/**/*.test.ts', '*.config.ts'],
+    languageOptions: { parser: tsParser },
+    plugins: { '@typescript-eslint': tsPlugin }
   }
 ];
