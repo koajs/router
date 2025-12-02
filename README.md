@@ -1,6 +1,6 @@
 # [@koa/router](https://github.com/koajs/router)
 
-> Modern TypeScript router middleware for [Koa](https://github.com/koajs/koa). Maintained by [Forward Email][forward-email] and [Lad][].
+> Modern TypeScript Router middleware for [Koa](https://github.com/koajs/koa). Maintained by [Forward Email][forward-email] and [Lad][].
 
 [![build status](https://github.com/koajs/router/actions/workflows/ci.yml/badge.svg)](https://github.com/koajs/router/actions/workflows/ci.yml)
 [![styled with prettier](https://img.shields.io/badge/styled_with-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
