@@ -26,6 +26,8 @@ jobs:
         run: yarn install --frozen-lockfile
       - name: Run lint
         run: yarn run lint
+      - name: Build
+        run: yarn run build
       - name: Run test coverage
         run: yarn run test:coverage
 

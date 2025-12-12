@@ -5,7 +5,7 @@
 import { describe, it } from 'node:test';
 import * as assert from 'node:assert';
 import * as http from 'node:http';
-import Router from '../router-module-loader';
+import Router, { RouterContext } from '../router-module-loader';
 import request from 'supertest';
 import Koa from 'koa';
 
@@ -13,15 +13,15 @@ describe('API Versioning', () => {
   it('should support multiple API versions', async () => {
     const app = new Koa();
 
-    const getUsersV1 = async (ctx: any) => {
+    const getUsersV1 = async (ctx: RouterContext) => {
       ctx.body = { users: [{ id: 1 }], version: 'v1' };
     };
 
-    const getUserV1 = async (ctx: any) => {
+    const getUserV1 = async (ctx: RouterContext) => {
       ctx.body = { user: { id: ctx.params.id }, version: 'v1' };
     };
 
-    const getUsersV2 = async (ctx: any) => {
+    const getUsersV2 = async (ctx: RouterContext) => {
       ctx.body = {
         users: [{ id: 1 }],
         version: 'v2',
@@ -29,7 +29,7 @@ describe('API Versioning', () => {
       };
     };
 
-    const getUserV2 = async (ctx: any) => {
+    const getUserV2 = async (ctx: RouterContext) => {
       ctx.body = {
         user: { id: ctx.params.id },
         version: 'v2',

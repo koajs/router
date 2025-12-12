@@ -2,17 +2,42 @@
  * Parameter Validation with router.param() Recipe
  *
  * Validate and transform parameters using router.param().
+ * Demonstrates:
+ * - UUID validation
+ * - Loading resources from database
+ * - Chaining multiple param handlers
+ * - Using generics to avoid type casting
  *
  * Note: User, Post, Resource models are placeholders.
  * Replace with your actual models/services.
  */
 import Router from '../router-module-loader';
-import { User, Post, Resource, ContextWithUser, Next } from '../common';
-import type { RouterParameterMiddleware } from '../router-module-loader';
+import { User, Post, Resource } from '../common';
+import type { User as UserType, Resource as ResourceType } from '../common';
 
-const router = new Router();
+/**
+ * State type for routes with user parameter
+ * Using null | undefined to handle both database returns and initial state
+ */
+type UserState = {
+  user?: UserType | null;
+};
 
-router.param('id', ((value: string, ctx: ContextWithUser, next: Next) => {
+/**
+ * State type for routes with resource parameter
+ */
+type ResourceState = {
+  resource?: ResourceType | null;
+};
+
+// ===========================================
+// Router with User param validation
+// ===========================================
+
+const userRouter = new Router<UserState>();
+
+// Validate UUID format for :id parameter
+userRouter.param('id', (value, ctx, next) => {
   const uuidRegex =
     /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
@@ -21,9 +46,10 @@ router.param('id', ((value: string, ctx: ContextWithUser, next: Next) => {
   }
 
   return next();
-}) as RouterParameterMiddleware);
+});
 
-router.param('user', (async (id: string, ctx: ContextWithUser, next: Next) => {
+// Load user from database for :user parameter
+userRouter.param('user', async (id, ctx, next) => {
   const user = await User.findById(id);
 
   if (!user) {
@@ -32,34 +58,56 @@ router.param('user', (async (id: string, ctx: ContextWithUser, next: Next) => {
 
   ctx.state.user = user;
   return next();
-}) as RouterParameterMiddleware);
+});
 
-router.get('/users/:user', (ctx: ContextWithUser) => {
+// Routes using the :user parameter
+userRouter.get('/users/:user', (ctx) => {
   ctx.body = ctx.state.user;
 });
 
-router.get('/users/:user/posts', async (ctx: ContextWithUser) => {
-  ctx.body = await Post.findByUserId(ctx.state.user!.id);
+userRouter.get('/users/:user/posts', async (ctx) => {
+  const user = ctx.state.user;
+  if (user) {
+    ctx.body = await Post.findByUserId(user.id);
+  }
 });
 
-router
-  .param('id', ((value: string, ctx: ContextWithUser, next: Next) => {
+// ===========================================
+// Router with Resource param validation
+// ===========================================
+
+const resourceRouter = new Router<ResourceState>();
+
+// Chain multiple param handlers for :id
+resourceRouter
+  // First: validate format
+  .param('id', (value, ctx, next) => {
     if (!/^\d+$/.test(value)) {
       ctx.throw(400, 'Invalid ID format');
     }
     return next();
-  }) as RouterParameterMiddleware)
-  .param('id', (async (value: string, ctx: ContextWithUser, next: Next) => {
+  })
+  // Second: load from database
+  .param('id', async (value, ctx, next) => {
     const resource = await Resource.findById(value);
-    ctx.state.resource = resource || undefined;
+    ctx.state.resource = resource;
     return next();
-  }) as RouterParameterMiddleware)
-  .param('id', ((_value: string, ctx: ContextWithUser, next: Next) => {
+  })
+  // Third: check existence
+  .param('id', (_value, ctx, next) => {
     if (!ctx.state.resource) {
-      ctx.throw(404);
+      ctx.throw(404, 'Resource not found');
     }
     return next();
-  }) as RouterParameterMiddleware)
-  .get('/resource/:id', (ctx: ContextWithUser) => {
+  })
+  .get('/resource/:id', (ctx) => {
     ctx.body = ctx.state.resource;
   });
+
+// Combined router for export
+const router = new Router();
+router.use(userRouter.routes());
+router.use(resourceRouter.routes());
+
+export { router, userRouter, resourceRouter };
+export type { UserState, ResourceState };

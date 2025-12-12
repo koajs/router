@@ -6,7 +6,7 @@
  * - Parameter propagation through nested routers
  * - Middleware at different nesting levels
  * - Multiple resources organized hierarchically
- * - Proper error handling and validation
+ * - Type inference without explicit annotations
  *
  * This pattern is commonly used in:
  * - RESTful APIs with versioning
@@ -16,15 +16,18 @@
  */
 
 import Koa from 'koa';
+import { bodyParser } from '@koa/bodyparser';
 import Router from '../router-module-loader';
-import type { RouterContext } from '../router-module-loader';
-import type { ContextWithBody, Next } from '../common';
 
 const app = new Koa();
 
+// Add body parser middleware
+app.use(bodyParser());
+
 const apiV1Router = new Router({ prefix: '/api/v1' });
 
-apiV1Router.use(async (ctx: RouterContext, next: Next) => {
+// ✅ Type inference - no explicit types needed
+apiV1Router.use(async (ctx, next) => {
   console.log(`[API v1] ${ctx.method} ${ctx.path}`);
   ctx.state.apiVersion = 'v1';
   await next();
@@ -32,12 +35,12 @@ apiV1Router.use(async (ctx: RouterContext, next: Next) => {
 
 const usersRouter = new Router({ prefix: '/users' });
 
-usersRouter.use(async (_ctx: RouterContext, next: Next) => {
+usersRouter.use(async (_ctx, next) => {
   console.log('[Users Router] Processing user request');
   await next();
 });
 
-usersRouter.get('/', async (ctx: RouterContext) => {
+usersRouter.get('/', async (ctx) => {
   ctx.body = {
     users: [
       { id: '1', name: 'John', email: 'john@example.com' },
@@ -46,7 +49,8 @@ usersRouter.get('/', async (ctx: RouterContext) => {
   };
 });
 
-usersRouter.post('/', async (ctx: ContextWithBody) => {
+// POST with body - ctx.request.body typed by @koa/bodyparser
+usersRouter.post('/', async (ctx) => {
   ctx.body = {
     id: '3',
     ...(ctx.request.body || {}),
@@ -54,7 +58,7 @@ usersRouter.post('/', async (ctx: ContextWithBody) => {
   };
 });
 
-usersRouter.get('/:userId', async (ctx: RouterContext) => {
+usersRouter.get('/:userId', async (ctx) => {
   ctx.body = {
     id: ctx.params.userId,
     name: 'John',
@@ -62,7 +66,7 @@ usersRouter.get('/:userId', async (ctx: RouterContext) => {
   };
 });
 
-usersRouter.put('/:userId', async (ctx: ContextWithBody) => {
+usersRouter.put('/:userId', async (ctx) => {
   ctx.body = {
     id: ctx.params.userId,
     ...(ctx.request.body || {}),
@@ -70,19 +74,19 @@ usersRouter.put('/:userId', async (ctx: ContextWithBody) => {
   };
 });
 
-usersRouter.delete('/:userId', async (ctx: RouterContext) => {
+usersRouter.delete('/:userId', async (ctx) => {
   ctx.status = 204;
 });
 
 const userPostsRouter = new Router({ prefix: '/:userId/posts' });
 
-userPostsRouter.use(async (ctx: RouterContext, next: Next) => {
+userPostsRouter.use(async (ctx, next) => {
   console.log(`[User Posts] Loading posts for user ${ctx.params.userId}`);
   ctx.state.userId = ctx.params.userId;
   await next();
 });
 
-userPostsRouter.get('/', async (ctx: RouterContext) => {
+userPostsRouter.get('/', async (ctx) => {
   ctx.body = {
     userId: ctx.params.userId,
     posts: [
@@ -92,7 +96,7 @@ userPostsRouter.get('/', async (ctx: RouterContext) => {
   };
 });
 
-userPostsRouter.post('/', async (ctx: ContextWithBody) => {
+userPostsRouter.post('/', async (ctx) => {
   ctx.body = {
     id: '3',
     userId: ctx.params.userId,
@@ -101,7 +105,7 @@ userPostsRouter.post('/', async (ctx: ContextWithBody) => {
   };
 });
 
-userPostsRouter.get('/:postId', async (ctx: RouterContext) => {
+userPostsRouter.get('/:postId', async (ctx) => {
   ctx.body = {
     id: ctx.params.postId,
     userId: ctx.params.userId,
@@ -110,7 +114,7 @@ userPostsRouter.get('/:postId', async (ctx: RouterContext) => {
   };
 });
 
-userPostsRouter.put('/:postId', async (ctx: ContextWithBody) => {
+userPostsRouter.put('/:postId', async (ctx) => {
   ctx.body = {
     id: ctx.params.postId,
     userId: ctx.params.userId,
@@ -119,13 +123,13 @@ userPostsRouter.put('/:postId', async (ctx: ContextWithBody) => {
   };
 });
 
-userPostsRouter.delete('/:postId', async (ctx: RouterContext) => {
+userPostsRouter.delete('/:postId', async (ctx) => {
   ctx.status = 204;
 });
 
 const postCommentsRouter = new Router({ prefix: '/:postId/comments' });
 
-postCommentsRouter.use(async (ctx: RouterContext, next: Next) => {
+postCommentsRouter.use(async (ctx, next) => {
   console.log(
     `[Comments] Loading comments for post ${ctx.params.postId} by user ${ctx.params.userId}`
   );
@@ -133,7 +137,7 @@ postCommentsRouter.use(async (ctx: RouterContext, next: Next) => {
   await next();
 });
 
-postCommentsRouter.get('/', async (ctx: RouterContext) => {
+postCommentsRouter.get('/', async (ctx) => {
   ctx.body = {
     postId: ctx.params.postId,
     userId: ctx.params.userId,
@@ -144,7 +148,7 @@ postCommentsRouter.get('/', async (ctx: RouterContext) => {
   };
 });
 
-postCommentsRouter.post('/', async (ctx: ContextWithBody) => {
+postCommentsRouter.post('/', async (ctx) => {
   ctx.body = {
     id: '3',
     postId: ctx.params.postId,
@@ -154,7 +158,7 @@ postCommentsRouter.post('/', async (ctx: ContextWithBody) => {
   };
 });
 
-postCommentsRouter.get('/:commentId', async (ctx: RouterContext) => {
+postCommentsRouter.get('/:commentId', async (ctx) => {
   ctx.body = {
     id: ctx.params.commentId,
     postId: ctx.params.postId,
@@ -163,13 +167,13 @@ postCommentsRouter.get('/:commentId', async (ctx: RouterContext) => {
   };
 });
 
-postCommentsRouter.delete('/:commentId', async (ctx: RouterContext) => {
+postCommentsRouter.delete('/:commentId', async (ctx) => {
   ctx.status = 204;
 });
 
 const userSettingsRouter = new Router({ prefix: '/:userId/settings' });
 
-userSettingsRouter.get('/', async (ctx: RouterContext) => {
+userSettingsRouter.get('/', async (ctx) => {
   ctx.body = {
     userId: ctx.params.userId,
     theme: 'dark',
@@ -177,7 +181,7 @@ userSettingsRouter.get('/', async (ctx: RouterContext) => {
   };
 });
 
-userSettingsRouter.put('/', async (ctx: ContextWithBody) => {
+userSettingsRouter.put('/', async (ctx) => {
   ctx.body = {
     userId: ctx.params.userId,
     ...(ctx.request.body || {}),
@@ -200,7 +204,7 @@ apiV1Router.use(usersRouter.routes(), usersRouter.allowedMethods());
 
 const postsRouter = new Router({ prefix: '/posts' });
 
-postsRouter.get('/', async (ctx: RouterContext) => {
+postsRouter.get('/', async (ctx) => {
   ctx.body = {
     posts: [
       { id: '1', title: 'Global Post 1' },
@@ -209,7 +213,7 @@ postsRouter.get('/', async (ctx: RouterContext) => {
   };
 });
 
-postsRouter.get('/:postId', async (ctx: RouterContext) => {
+postsRouter.get('/:postId', async (ctx) => {
   ctx.body = {
     id: ctx.params.postId,
     title: 'Global Post Title'

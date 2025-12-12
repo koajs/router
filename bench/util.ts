@@ -3,28 +3,53 @@ import chalk from 'chalk';
 
 export const operations = 1_000_000;
 
+/**
+ * Get current high-resolution time in milliseconds
+ * Uses process.hrtime.bigint() for better precision
+ */
 export function now(): number {
-  const ts = process.hrtime();
-  return ts[0] * 1e3 + ts[1] / 1e6;
+  return Number(process.hrtime.bigint()) / 1e6;
 }
 
+/**
+ * Calculate operations per second
+ */
 export function getOpsSec(ms: number): number {
-  return Number(((operations * 1000) / ms).toFixed(0));
+  return Math.round((operations * 1000) / ms);
 }
 
+/**
+ * Print benchmark result
+ */
 export function print(name: string, time: number): number {
   const opsSec = getOpsSec(now() - time);
-  console.log(chalk.yellow(name), opsSec.toLocaleString(), 'ops/sec');
-  return Number(opsSec);
+  console.log(
+    chalk.yellow(name.padEnd(30)),
+    opsSec.toLocaleString().padStart(12),
+    'ops/sec'
+  );
+  return opsSec;
 }
 
+/**
+ * Print section title
+ */
 export function title(name: string): void {
   console.log(
     chalk.green(`
-${'='.repeat(name.length + 2)}
- ${name}
-${'='.repeat(name.length + 2)}`)
+${'='.repeat(name.length + 4)}
+  ${name}
+${'='.repeat(name.length + 4)}`)
   );
+}
+
+/**
+ * Warmup function - runs the benchmark once to warm up JIT
+ */
+export function warmup(fn: () => void, iterations = 10_000): void {
+  for (let i = 0; i < iterations; i++) {
+    fn();
+  }
 }
 
 export class Queue {

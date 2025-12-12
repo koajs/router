@@ -10,6 +10,14 @@ import request from 'supertest';
 import Koa from 'koa';
 import { Next } from '../common';
 
+type ErrorDetails = Record<string, unknown>;
+
+type CaughtError = Error & {
+  status?: number;
+  code?: string;
+  details?: ErrorDetails;
+};
+
 describe('Error Handling', () => {
   it('should handle errors with custom error class', async () => {
     const app = new Koa();
@@ -19,13 +27,13 @@ describe('Error Handling', () => {
       status: number;
       code: string;
       isOperational: boolean;
-      details?: any;
+      details?: ErrorDetails;
 
       constructor(
         message: string,
         status = 500,
         code = 'INTERNAL_ERROR',
-        details?: any
+        details?: ErrorDetails
       ) {
         super(message);
         this.status = status;
@@ -38,20 +46,21 @@ describe('Error Handling', () => {
     const errorHandler = async (ctx: RouterContext, next: Next) => {
       try {
         await next();
-      } catch (err: any) {
-        ctx.status = err.status || 500;
+      } catch (err) {
+        const error = err as CaughtError;
+        ctx.status = error.status || 500;
         ctx.body = {
           error: {
-            message: err.message,
-            code: err.code || 'INTERNAL_ERROR',
+            message: error.message,
+            code: error.code || 'INTERNAL_ERROR',
             ...(process.env.NODE_ENV === 'development' && {
-              stack: err.stack,
-              details: err.details
+              stack: error.stack,
+              details: error.details
             })
           }
         };
 
-        ctx.app.emit('error', err, ctx);
+        ctx.app.emit('error', error, ctx);
       }
     };
 
@@ -98,12 +107,13 @@ describe('Error Handling', () => {
     const errorHandler = async (ctx: RouterContext, next: Next) => {
       try {
         await next();
-      } catch (err: any) {
-        ctx.status = err.status || 500;
+      } catch (err) {
+        const error = err as CaughtError;
+        ctx.status = error.status || 500;
         ctx.body = {
           error: {
-            message: err.message,
-            code: err.code || 'INTERNAL_ERROR'
+            message: error.message,
+            code: error.code || 'INTERNAL_ERROR'
           }
         };
       }

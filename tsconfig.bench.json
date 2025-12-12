@@ -4,9 +4,11 @@
     "module": "CommonJS",
     "moduleResolution": "node",
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "rootDir": ".",
+    "outDir": "./dist-bench"
   },
-  "include": ["bench/**/*.ts"],
+  "include": ["bench/**/*.ts", "src/**/*.ts"],
   "ts-node": {
     "transpileOnly": true,
     "files": true,

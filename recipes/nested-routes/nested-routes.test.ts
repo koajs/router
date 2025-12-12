@@ -8,8 +8,16 @@ import { describe, it } from 'node:test';
 import * as assert from 'node:assert';
 import * as http from 'node:http';
 import Koa from 'koa';
-import Router from '../router-module-loader';
+import Router, { RouterContext } from '../router-module-loader';
 import request from 'supertest';
+
+type RequestBody = Record<string, unknown>;
+
+type ContextWithBody = RouterContext & {
+  request: RouterContext['request'] & {
+    body?: RequestBody;
+  };
+};
 
 describe('Production-Ready Nested Routes', () => {
   it('should handle multiple levels of nested routes correctly', async () => {
@@ -22,9 +30,9 @@ describe('Production-Ready Nested Routes', () => {
           body += chunk;
         }
         try {
-          (ctx.request as any).body = JSON.parse(body);
+          (ctx.request as { body?: RequestBody }).body = JSON.parse(body);
         } catch {
-          (ctx.request as any).body = {};
+          (ctx.request as { body?: RequestBody }).body = {};
         }
       }
       await next();
@@ -40,11 +48,11 @@ describe('Production-Ready Nested Routes', () => {
     // ============================================================================
     const usersRouter = new Router({ prefix: '/users' });
 
-    usersRouter.get('/', async (ctx: any) => {
+    usersRouter.get('/', async (ctx: RouterContext) => {
       ctx.body = { users: [{ id: '1', name: 'John' }] };
     });
 
-    usersRouter.get('/:userId', async (ctx: any) => {
+    usersRouter.get('/:userId', async (ctx: RouterContext) => {
       ctx.body = { id: ctx.params.userId, name: 'John' };
     });
 
@@ -53,14 +61,14 @@ describe('Production-Ready Nested Routes', () => {
     // ============================================================================
     const userPostsRouter = new Router({ prefix: '/:userId/posts' });
 
-    userPostsRouter.get('/', async (ctx: any) => {
+    userPostsRouter.get('/', async (ctx: RouterContext) => {
       ctx.body = {
         userId: ctx.params.userId,
         posts: [{ id: '1', title: 'Post 1' }]
       };
     });
 
-    userPostsRouter.get('/:postId', async (ctx: any) => {
+    userPostsRouter.get('/:postId', async (ctx: RouterContext) => {
       ctx.body = {
         id: ctx.params.postId,
         userId: ctx.params.userId,
@@ -68,11 +76,11 @@ describe('Production-Ready Nested Routes', () => {
       };
     });
 
-    userPostsRouter.post('/', async (ctx: any) => {
+    userPostsRouter.post('/', async (ctx: ContextWithBody) => {
       ctx.body = {
         id: '2',
         userId: ctx.params.userId,
-        ...(ctx.request as any).body
+        ...ctx.request.body
       };
     });
 
@@ -81,7 +89,7 @@ describe('Production-Ready Nested Routes', () => {
     // ============================================================================
     const postCommentsRouter = new Router({ prefix: '/:postId/comments' });
 
-    postCommentsRouter.get('/', async (ctx: any) => {
+    postCommentsRouter.get('/', async (ctx: RouterContext) => {
       ctx.body = {
         postId: ctx.params.postId,
         userId: ctx.params.userId,
@@ -89,7 +97,7 @@ describe('Production-Ready Nested Routes', () => {
       };
     });
 
-    postCommentsRouter.get('/:commentId', async (ctx: any) => {
+    postCommentsRouter.get('/:commentId', async (ctx: RouterContext) => {
       ctx.body = {
         id: ctx.params.commentId,
         postId: ctx.params.postId,
@@ -98,12 +106,12 @@ describe('Production-Ready Nested Routes', () => {
       };
     });
 
-    postCommentsRouter.post('/', async (ctx: any) => {
+    postCommentsRouter.post('/', async (ctx: ContextWithBody) => {
       ctx.body = {
         id: '2',
         postId: ctx.params.postId,
         userId: ctx.params.userId,
-        ...(ctx.request as any).body
+        ...ctx.request.body
       };
     });
 
@@ -112,17 +120,17 @@ describe('Production-Ready Nested Routes', () => {
     // ============================================================================
     const userSettingsRouter = new Router({ prefix: '/:userId/settings' });
 
-    userSettingsRouter.get('/', async (ctx: any) => {
+    userSettingsRouter.get('/', async (ctx: RouterContext) => {
       ctx.body = {
         userId: ctx.params.userId,
         theme: 'dark'
       };
     });
 
-    userSettingsRouter.put('/', async (ctx: any) => {
+    userSettingsRouter.put('/', async (ctx: ContextWithBody) => {
       ctx.body = {
         userId: ctx.params.userId,
-        ...(ctx.request as any).body
+        ...ctx.request.body
       };
     });
 
@@ -215,7 +223,7 @@ describe('Production-Ready Nested Routes', () => {
     const postsRouter = new Router({ prefix: '/:userId/posts' });
     const commentsRouter = new Router({ prefix: '/:postId/comments' });
 
-    commentsRouter.get('/:commentId', async (ctx: any) => {
+    commentsRouter.get('/:commentId', async (ctx: RouterContext) => {
       ctx.body = {
         userId: ctx.params.userId,
         postId: ctx.params.postId,
@@ -255,15 +263,15 @@ describe('Production-Ready Nested Routes', () => {
     const settingsRouter = new Router({ prefix: '/:userId/settings' });
     const followersRouter = new Router({ prefix: '/:userId/followers' });
 
-    postsRouter.get('/', async (ctx: any) => {
+    postsRouter.get('/', async (ctx: RouterContext) => {
       ctx.body = { userId: ctx.params.userId, resource: 'posts' };
     });
 
-    settingsRouter.get('/', async (ctx: any) => {
+    settingsRouter.get('/', async (ctx: RouterContext) => {
       ctx.body = { userId: ctx.params.userId, resource: 'settings' };
     });
 
-    followersRouter.get('/', async (ctx: any) => {
+    followersRouter.get('/', async (ctx: RouterContext) => {
       ctx.body = { userId: ctx.params.userId, resource: 'followers' };
     });
 
@@ -296,7 +304,7 @@ describe('Production-Ready Nested Routes', () => {
     const usersRouter = new Router({ prefix: '/users' });
     const postsRouter = new Router({ prefix: '/:userId/posts' });
 
-    postsRouter.get('/:postId', async (ctx: any) => {
+    postsRouter.get('/:postId', async (ctx: RouterContext) => {
       ctx.body = { id: ctx.params.postId };
     });
 

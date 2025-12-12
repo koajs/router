@@ -1,73 +1,65 @@
 /**
- * Placeholder types for recipe examples
+ * Common types and placeholder implementations for recipe examples
  *
  * These are example types that should be replaced with actual
  * implementations in real applications.
+ *
+ * NOTE: Instead of using extended context types with casting,
+ * prefer using Router generics: new Router<StateT, ContextT>()
+ * This provides better type safety without runtime casting.
  */
 
 import type { RouterContext } from './router-module-loader';
 
-export interface User {
+// ===========================================
+// Domain Types
+// ===========================================
+
+export type User = {
   id: string;
   email: string;
   name: string;
   role?: string;
-}
+};
 
-export interface Post {
+export type Post = {
   id: string;
   userId: string;
   title: string;
   content: string;
-}
+};
 
-export interface Resource {
+export type Resource = {
   id: string;
   name: string;
-}
+};
 
-export type ContextWithBody<StateT = any, ContextT = any> = RouterContext<
-  StateT,
-  ContextT
-> & {
-  request: RouterContext<StateT, ContextT>['request'] & {
-    body?: any;
+// ===========================================
+// Extended Context Types (Legacy)
+// ===========================================
+
+/**
+ * @deprecated Prefer using Router generics: new Router<StateT>()
+ * Context with request body (for POST/PUT/PATCH requests)
+ */
+export type ContextWithBody = RouterContext & {
+  request: RouterContext['request'] & {
+    body?: Record<string, unknown>;
   };
 };
 
-export type ContextWithUser<StateT = any, ContextT = any> = RouterContext<
-  StateT,
-  ContextT
-> & {
-  state: RouterContext<StateT, ContextT>['state'] & {
+/**
+ * @deprecated Prefer using Router generics: new Router<StateT>()
+ * Context with authenticated user state
+ */
+export type ContextWithUser = RouterContext & {
+  state: RouterContext['state'] & {
     user?: User;
     resource?: Resource;
-    pagination?: {
-      page: number;
-      limit: number;
-      offset: number;
-    };
   };
 };
 
-export type RecipeContext<StateT = any, ContextT = any> = RouterContext<
-  StateT,
-  ContextT
-> & {
-  request: RouterContext<StateT, ContextT>['request'] & {
-    body?: any;
-  };
-  state: RouterContext<StateT, ContextT>['state'] & {
-    user?: User;
-    resource?: Resource;
-    pagination?: {
-      page: number;
-      limit: number;
-      offset: number;
-    };
-  };
-};
-
+// Re-export Next type for convenience
 export type { Next } from 'koa';
 
 export const db = {
@@ -79,6 +71,9 @@ export const redis = {
     return 'PONG';
   }
 };
+
+type UserCreateData = { email?: string; name?: string };
+type UserUpdateData = { email?: string; name?: string };
 
 export const User = {
   findById: async (_id: string): Promise<User | null> => {
@@ -93,10 +88,10 @@ export const User = {
   }): Promise<{ count: number; rows: User[] }> => {
     return { count: 0, rows: [] };
   },
-  create: async (data: any): Promise<User> => {
+  create: async (data: UserCreateData): Promise<User> => {
     return { id: '1', email: data.email || '', name: data.name || '' };
   },
-  update: async (_id: string, data: any): Promise<User> => {
+  update: async (_id: string, data: UserUpdateData): Promise<User> => {
     return { id: _id, email: data.email || '', name: data.name || '' };
   },
   delete: async (_id: string): Promise<void> => {}

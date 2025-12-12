@@ -6,8 +6,16 @@ import { describe, it } from 'node:test';
 import * as assert from 'node:assert';
 import * as http from 'node:http';
 import Koa from 'koa';
-import Router from '../router-module-loader';
+import Router, { RouterContext } from '../router-module-loader';
 import request from 'supertest';
+
+type RequestBody = Record<string, unknown>;
+
+type ContextWithBody = RouterContext & {
+  request: RouterContext['request'] & {
+    body?: RequestBody;
+  };
+};
 
 describe('RESTful API Structure', () => {
   it('should organize API with nested routers', async () => {
@@ -20,9 +28,9 @@ describe('RESTful API Structure', () => {
           body += chunk;
         }
         try {
-          (ctx.request as any).body = JSON.parse(body);
+          (ctx.request as { body?: RequestBody }).body = JSON.parse(body);
         } catch {
-          (ctx.request as any).body = {};
+          (ctx.request as { body?: RequestBody }).body = {};
         }
       }
       await next();
@@ -34,25 +42,25 @@ describe('RESTful API Structure', () => {
         { id: 2, name: 'Jane' }
       ],
       findById: async (id: string) => ({ id, name: 'John' }),
-      create: async (data: any) => ({ id: 3, ...data }),
-      update: async (id: string, data: any) => ({ id, ...data }),
+      create: async (data: RequestBody) => ({ id: 3, ...data }),
+      update: async (id: string, data: RequestBody) => ({ id, ...data }),
       delete: async (_id: string) => true
     };
 
     const usersRouter = new Router({ prefix: '/users' });
-    usersRouter.get('/', async (ctx: any) => {
+    usersRouter.get('/', async (ctx: RouterContext) => {
       ctx.body = await User.findAll();
     });
-    usersRouter.post('/', async (ctx: any) => {
-      ctx.body = await User.create((ctx.request as any).body);
+    usersRouter.post('/', async (ctx: ContextWithBody) => {
+      ctx.body = await User.create(ctx.request.body || {});
     });
-    usersRouter.get('/:id', async (ctx: any) => {
+    usersRouter.get('/:id', async (ctx: RouterContext) => {
       ctx.body = await User.findById(ctx.params.id);
     });
-    usersRouter.put('/:id', async (ctx: any) => {
-      ctx.body = await User.update(ctx.params.id, (ctx.request as any).body);
+    usersRouter.put('/:id', async (ctx: ContextWithBody) => {
+      ctx.body = await User.update(ctx.params.id, ctx.request.body || {});
     });
-    usersRouter.delete('/:id', async (ctx: any) => {
+    usersRouter.delete('/:id', async (ctx: RouterContext) => {
       await User.delete(ctx.params.id);
       ctx.status = 204;
     });

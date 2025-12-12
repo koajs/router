@@ -1,9 +1,5 @@
-import debugModule from 'debug';
-const debug = debugModule('koa-router');
-
 import compose from 'koa-compose';
 import HttpError from 'http-errors';
-import type { Middleware, ParameterizedContext } from 'koa';
 
 import Layer from './layer';
 import { getAllHttpMethods, COMMON_HTTP_METHODS } from './utils/http-methods';
@@ -15,16 +11,21 @@ import {
   hasPathParameters,
   determineMiddlewarePath
 } from './utils/path-helpers';
+import { debug } from './utils/debug';
 
 import type {
+  Middleware,
+  ParameterizedContext,
   RouterOptions,
+  RouterOptionsWithMethods,
   RouterMiddleware,
   RouterParameterMiddleware,
   RouterContext,
   RouterParameterContext,
   MatchResult,
   AllowedMethodsOptions,
-  LayerOptions
+  LayerOptions,
+  RouterWithMethods
 } from './types';
 
 const httpMethods = getAllHttpMethods();
@@ -32,20 +33,17 @@ const httpMethods = getAllHttpMethods();
 /**
  * Middleware with router property
  */
-interface RouterComposedMiddleware<
+type RouterComposedMiddleware<
   StateT = import('koa').DefaultState,
   ContextT = import('koa').DefaultContext
-> extends Middleware<
-  StateT,
-  ContextT & RouterParameterContext<StateT, ContextT>
-> {
+> = Middleware<StateT, ContextT & RouterParameterContext<StateT, ContextT>> & {
   router?: Router<StateT, ContextT>;
-}
+};
 
 /**
  * @module koa-router
  */
-export default class Router<
+class Router<
   StateT = import('koa').DefaultState,
   ContextT = import('koa').DefaultContext
 > {
@@ -57,7 +55,7 @@ export default class Router<
     | RouterParameterMiddleware<StateT, ContextT>
     | RouterParameterMiddleware<StateT, ContextT>[]
   >;
-  stack: Layer[];
+  stack: Layer<StateT, ContextT>[];
   host?: string | string[] | RegExp;
 
   /**
@@ -119,7 +117,7 @@ export default class Router<
    * @param args - URL parameters
    * @returns Generated URL
    */
-  static url(path: string | RegExp, ...arguments_: any[]): string {
+  static url(path: string | RegExp, ...arguments_: unknown[]): string {
     const temporaryLayer = new Layer(path, [], () => {});
     return temporaryLayer.url(...arguments_);
   }
@@ -151,17 +149,39 @@ export default class Router<
    * @param middleware - Middleware functions
    * @returns This router instance
    */
-  use(
+  use<T = {}, U = {}, B = unknown>(
+    middleware: RouterMiddleware<StateT & T, ContextT & U, B>
+  ): Router<StateT, ContextT>;
+  use<T = {}, U = {}>(
+    middleware: RouterComposedMiddleware<StateT & T, ContextT & U>
+  ): Router<StateT, ContextT>;
+  use<T = {}, U = {}, B = unknown>(
+    path: string | RegExp | string[],
+    middleware: RouterMiddleware<StateT & T, ContextT & U, B>
+  ): Router<StateT, ContextT>;
+  use<T = {}, U = {}>(
+    path: string | RegExp | string[],
+    middleware: RouterComposedMiddleware<StateT & T, ContextT & U>
+  ): Router<StateT, ContextT>;
+  use<T = {}, U = {}, B = unknown>(
+    path: string | RegExp | string[],
+    m1: RouterMiddleware<StateT & T, ContextT & U, B>,
+    m2:
+      | RouterMiddleware<StateT & T, ContextT & U, B>
+      | RouterComposedMiddleware<StateT & T, ContextT & U>,
     ...middleware: Array<
-      | RouterMiddleware<StateT, ContextT>
-      | RouterComposedMiddleware<StateT, ContextT>
+      | RouterMiddleware<StateT & T, ContextT & U, B>
+      | RouterComposedMiddleware<StateT & T, ContextT & U>
     >
   ): Router<StateT, ContextT>;
-  use(
-    path: string | RegExp | string[],
+  use<T = {}, U = {}, B = unknown>(
+    m1: RouterMiddleware<StateT & T, ContextT & U, B>,
+    m2:
+      | RouterMiddleware<StateT & T, ContextT & U, B>
+      | RouterComposedMiddleware<StateT & T, ContextT & U>,
     ...middleware: Array<
-      | RouterMiddleware<StateT, ContextT>
-      | RouterComposedMiddleware<StateT, ContextT>
+      | RouterMiddleware<StateT & T, ContextT & U, B>
+      | RouterComposedMiddleware<StateT & T, ContextT & U>
     >
   ): Router<StateT, ContextT>;
   use(
@@ -184,6 +204,12 @@ export default class Router<
       explicitPath = middleware.shift() as string | RegExp;
     }
 
+    if (middleware.length === 0) {
+      throw new Error(
+        'You must provide at least one middleware function to router.use()'
+      );
+    }
+
     for (const currentMiddleware of middleware) {
       if (this._isNestedRouter(currentMiddleware)) {
         this._mountNestedRouter(
@@ -203,11 +229,15 @@ export default class Router<
   }
 
   /**
-   * Check if first argument is an array of paths
+   * Check if first argument is an array of paths (all elements must be strings)
    * @private
    */
-  private _isPathArray(firstArgument: any): firstArgument is string[] {
-    return Array.isArray(firstArgument) && typeof firstArgument[0] === 'string';
+  private _isPathArray(firstArgument: unknown): firstArgument is string[] {
+    return (
+      Array.isArray(firstArgument) &&
+      firstArgument.length > 0 &&
+      firstArgument.every((item) => typeof item === 'string')
+    );
   }
 
   /**
@@ -215,7 +245,7 @@ export default class Router<
    * Empty string counts as explicit path to enable param capture
    * @private
    */
-  private _hasExplicitPath(firstArgument: any): boolean {
+  private _hasExplicitPath(firstArgument: unknown): boolean {
     return typeof firstArgument === 'string' || firstArgument instanceof RegExp;
   }
 
@@ -224,16 +254,20 @@ export default class Router<
    * @private
    */
   private _isNestedRouter(
-    middleware: any
+    middleware: unknown
   ): middleware is RouterComposedMiddleware<StateT, ContextT> {
-    return middleware.router !== undefined;
+    return (
+      typeof middleware === 'function' &&
+      'router' in middleware &&
+      middleware.router !== undefined
+    );
   }
 
   /**
    * Apply middleware to multiple paths
    * @private
    */
-  private _useWithPathArray(middleware: any[]): Router<StateT, ContextT> {
+  private _useWithPathArray(middleware: unknown[]): Router<StateT, ContextT> {
     const pathArray = middleware[0] as string[];
     const remainingMiddleware = middleware.slice(1);
 
@@ -285,7 +319,7 @@ export default class Router<
     }
 
     if (this.params) {
-      this._applyParamMiddlewareToRouter(clonedRouter as any);
+      this._applyParamMiddlewareToRouter(clonedRouter);
     }
   }
 
@@ -306,29 +340,42 @@ export default class Router<
   }
 
   /**
-   * Clone a layer instance
+   * Clone a layer instance (deep clone to avoid shared references)
    * @private
    */
-  private _cloneLayer(sourceLayer: Layer): Layer {
-    return Object.assign(
+  private _cloneLayer(
+    sourceLayer: Layer<StateT, ContextT>
+  ): Layer<StateT, ContextT> {
+    const cloned = Object.assign(
       Object.create(Object.getPrototypeOf(sourceLayer)),
-      sourceLayer
-    );
+      sourceLayer,
+      {
+        // Deep clone arrays and objects to avoid shared references
+        stack: [...sourceLayer.stack],
+        methods: [...sourceLayer.methods],
+        paramNames: [...sourceLayer.paramNames],
+        opts: { ...sourceLayer.opts }
+      }
+    ) as Layer<StateT, ContextT>;
+
+    return cloned;
   }
 
   /**
    * Apply this router's param middleware to a nested router
    * @private
    */
-  private _applyParamMiddlewareToRouter(targetRouter: Router): void {
+  private _applyParamMiddlewareToRouter(
+    targetRouter: Router<StateT, ContextT>
+  ): void {
     const parameterNames = Object.keys(this.params);
 
     for (const parameterName of parameterNames) {
       const parameterMiddleware = this.params[parameterName];
-      applyParameterMiddlewareToRoute(
-        targetRouter as any,
+      applyParameterMiddlewareToRoute<StateT, ContextT>(
+        targetRouter,
         parameterName,
-        parameterMiddleware as any
+        parameterMiddleware
       );
     }
   }
@@ -380,6 +427,7 @@ export default class Router<
 
   /**
    * Set the path prefix for a Router instance that was already initialized.
+   * Note: Calling this method multiple times will replace the prefix, not stack them.
    *
    * @example
    *
@@ -392,11 +440,21 @@ export default class Router<
    */
   prefix(prefixPath: string): Router<StateT, ContextT> {
     const normalizedPrefix = prefixPath.replace(/\/$/, '');
+    const previousPrefix = this.opts.prefix || '';
 
     this.opts.prefix = normalizedPrefix;
 
     for (const route of this.stack) {
-      route.setPrefix(normalizedPrefix);
+      if (previousPrefix && typeof route.path === 'string') {
+        if (route.path.startsWith(previousPrefix)) {
+          route.path = route.path.slice(previousPrefix.length) || '/';
+          route.setPrefix(normalizedPrefix);
+        } else {
+          route.setPrefix(normalizedPrefix);
+        }
+      } else {
+        route.setPrefix(normalizedPrefix);
+      }
     }
 
     return this;
@@ -414,7 +472,7 @@ export default class Router<
         StateT,
         ContextT & RouterParameterContext<StateT, ContextT>
       >,
-      next: () => Promise<any>
+      next: () => Promise<unknown>
     ) {
       debug('%s %s', context.method, context.path);
 
@@ -440,7 +498,10 @@ export default class Router<
         matchedLayers,
         requestPath
       );
-      return compose(middlewareChain)(context, next);
+      return compose(middlewareChain)(
+        context as RouterContext<StateT, ContextT>,
+        next
+      );
     }.bind(this);
 
     (dispatchMiddleware as RouterComposedMiddleware<StateT, ContextT>).router =
@@ -452,12 +513,18 @@ export default class Router<
    * Get the request path to use for routing
    * @private
    */
-  private _getRequestPath(context: RouterContext<StateT, ContextT>): string {
+  private _getRequestPath(
+    context: ParameterizedContext<
+      StateT,
+      ContextT & RouterParameterContext<StateT, ContextT>
+    >
+  ): string {
+    const context_ = context as RouterContext<StateT, ContextT>;
     return (
       this.opts.routerPath ||
-      context.newRouterPath ||
-      context.path ||
-      context.routerPath ||
+      context_.newRouterPath ||
+      context_.path ||
+      context_.routerPath ||
       ''
     );
   }
@@ -467,13 +534,17 @@ export default class Router<
    * @private
    */
   private _storeMatchedRoutes(
-    context: RouterContext<StateT, ContextT>,
-    matchResult: MatchResult
+    context: ParameterizedContext<
+      StateT,
+      ContextT & RouterParameterContext<StateT, ContextT>
+    >,
+    matchResult: MatchResult<StateT, ContextT>
   ): void {
-    if (context.matched) {
-      context.matched.push(...matchResult.path);
+    const context_ = context as RouterContext<StateT, ContextT>;
+    if (context_.matched) {
+      context_.matched.push(...matchResult.path);
     } else {
-      context.matched = matchResult.path;
+      context_.matched = matchResult.path;
     }
   }
 
@@ -482,18 +553,22 @@ export default class Router<
    * @private
    */
   private _setMatchedRouteInfo(
-    context: RouterContext<StateT, ContextT>,
-    matchedLayers: Layer[]
+    context: ParameterizedContext<
+      StateT,
+      ContextT & RouterParameterContext<StateT, ContextT>
+    >,
+    matchedLayers: Layer<StateT, ContextT>[]
   ): void {
+    const context_ = context as RouterContext<StateT, ContextT>;
     const routeLayer = matchedLayers
       .toReversed()
-      .find((layer: Layer) => layer.methods.length > 0);
+      .find((layer) => layer.methods.length > 0);
 
     if (routeLayer) {
-      context._matchedRoute = routeLayer.path as string;
+      context_._matchedRoute = routeLayer.path as string;
 
       if (routeLayer.name) {
-        context._matchedRouteName = routeLayer.name;
+        context_._matchedRouteName = routeLayer.name;
       }
     }
   }
@@ -503,12 +578,12 @@ export default class Router<
    * @private
    */
   private _buildMiddlewareChain(
-    matchedLayers: Layer[],
+    matchedLayers: Layer<StateT, ContextT>[],
     requestPath: string
   ): RouterMiddleware<StateT, ContextT>[] {
     const layersToExecute = this.opts.exclusive
       ? [matchedLayers.at(-1)].filter(
-          (layer): layer is Layer => layer !== undefined
+          (layer): layer is Layer<StateT, ContextT> => layer !== undefined
         )
       : matchedLayers;
 
@@ -521,7 +596,7 @@ export default class Router<
             StateT,
             ContextT & RouterParameterContext<StateT, ContextT>
           >,
-          next: () => Promise<any>
+          next: () => Promise<unknown>
         ) => {
           const routerContext = context as RouterContext<StateT, ContextT>;
           routerContext.captures = layer.captures(requestPath);
@@ -601,7 +676,7 @@ export default class Router<
         StateT,
         ContextT & RouterParameterContext<StateT, ContextT>
       >,
-      next: () => Promise<any>
+      next: () => Promise<unknown>
     ) => {
       const routerContext = context as RouterContext<StateT, ContextT>;
       return next().then(() => {
@@ -609,12 +684,14 @@ export default class Router<
           return;
         }
 
-        const allowedMethods = this._collectAllowedMethods(
-          routerContext.matched!
-        );
+        // Safe access since _shouldProcessAllowedMethods validates matched exists
+        const matchedRoutes = routerContext.matched || [];
+        const allowedMethods = this._collectAllowedMethods(matchedRoutes);
         const allowedMethodsList = Object.keys(allowedMethods);
 
-        if (!implementedMethods.includes(context.method)) {
+        // Normalize method to uppercase for comparison
+        const requestMethod = context.method.toUpperCase();
+        if (!implementedMethods.includes(requestMethod)) {
           this._handleNotImplemented(
             routerContext,
             allowedMethodsList,
@@ -623,12 +700,12 @@ export default class Router<
           return;
         }
 
-        if (context.method === 'OPTIONS' && allowedMethodsList.length > 0) {
+        if (requestMethod === 'OPTIONS' && allowedMethodsList.length > 0) {
           this._handleOptionsRequest(routerContext, allowedMethodsList);
           return;
         }
 
-        if (allowedMethodsList.length > 0 && !allowedMethods[context.method]) {
+        if (allowedMethodsList.length > 0 && !allowedMethods[requestMethod]) {
           this._handleMethodNotAllowed(
             routerContext,
             allowedMethodsList,
@@ -644,7 +721,7 @@ export default class Router<
    * @private
    */
   private _shouldProcessAllowedMethods(
-    context: RouterContext<any, any>
+    context: RouterContext<StateT, ContextT>
   ): boolean {
     return !!(context.matched && (!context.status || context.status === 404));
   }
@@ -654,7 +731,7 @@ export default class Router<
    * @private
    */
   private _collectAllowedMethods(
-    matchedRoutes: Layer[]
+    matchedRoutes: Layer<StateT, ContextT>[]
   ): Record<string, string> {
     const allowedMethods: Record<string, string> = {};
 
@@ -672,7 +749,7 @@ export default class Router<
    * @private
    */
   private _handleNotImplemented(
-    context: RouterContext<any, any>,
+    context: RouterContext<StateT, ContextT>,
     allowedMethodsList: string[],
     options: AllowedMethodsOptions
   ): void {
@@ -693,7 +770,7 @@ export default class Router<
    * @private
    */
   private _handleOptionsRequest(
-    context: RouterContext<any, any>,
+    context: RouterContext<StateT, ContextT>,
     allowedMethodsList: string[]
   ): void {
     context.status = 200;
@@ -706,7 +783,7 @@ export default class Router<
    * @private
    */
   private _handleMethodNotAllowed(
-    context: RouterContext<any, any>,
+    context: RouterContext<StateT, ContextT>,
     allowedMethodsList: string[],
     options: AllowedMethodsOptions
   ): void {
@@ -737,7 +814,7 @@ export default class Router<
     path: string | RegExp | Array<string | RegExp>,
     ...middleware: Array<RouterMiddleware<StateT & T, ContextT & U, B>>
   ): Router<StateT, ContextT>;
-  all(...arguments_: any[]): Router<StateT, ContextT> {
+  all(...arguments_: unknown[]): Router<StateT, ContextT> {
     let name: string | undefined;
     let path: string | RegExp | string[];
     let middleware: RouterMiddleware<StateT, ContextT>[];
@@ -746,13 +823,13 @@ export default class Router<
       arguments_.length >= 2 &&
       (typeof arguments_[1] === 'string' || arguments_[1] instanceof RegExp)
     ) {
-      name = arguments_[0];
-      path = arguments_[1];
-      middleware = arguments_.slice(2);
+      name = arguments_[0] as string;
+      path = arguments_[1] as string | RegExp;
+      middleware = arguments_.slice(2) as RouterMiddleware<StateT, ContextT>[];
     } else {
       name = undefined;
-      path = arguments_[0];
-      middleware = arguments_.slice(1);
+      path = arguments_[0] as string | RegExp | string[];
+      middleware = arguments_.slice(1) as RouterMiddleware<StateT, ContextT>[];
     }
 
     if (
@@ -806,7 +883,10 @@ export default class Router<
     let resolvedSource: string = source as string;
     let resolvedDestination: string = destination as string;
 
-    if (typeof source === 'symbol' || source[0] !== '/') {
+    if (
+      typeof source === 'symbol' ||
+      (typeof source === 'string' && source[0] !== '/')
+    ) {
       const sourceUrl = this.url(source as string);
       if (sourceUrl instanceof Error) throw sourceUrl;
       resolvedSource = sourceUrl;
@@ -814,7 +894,9 @@ export default class Router<
 
     if (
       typeof destination === 'symbol' ||
-      (destination[0] !== '/' && !destination.includes('://'))
+      (typeof destination === 'string' &&
+        destination[0] !== '/' &&
+        !destination.includes('://'))
     ) {
       const destinationUrl = this.url(destination as string);
       if (destinationUrl instanceof Error) throw destinationUrl;
@@ -853,14 +935,14 @@ export default class Router<
       | RouterMiddleware<StateT, ContextT>
       | RouterMiddleware<StateT, ContextT>[],
     additionalOptions: LayerOptions = {}
-  ): Layer | Router<StateT, ContextT> {
+  ): Layer<StateT, ContextT> | Router<StateT, ContextT> {
     const mergedOptions = { ...this.opts, ...additionalOptions };
 
     if (Array.isArray(path)) {
       return this._registerMultiplePaths(
         path,
         methods,
-        middleware as any,
+        middleware,
         mergedOptions
       );
     }
@@ -868,7 +950,7 @@ export default class Router<
     const routeLayer = this._createRouteLayer(
       path,
       methods,
-      middleware as any,
+      middleware,
       mergedOptions
     );
 
@@ -876,7 +958,7 @@ export default class Router<
       routeLayer.setPrefix(this.opts.prefix);
     }
 
-    applyAllParameterMiddleware(routeLayer, this.params as any);
+    applyAllParameterMiddleware<StateT, ContextT>(routeLayer, this.params);
 
     this.stack.push(routeLayer);
 
@@ -911,10 +993,12 @@ export default class Router<
   private _createRouteLayer(
     path: string | RegExp,
     methods: string[],
-    middleware: RouterMiddleware | RouterMiddleware[],
+    middleware:
+      | RouterMiddleware<StateT, ContextT>
+      | RouterMiddleware<StateT, ContextT>[],
     options: LayerOptions
-  ): Layer {
-    return new Layer(path, methods, middleware, {
+  ): Layer<StateT, ContextT> {
+    return new Layer<StateT, ContextT>(path, methods, middleware, {
       end: options.end === false ? options.end : true,
       name: options.name,
       sensitive: options.sensitive || false,
@@ -931,7 +1015,7 @@ export default class Router<
    * @param name - Route name
    * @returns Matched layer or false
    */
-  route(name: string): Layer | false {
+  route(name: string): Layer<StateT, ContextT> | false {
     const matchingRoute = this.stack.find((route) => route.name === name);
     return matchingRoute || false;
   }
@@ -968,9 +1052,9 @@ export default class Router<
    * @param args - URL parameters
    * @returns Generated URL or Error
    */
-  url(name: string, ...arguments_: any[]): string | Error {
+  url(name: string, ...arguments_: unknown[]): string | Error {
     const route = this.route(name);
-    if (route) return route.url.apply(route, arguments_);
+    if (route) return route.url(...arguments_);
 
     return new Error(`No route found for name: ${String(name)}`);
   }
@@ -983,12 +1067,15 @@ export default class Router<
    * @returns Match result with matched layers
    * @private
    */
-  match(path: string, method: string): MatchResult {
-    const matchResult: MatchResult = {
+  match(path: string, method: string): MatchResult<StateT, ContextT> {
+    const matchResult: MatchResult<StateT, ContextT> = {
       path: [],
       pathAndMethod: [],
       route: false
     };
+
+    // Normalize method to uppercase for consistent comparison
+    const normalizedMethod = method.toUpperCase();
 
     for (const layer of this.stack) {
       debug('test %s %s', layer.path, layer.regexp);
@@ -998,7 +1085,7 @@ export default class Router<
         matchResult.path.push(layer);
 
         const isMiddleware = layer.methods.length === 0;
-        const matchesMethod = layer.methods.includes(method);
+        const matchesMethod = layer.methods.includes(normalizedMethod);
 
         if (isMiddleware || matchesMethod) {
           matchResult.pathAndMethod.push(layer);
@@ -1092,7 +1179,7 @@ export default class Router<
     ).push(middleware);
 
     for (const route of this.stack) {
-      route.param(parameter, middleware as any);
+      route.param(parameter, middleware);
     }
 
     return this;
@@ -1104,23 +1191,23 @@ export default class Router<
    */
   _registerMethod(
     method: string,
-    ...arguments_: any[]
+    ...arguments_: unknown[]
   ): Router<StateT, ContextT> {
     let name: string | undefined;
     let path: string | RegExp | string[];
-    let middleware: RouterMiddleware<any, any>[];
+    let middleware: RouterMiddleware<StateT, ContextT>[];
 
     if (
       arguments_.length >= 2 &&
       (typeof arguments_[1] === 'string' || arguments_[1] instanceof RegExp)
     ) {
-      name = arguments_[0];
-      path = arguments_[1];
-      middleware = arguments_.slice(2);
+      name = arguments_[0] as string;
+      path = arguments_[1] as string | RegExp;
+      middleware = arguments_.slice(2) as RouterMiddleware<StateT, ContextT>[];
     } else {
       name = undefined;
-      path = arguments_[0];
-      middleware = arguments_.slice(1);
+      path = arguments_[0] as string | RegExp | string[];
+      middleware = arguments_.slice(1) as RouterMiddleware<StateT, ContextT>[];
     }
 
     if (
@@ -1137,7 +1224,7 @@ export default class Router<
       pathAsRegExp: path instanceof RegExp
     };
 
-    this.register(path, [method], middleware as any, {
+    this.register(path, [method], middleware, {
       ...this.opts,
       ...options
     });
@@ -1156,7 +1243,7 @@ export default class Router<
     path: string | RegExp | Array<string | RegExp>,
     ...middleware: Array<RouterMiddleware<StateT & T, ContextT & U, B>>
   ): Router<StateT, ContextT>;
-  get(...arguments_: any[]): Router<StateT, ContextT> {
+  get(...arguments_: unknown[]): Router<StateT, ContextT> {
     return this._registerMethod('get', ...arguments_);
   }
 
@@ -1172,7 +1259,7 @@ export default class Router<
     path: string | RegExp | Array<string | RegExp>,
     ...middleware: Array<RouterMiddleware<StateT & T, ContextT & U, B>>
   ): Router<StateT, ContextT>;
-  post(...arguments_: any[]): Router<StateT, ContextT> {
+  post(...arguments_: unknown[]): Router<StateT, ContextT> {
     return this._registerMethod('post', ...arguments_);
   }
 
@@ -1188,7 +1275,7 @@ export default class Router<
     path: string | RegExp | Array<string | RegExp>,
     ...middleware: Array<RouterMiddleware<StateT & T, ContextT & U, B>>
   ): Router<StateT, ContextT>;
-  put(...arguments_: any[]): Router<StateT, ContextT> {
+  put(...arguments_: unknown[]): Router<StateT, ContextT> {
     return this._registerMethod('put', ...arguments_);
   }
 
@@ -1204,7 +1291,7 @@ export default class Router<
     path: string | RegExp | Array<string | RegExp>,
     ...middleware: Array<RouterMiddleware<StateT & T, ContextT & U, B>>
   ): Router<StateT, ContextT>;
-  patch(...arguments_: any[]): Router<StateT, ContextT> {
+  patch(...arguments_: unknown[]): Router<StateT, ContextT> {
     return this._registerMethod('patch', ...arguments_);
   }
 
@@ -1220,7 +1307,7 @@ export default class Router<
     path: string | RegExp | Array<string | RegExp>,
     ...middleware: Array<RouterMiddleware<StateT & T, ContextT & U, B>>
   ): Router<StateT, ContextT>;
-  delete(...arguments_: any[]): Router<StateT, ContextT> {
+  delete(...arguments_: unknown[]): Router<StateT, ContextT> {
     return this._registerMethod('delete', ...arguments_);
   }
 
@@ -1236,8 +1323,11 @@ export default class Router<
     path: string | RegExp | Array<string | RegExp>,
     ...middleware: Array<RouterMiddleware<StateT & T, ContextT & U, B>>
   ): Router<StateT, ContextT>;
-  del(...arguments_: any[]): Router<StateT, ContextT> {
-    return (this.delete as any).apply(this, arguments_);
+  del(...arguments_: unknown[]): Router<StateT, ContextT> {
+    return this.delete.apply(
+      this,
+      arguments_ as Parameters<typeof this.delete>
+    );
   }
 
   /**
@@ -1252,7 +1342,7 @@ export default class Router<
     path: string | RegExp | Array<string | RegExp>,
     ...middleware: Array<RouterMiddleware<StateT & T, ContextT & U, B>>
   ): Router<StateT, ContextT>;
-  head(...arguments_: any[]): Router<StateT, ContextT> {
+  head(...arguments_: unknown[]): Router<StateT, ContextT> {
     return this._registerMethod('head', ...arguments_);
   }
 
@@ -1268,10 +1358,74 @@ export default class Router<
     path: string | RegExp | Array<string | RegExp>,
     ...middleware: Array<RouterMiddleware<StateT & T, ContextT & U, B>>
   ): Router<StateT, ContextT>;
-  options(...arguments_: any[]): Router<StateT, ContextT> {
+  options(...arguments_: unknown[]): Router<StateT, ContextT> {
     return this._registerMethod('options', ...arguments_);
   }
+
+  /**
+   * Dynamic HTTP method handler for any method from http.METHODS.
+   * Use this index signature to access methods like PURGE, COPY, CONNECT, TRACE, etc.
+   * These are dynamically added at runtime from Node's http.METHODS.
+   *
+   * @example
+   * ```typescript
+   * // Type-safe way to use dynamic methods
+   * const router = new Router();
+   * router.register('/cache/:key', ['PURGE'], middleware);
+   *
+   * // Or cast to access dynamic method directly
+   * (router as any).purge('/cache/:key', middleware);
+   * ```
+   */
+  [method: string]: unknown;
 }
+
+/**
+ * Router constructor interface with automatic type inference for custom HTTP methods.
+ *
+ * @example
+ * ```typescript
+ * // Methods are automatically typed based on what you pass
+ * const router = new Router({
+ *   methods: ['GET', 'POST', 'PURGE', 'CUSTOM'] as const
+ * });
+ *
+ * // TypeScript knows these methods exist
+ * router.get('/users', handler);
+ * router.purge('/cache/:key', handler);
+ * router.custom('/special', handler);
+ * ```
+ */
+interface RouterConstructor {
+  new <
+    M extends string,
+    StateT = import('koa').DefaultState,
+    ContextT = import('koa').DefaultContext
+  >(
+    options: RouterOptionsWithMethods<M>
+  ): RouterWithMethods<M, StateT, ContextT>;
+
+  new <
+    StateT = import('koa').DefaultState,
+    ContextT = import('koa').DefaultContext
+  >(
+    options?: RouterOptions
+  ): Router<StateT, ContextT>;
+
+  /**
+   * Generate URL from url pattern and given `params`.
+   */
+  url(path: string, parameters?: Record<string, unknown>): string;
+  url(path: string, ...parameters: unknown[]): string;
+
+  readonly prototype: Router;
+}
+
+const RouterExport: RouterConstructor = Router as RouterConstructor;
+
+export default RouterExport;
+export { RouterExport as Router };
+export type { Router as RouterInstance };
 
 /**
  * Create `router.verb()` methods, where *verb* is one of the HTTP verbs such
@@ -1285,12 +1439,11 @@ export default class Router<
 
 for (const httpMethod of httpMethods) {
   const isAlreadyDefined =
-    COMMON_HTTP_METHODS.includes(httpMethod) ||
-    (Router.prototype as any)[httpMethod];
+    COMMON_HTTP_METHODS.includes(httpMethod) || httpMethod in Router.prototype;
 
   if (!isAlreadyDefined) {
     Object.defineProperty(Router.prototype, httpMethod, {
-      value: function (this: Router, ...arguments_: any[]) {
+      value: function (this: Router, ...arguments_: unknown[]) {
         return this._registerMethod(httpMethod, ...arguments_);
       },
       writable: true,

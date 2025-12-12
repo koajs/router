@@ -20,6 +20,14 @@
       "email": "imed-jaberi@outlook.com"
     }
   ],
+  "peerDependencies": {
+    "koa": "^2.0.0 || ^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "koa": {
+      "optional": false
+    }
+  },
   "dependencies": {
     "debug": "^4.4.3",
     "http-errors": "^2.0.1",
@@ -29,6 +37,7 @@
   "devDependencies": {
     "@commitlint/cli": "^20.2.0",
     "@commitlint/config-conventional": "^20.2.0",
+    "@koa/bodyparser": "^6.0.0",
     "@types/debug": "^4.1.12",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/koa": "^3.0.1",
@@ -103,6 +112,7 @@
     "test:all": "TS_NODE_PROJECT=tsconfig.ts-node.json node --require ts-node/register --test test/*.test.ts test/**/*.test.ts recipes/**/*.test.ts",
     "test:coverage": "c8 npm run test:all",
     "ts:check": "tsc --noEmit --project tsconfig.typecheck.json",
+    "ts:check:test": "tsc --noEmit --project tsconfig.test.json",
     "prebuild": "rimraf dist",
     "build": "tsup",
     "prepublishOnly": "npm run build"

@@ -18,13 +18,19 @@ usersRouter.get('/', async (ctx: RouterContext) => {
   ctx.body = await User.findAll();
 });
 usersRouter.post('/', async (ctx: ContextWithBody) => {
-  ctx.body = await User.create(ctx.request.body);
+  const body = ctx.request.body as
+    | { email?: string; name?: string }
+    | undefined;
+  ctx.body = await User.create(body || {});
 });
 usersRouter.get('/:id', async (ctx: RouterContext) => {
   ctx.body = await User.findById(ctx.params.id);
 });
 usersRouter.put('/:id', async (ctx: ContextWithBody) => {
-  ctx.body = await User.update(ctx.params.id, ctx.request.body);
+  const body = ctx.request.body as
+    | { email?: string; name?: string }
+    | undefined;
+  ctx.body = await User.update(ctx.params.id, body || {});
 });
 usersRouter.delete('/:id', async (ctx: RouterContext) => {
   await User.delete(ctx.params.id);

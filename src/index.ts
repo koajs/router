@@ -6,15 +6,18 @@
 
 export type {
   RouterOptions,
+  RouterOptionsWithMethods,
   LayerOptions,
   UrlOptions,
   RouterParameterMiddleware,
   RouterMiddleware,
+  RouterMethodFunction,
   RouterContext,
   MatchResult,
   AllowedMethodsOptions,
   Layer,
-  HttpMethod
+  HttpMethod,
+  RouterWithMethods
 } from './types';
 
-export { default, default as Router } from './router';
+export { default, Router, type RouterInstance } from './router';

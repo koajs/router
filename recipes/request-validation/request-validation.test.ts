@@ -10,6 +10,31 @@ import request from 'supertest';
 import Koa from 'koa';
 import { Next } from '../common';
 
+type RequestBody = Record<string, unknown>;
+
+type ContextWithBody = RouterContext & {
+  request: RouterContext['request'] & {
+    body?: RequestBody;
+  };
+};
+
+type ValidationError = {
+  path: string[];
+  message: string;
+};
+
+type ValidationResult = {
+  error: { details: ValidationError[] } | null;
+  value: RequestBody | null;
+};
+
+type ValidationSchema = {
+  validate: (
+    data: RequestBody,
+    options?: { abortEarly?: boolean; stripUnknown?: boolean }
+  ) => ValidationResult;
+};
+
 describe('Request Validation', () => {
   it('should validate request data with middleware', async () => {
     const app = new Koa();
@@ -22,17 +47,18 @@ describe('Request Validation', () => {
           body += chunk;
         }
         try {
-          (ctx.request as any).body = JSON.parse(body);
+          (ctx.request as { body?: RequestBody }).body = JSON.parse(body);
         } catch {
-          (ctx.request as any).body = {};
+          (ctx.request as { body?: RequestBody }).body = {};
         }
       }
       await next();
     });
 
     const validate =
-      (schema: any) => async (ctx: RouterContext, next: Next) => {
-        const body = (ctx.request as any).body || {};
+      (schema: ValidationSchema) =>
+      async (ctx: ContextWithBody, next: Next) => {
+        const body = ctx.request.body || {};
         const { error, value } = schema.validate(body, {
           abortEarly: false,
           stripUnknown: true
@@ -42,7 +68,7 @@ describe('Request Validation', () => {
           ctx.status = 400;
           ctx.body = {
             error: 'Validation failed',
-            details: error.details.map((d: any) => ({
+            details: error.details.map((d) => ({
               field: d.path.join('.'),
               message: d.message
             }))
@@ -50,23 +76,27 @@ describe('Request Validation', () => {
           return;
         }
 
-        (ctx.request as any).body = value;
+        ctx.request.body = value || {};
         await next();
       };
 
-    const createUserSchema = {
-      validate: (data: any) => {
-        const errors: any[] = [];
-        if (!data.email || !data.email.includes('@')) {
+    const createUserSchema: ValidationSchema = {
+      validate: (data: RequestBody) => {
+        const errors: ValidationError[] = [];
+        const email = data.email as string | undefined;
+        const password = data.password as string | undefined;
+        const name = data.name as string | undefined;
+
+        if (!email || !email.includes('@')) {
           errors.push({ path: ['email'], message: 'Email is invalid' });
         }
-        if (!data.password || data.password.length < 8) {
+        if (!password || password.length < 8) {
           errors.push({
             path: ['password'],
             message: 'Password must be at least 8 characters'
           });
         }
-        if (!data.name || data.name.length < 2) {
+        if (!name || name.length < 2) {
           errors.push({
             path: ['name'],
             message: 'Name must be at least 2 characters'
@@ -80,9 +110,13 @@ describe('Request Validation', () => {
       }
     };
 
-    router.post('/users', validate(createUserSchema), async (ctx: any) => {
-      ctx.body = { success: true, user: (ctx.request as any).body };
-    });
+    router.post(
+      '/users',
+      validate(createUserSchema),
+      async (ctx: ContextWithBody) => {
+        ctx.body = { success: true, user: ctx.request.body };
+      }
+    );
 
     app.use(router.routes());
 

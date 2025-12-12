@@ -4,6 +4,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
+
 import {
   hasPathParameters,
   determineMiddlewarePath
@@ -17,7 +18,8 @@ describe('path-helpers utilities', () => {
     });
 
     it('should return false for undefined', () => {
-      assert.strictEqual(hasPathParameters(undefined as any), false);
+      // @ts-expect-error - testing undefined input
+      assert.strictEqual(hasPathParameters(undefined), false);
     });
 
     it('should return false for path without parameters', () => {
@@ -123,8 +125,8 @@ describe('path-helpers utilities', () => {
         assert.strictEqual(result.pathAsRegExp, true);
         assert.strictEqual(typeof result.path, 'string');
         assert.strictEqual(
-          result.path.includes('\\/'),
-          true || result.path.includes('|')
+          (result.path as string).includes('\\/'),
+          true || (result.path as string).includes('|')
         );
       });
 

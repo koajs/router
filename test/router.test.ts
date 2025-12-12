@@ -11,8 +11,15 @@ import Koa from 'koa';
 import methods from 'methods';
 import request from 'supertest';
 
-import Router from '../src';
+import Router, { RouterMiddleware, RouterParameterMiddleware } from '../src';
 import Layer from '../src/layer';
+
+type HttpError = Error & {
+  status?: number;
+  statusCode?: number;
+  body?: unknown;
+  type?: string;
+};
 
 describe('Router', () => {
   it('creates new router with koa app', () => {
@@ -113,13 +120,13 @@ describe('Router', () => {
       (ctx, next) => {
         return new Promise((resolve) => {
           setTimeout(() => {
-            ctx.body.message += ' World';
+            (ctx.body as { message: string }).message += ' World';
             resolve(next());
           }, 1);
         });
       },
       (ctx) => {
-        ctx.body.message += '!';
+        (ctx.body as { message: string }).message += '!';
       }
     );
 
@@ -171,10 +178,10 @@ describe('Router', () => {
 
   it('supports promises for async/await', async () => {
     const app = new Koa();
-    app.experimental = true;
+    (app as Koa & { experimental: boolean }).experimental = true;
     const router = new Router();
     router.get('/async', (ctx) => {
-      return new Promise((resolve) => {
+      return new Promise<void>((resolve) => {
         setTimeout(() => {
           ctx.body = {
             msg: 'promises!'
@@ -250,7 +257,7 @@ describe('Router', () => {
         next();
       })
       .get('users_all', '/users/all', (ctx, next) => {
-        ctx.body = { ...ctx.body, all: true };
+        ctx.body = { ...(ctx.body as object), all: true };
         next();
       });
 
@@ -274,7 +281,7 @@ describe('Router', () => {
         next();
       })
       .get('users_all', '/users/all', (ctx, next) => {
-        ctx.body = { ...ctx.body, all: true };
+        ctx.body = { ...(ctx.body as object), all: true };
         next();
       });
 
@@ -563,6 +570,69 @@ describe('Router#allowedMethods()', () => {
     assert.strictEqual(res.header['content-length'], '0');
     assert.strictEqual(res.header.allow, 'HEAD, GET, PUT');
   });
+
+  it('should handle requests to non-existent routes without crashing', async () => {
+    const app = new Koa();
+    const router = new Router();
+
+    router.get('/exists', (ctx) => {
+      ctx.body = 'exists';
+    });
+
+    app.use(router.routes());
+    app.use(router.allowedMethods());
+
+    await request(http.createServer(app.callback()))
+      .get('/does-not-exist')
+      .expect(404);
+  });
+
+  it('should set Allow header with correct methods for 405 responses', async () => {
+    const app = new Koa();
+    const router = new Router();
+
+    router.get('/resource', (ctx) => {
+      ctx.body = 'get';
+    });
+
+    router.post('/resource', (ctx) => {
+      ctx.body = 'post';
+    });
+
+    app.use(router.routes());
+    app.use(router.allowedMethods());
+
+    const res = await request(http.createServer(app.callback()))
+      .delete('/resource')
+      .expect(405);
+
+    assert.ok(res.headers.allow);
+    assert.ok(res.headers.allow.includes('GET'));
+    assert.ok(res.headers.allow.includes('POST'));
+  });
+
+  it('should return uppercase method names in Allow header', async () => {
+    const app = new Koa();
+    const router = new Router();
+
+    router.get('/test', (ctx) => {
+      ctx.body = 'get';
+    });
+    router.post('/test', (ctx) => {
+      ctx.body = 'post';
+    });
+
+    app.use(router.routes());
+    app.use(router.allowedMethods());
+
+    const res = await request(http.createServer(app.callback()))
+      .options('/test')
+      .expect(200);
+
+    assert.ok(res.headers.allow.includes('GET'));
+    assert.ok(res.headers.allow.includes('POST'));
+    assert.ok(res.headers.allow.includes('HEAD'));
+  });
 });
 
 it('responds with 405 Method Not Allowed', async () => {
@@ -584,7 +654,7 @@ it('responds with 405 Method Not Allowed using the "throw" option', async () => 
   const router = new Router();
   app.use(router.routes());
   app.use((ctx, next) => {
-    return next().catch((err) => {
+    return next().catch((err: HttpError) => {
       assert.strictEqual(err.name, 'MethodNotAllowedError');
       assert.strictEqual(err.statusCode, 405);
 
@@ -607,7 +677,7 @@ it('responds with user-provided throwable using the "throw" and "methodNotAllowe
   const router = new Router();
   app.use(router.routes());
   app.use((ctx, next) => {
-    return next().catch((err) => {
+    return next().catch((err: HttpError) => {
       assert.strictEqual(err.message, 'Custom Not Allowed Error');
       assert.strictEqual(err.statusCode, 405);
 
@@ -619,7 +689,7 @@ it('responds with user-provided throwable using the "throw" and "methodNotAllowe
     router.allowedMethods({
       throw: true,
       methodNotAllowed() {
-        const notAllowedErr = new Error('Custom Not Allowed Error');
+        const notAllowedErr: HttpError = new Error('Custom Not Allowed Error');
         notAllowedErr.type = 'custom';
         notAllowedErr.statusCode = 405;
         notAllowedErr.body = {
@@ -660,7 +730,7 @@ it('responds with 501 Not Implemented using the "throw" option', async () => {
   const router = new Router();
   app.use(router.routes());
   app.use((ctx, next) => {
-    return next().catch((err) => {
+    return next().catch((err: HttpError) => {
       assert.strictEqual(err.name, 'NotImplementedError');
       assert.strictEqual(err.statusCode, 501);
 
@@ -682,7 +752,7 @@ it('responds with user-provided throwable using the "throw" and "notImplemented"
   const router = new Router();
   app.use(router.routes());
   app.use((ctx, next) => {
-    return next().catch((err) => {
+    return next().catch((err: HttpError) => {
       assert.strictEqual(err.message, 'Custom Not Implemented Error');
       assert.strictEqual(err.type, 'custom');
       assert.strictEqual(err.statusCode, 501);
@@ -695,7 +765,9 @@ it('responds with user-provided throwable using the "throw" and "notImplemented"
     router.allowedMethods({
       throw: true,
       notImplemented() {
-        const notImplementedErr = new Error('Custom Not Implemented Error');
+        const notImplementedErr: HttpError = new Error(
+          'Custom Not Implemented Error'
+        );
         notImplementedErr.type = 'custom';
         notImplementedErr.statusCode = 501;
         notImplementedErr.body = {
@@ -744,7 +816,9 @@ it('sets the allowed methods to a single Allow header #273', async () => {
     .expect(200);
 
   assert.strictEqual(res.header.allow, 'HEAD, GET');
-  const allowHeaders = res.res.rawHeaders.filter((item) => item === 'Allow');
+  const allowHeaders = (
+    res as unknown as { res: { rawHeaders: string[] } }
+  ).res.rawHeaders.filter((item: string) => item === 'Allow');
   assert.strictEqual(allowHeaders.length, 1);
 });
 
@@ -789,7 +863,7 @@ it('parameter added to request in ctx', async () => {
       ctx.body = { echo: ctx.params.saying };
     } catch (err) {
       ctx.status = 500;
-      ctx.body = err.message;
+      ctx.body = (err as Error).message;
     }
   });
   app.use(router.routes());
@@ -811,7 +885,7 @@ it('two routes with the same path', async () => {
       next();
     } catch (err) {
       ctx.status = 500;
-      ctx.body = err.message;
+      ctx.body = (err as Error).message;
     }
   });
   router2.get('/echo/:saying', (ctx) => {
@@ -821,7 +895,7 @@ it('two routes with the same path', async () => {
       ctx.body = { echo: ctx.params.saying };
     } catch (err) {
       ctx.status = 500;
-      ctx.body = err.message;
+      ctx.body = (err as Error).message;
     }
   });
   app.use(router1.routes());
@@ -850,7 +924,7 @@ it('parameter added to request in ctx with sub router', async () => {
       ctx.body = { echo: ctx.params.saying };
     } catch (err) {
       ctx.status = 500;
-      ctx.body = err.message;
+      ctx.body = (err as Error).message;
     }
   });
 
@@ -870,8 +944,11 @@ describe('Router#[verb]()', () => {
     app.use(router.routes());
     for (const method of methods) {
       assert.strictEqual(method in router, true);
-      assert.strictEqual(typeof router[method], 'function');
-      router[method]('/', () => {});
+      assert.strictEqual(
+        typeof (router as unknown as Record<string, unknown>)[method],
+        'function'
+      );
+      (router as unknown as Record<string, Function>)[method]('/', () => {});
     }
 
     assert.strictEqual(router.stack.length, methods.length);
@@ -881,7 +958,10 @@ describe('Router#[verb]()', () => {
     const router = new Router();
     for (const method of methods) {
       assert.strictEqual(
-        router[method](/^\/\w$/i, () => {}),
+        (router as unknown as Record<string, Function>)[method](
+          /^\/\w$/i,
+          () => {}
+        ),
         router
       );
     }
@@ -891,7 +971,11 @@ describe('Router#[verb]()', () => {
     const router = new Router();
     for (const method of methods) {
       assert.strictEqual(
-        router[method](method, '/', () => {}),
+        (router as unknown as Record<string, Function>)[method](
+          method,
+          '/',
+          () => {}
+        ),
         router
       );
     }
@@ -901,7 +985,11 @@ describe('Router#[verb]()', () => {
     const router = new Router();
     for (const method of methods) {
       assert.strictEqual(
-        router[method](method, /^\/$/i, () => {}),
+        (router as unknown as Record<string, Function>)[method](
+          method,
+          /^\/$/i,
+          () => {}
+        ),
         router
       );
     }
@@ -911,7 +999,7 @@ describe('Router#[verb]()', () => {
     const router = new Router();
     for (const method of methods) {
       assert.strictEqual(
-        router[method]('/', () => {}),
+        (router as unknown as Record<string, Function>)[method]('/', () => {}),
         router
       );
     }
@@ -954,10 +1042,10 @@ describe('Router#[verb]()', () => {
     const router = new Router();
     for (const el of methods) {
       try {
-        router[el](() => {});
+        (router as unknown as Record<string, Function>)[el](() => {});
       } catch (err) {
         assert.strictEqual(
-          err.message,
+          (err as Error).message,
           `You have to provide a path when adding a ${el} handler`
         );
       }
@@ -967,10 +1055,11 @@ describe('Router#[verb]()', () => {
   it('correctly returns an error when not passed a path for "all" registration (gh-147)', () => {
     const router = new Router();
     try {
+      // @ts-expect-error - testing invalid call without path
       router.all(() => {});
     } catch (err) {
       assert.strictEqual(
-        err.message,
+        (err as Error).message,
         'You have to provide a path when adding an all handler'
       );
     }
@@ -1010,7 +1099,7 @@ describe('Router#[verb]()', () => {
     const app = new Koa();
     const router = new Router();
 
-    function validateUUID(paramName) {
+    function validateUUID(paramName: string): RouterMiddleware {
       const uuidRegex =
         /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
       return async (ctx, next) => {
@@ -1256,10 +1345,10 @@ describe('Router#use()', () => {
         ctx.step1 = 'done';
         return next();
       },
-      (ctx, next) => {
+      ((ctx, next) => {
         ctx.step2 = 'done';
         return next();
-      }
+      }) as RouterMiddleware
     );
 
     router.get('/admin/dashboard', (ctx) => {
@@ -1570,6 +1659,114 @@ it('uses a same router middleware at given paths continuously - ZijianHe/koa-rou
   });
 });
 
+it('should throw error when called without any middleware functions', () => {
+  const router = new Router();
+
+  assert.throws(() => {
+    // @ts-expect-error - testing runtime error for missing middleware
+    router.use('/path');
+  }, /You must provide at least one middleware function/);
+});
+
+it('should throw error when called with only path array and no middleware', () => {
+  const router = new Router();
+
+  assert.throws(() => {
+    // @ts-expect-error - testing runtime error for missing middleware
+    router.use(['/path1', '/path2']);
+  }, /You must provide at least one middleware function/);
+});
+
+it('should not share middleware stack between original and nested router layers', () => {
+  const router1 = new Router();
+  router1.get('/test', (ctx) => {
+    ctx.body = 'original';
+  });
+
+  const router2 = new Router();
+  router2.use(router1.routes());
+
+  const originalLayer = router1.stack[0];
+  const clonedLayer = router2.stack[0];
+
+  const testMiddleware: RouterMiddleware = (ctx) => {
+    ctx.body = 'modified';
+  };
+  clonedLayer.stack.push(testMiddleware);
+
+  assert.notStrictEqual(
+    originalLayer.stack.length,
+    clonedLayer.stack.length,
+    'Cloned layer stack should be independent of original'
+  );
+});
+
+it('should not share methods array between original and nested router layers', () => {
+  const router1 = new Router();
+  router1.get('/test', (ctx) => {
+    ctx.body = 'test';
+  });
+
+  const router2 = new Router();
+  router2.use(router1.routes());
+
+  const originalLayer = router1.stack[0];
+  const clonedLayer = router2.stack[0];
+
+  clonedLayer.methods.push('POST');
+
+  assert.ok(
+    !originalLayer.methods.includes('POST'),
+    'Original layer methods should not include POST'
+  );
+});
+
+it('should not share opts between original and nested router layers', () => {
+  const router1 = new Router();
+  router1.get('/test', (ctx) => {
+    ctx.body = 'test';
+  });
+
+  const router2 = new Router();
+  router2.use(router1.routes());
+
+  const originalLayer = router1.stack[0];
+  const clonedLayer = router2.stack[0];
+
+  clonedLayer.opts.sensitive = true;
+
+  assert.strictEqual(
+    originalLayer.opts.sensitive,
+    false,
+    'Original layer opts should not be modified'
+  );
+});
+
+it('should accept valid string arrays as multiple paths', async () => {
+  const app = new Koa();
+  const router = new Router();
+  const visited: string[] = [];
+
+  router.use(['/path1', '/path2'], (ctx, next) => {
+    visited.push(ctx.path);
+    return next();
+  });
+
+  router.get('/path1', (ctx) => {
+    ctx.body = 'path1';
+  });
+  router.get('/path2', (ctx) => {
+    ctx.body = 'path2';
+  });
+
+  app.use(router.routes());
+
+  await request(http.createServer(app.callback())).get('/path1').expect(200);
+  await request(http.createServer(app.callback())).get('/path2').expect(200);
+
+  assert.deepStrictEqual(visited, ['/path1', '/path2']);
+});
+
 describe('Router#register()', () => {
   it('registers new routes', async () => {
     const app = new Koa();
@@ -1609,6 +1806,43 @@ describe('Router#redirect()', () => {
       .expect(301);
     assert.strictEqual(res.header.location, '/sign-up-form');
   });
+
+  it('should redirect correctly when source path starts with /', async () => {
+    const app = new Koa();
+    const router = new Router();
+
+    router.redirect('/old', '/new');
+    router.get('/new', (ctx) => {
+      ctx.body = 'new page';
+    });
+
+    app.use(router.routes());
+
+    const res = await request(http.createServer(app.callback()))
+      .get('/old')
+      .expect(301);
+
+    assert.strictEqual(res.headers.location, '/new');
+  });
+
+  it('should redirect to named route destination', async () => {
+    const app = new Koa();
+    const router = new Router();
+
+    router.get('newPage', '/new', (ctx) => {
+      ctx.body = 'new page';
+    });
+
+    router.redirect('/old', 'newPage');
+
+    app.use(router.routes());
+
+    const res = await request(http.createServer(app.callback()))
+      .get('/old')
+      .expect(301);
+
+    assert.strictEqual(res.headers.location, '/new');
+  });
 });
 
 it('redirects using symbols as route names', async () => {
@@ -1617,7 +1851,9 @@ it('redirects using symbols as route names', async () => {
   app.use(router.routes());
   const homeSymbol = Symbol('home');
   const signUpFormSymbol = Symbol('sign-up-form');
+  // @ts-expect-error - testing symbol as route name
   router.get(homeSymbol, '/', () => {});
+  // @ts-expect-error - testing symbol as route name
   router.get(signUpFormSymbol, '/sign-up-form', () => {});
   router.redirect(homeSymbol, signUpFormSymbol);
   const res = await request(http.createServer(app.callback()))
@@ -1666,16 +1902,20 @@ describe('Router#route()', () => {
       ctx.body = { hello: 'world' };
     });
     const router = new Router().use(subrouter.routes());
-    assert.strictEqual(router.route('child').name, 'child');
+    const route = router.route('child');
+    assert.strictEqual(route && route.name, 'child');
   });
 
   it('supports symbols as names', () => {
     const childSymbol = Symbol('child');
+    // @ts-expect-error - testing symbol as route name
     const subrouter = new Router().get(childSymbol, '/hello', (ctx) => {
       ctx.body = { hello: 'world' };
     });
     const router = new Router().use(subrouter.routes());
-    assert.strictEqual(router.route(childSymbol).name, childSymbol);
+    // @ts-expect-error - testing symbol as route name
+    const route = router.route(childSymbol);
+    assert.strictEqual(route && route.name, childSymbol);
   });
 
   it('returns false if no name matches', () => {
@@ -1683,10 +1923,12 @@ describe('Router#route()', () => {
     router.get('books', '/books', (ctx) => {
       ctx.status = 204;
     });
+    // @ts-expect-error - testing symbol as route name
     router.get(Symbol('Picard'), '/enterprise', (ctx) => {
       ctx.status = 204;
     });
     assert.strictEqual(Boolean(router.route('Picard')), false);
+    // @ts-expect-error - testing symbol as route name
     assert.strictEqual(Boolean(router.route(Symbol('books'))), false);
   });
 });
@@ -1790,9 +2032,9 @@ describe('Router#url()', () => {
     url = router.url('books');
     assert.strictEqual(url, '/books');
     url = router.url('books');
-    assert.strictEqual(url, '/books', {});
+    assert.strictEqual(url, '/books');
     url = router.url('books');
-    assert.strictEqual(url, '/books', {}, {});
+    assert.strictEqual(url, '/books');
     url = router.url('books', {}, { query: { page: 3, limit: 10 } });
     assert.strictEqual(url, '/books?page=3&limit=10');
     url = router.url('books', {}, { query: 'page=3&limit=10' });
@@ -1817,11 +2059,13 @@ describe('Router#url()', () => {
     router.get('books', '/books', (ctx) => {
       ctx.status = 204;
     });
+    // @ts-expect-error - testing symbol as route name
     router.get(Symbol('Picard'), '/enterprise', (ctx) => {
       ctx.status = 204;
     });
 
     assert.strictEqual(router.url('Picard') instanceof Error, true);
+    // @ts-expect-error - testing symbol as route name
     assert.strictEqual(router.url(Symbol('books')) instanceof Error, true);
   });
 
@@ -1832,6 +2076,69 @@ describe('Router#url()', () => {
     });
     assert.strictEqual(url, '/programming/how%20to%20node%20%26%20js%2Fts');
   });
+
+  it('should preserve route params when query option is also provided', () => {
+    const router = new Router();
+    router.get('user', '/users/:id', (ctx) => {
+      ctx.body = 'user';
+    });
+
+    const url = router.url('user', { id: 123, query: { page: 1 } });
+
+    assert.ok(typeof url === 'string');
+    assert.ok(url.includes('/users/123'));
+    assert.ok(url.includes('page=1'));
+  });
+
+  it('should handle query-only options object without route params', () => {
+    const router = new Router();
+    router.get('home', '/', (ctx) => {
+      ctx.body = 'home';
+    });
+
+    const url = router.url('home', { query: { sort: 'asc' } });
+
+    assert.ok(typeof url === 'string');
+    assert.strictEqual(url, '/?sort=asc');
+  });
+
+  it('should handle separate params object and options object with query', () => {
+    const router = new Router();
+    router.get('user', '/users/:id', (ctx) => {
+      ctx.body = 'user';
+    });
+
+    const url = router.url('user', { id: 456 }, { query: { detail: 'full' } });
+
+    assert.ok(typeof url === 'string');
+    assert.ok(url.includes('/users/456'));
+    assert.ok(url.includes('detail=full'));
+  });
+
+  it('should handle positional params with query options', () => {
+    const router = new Router();
+    router.get('user', '/users/:id/:action', (ctx) => {
+      ctx.body = 'user';
+    });
+
+    const url = router.url('user', 789, 'edit', { query: { confirm: 'yes' } });
+
+    assert.ok(typeof url === 'string');
+    assert.ok(url.includes('/users/789/edit'));
+    assert.ok(url.includes('confirm=yes'));
+  });
+
+  it('should throw error when generating URL for RegExp routes via router.url()', () => {
+    const router = new Router();
+    router.get('regexpRoute', /\/test\/\d+/, (ctx) => {
+      ctx.body = 'test';
+    });
+
+    assert.throws(
+      () => router.url('regexpRoute', { id: 1 }),
+      /Cannot generate URL for routes defined with RegExp paths/
+    );
+  });
 });
 
 describe('Router#param()', () => {
@@ -1840,7 +2147,7 @@ describe('Router#param()', () => {
     const router = new Router();
     app.use(router.routes());
     router
-      .param('user', (id, ctx, next) => {
+      .param('user', (id: string, ctx, next) => {
         ctx.user = { name: 'alex' };
         if (!id) {
           ctx.status = 404;
@@ -1863,7 +2170,7 @@ describe('Router#param()', () => {
     const app = new Koa();
     const router = new Router();
     router
-      .param('user', (id, ctx, next) => {
+      .param('user', (id: string, ctx, next) => {
         ctx.user = { name: 'alex' };
         if (ctx.ranFirst) {
           ctx.user.ordered = 'parameters';
@@ -1876,7 +2183,7 @@ describe('Router#param()', () => {
 
         return next();
       })
-      .param('first', (id, ctx, next) => {
+      .param('first', (id: string, ctx, next) => {
         ctx.ranFirst = true;
         if (ctx.user) {
           ctx.ranFirst = false;
@@ -1908,19 +2215,19 @@ describe('Router#param()', () => {
     const app = new Koa();
     const router = new Router();
     router
-      .param('a', (id, ctx, next) => {
+      .param('a', (id: string, ctx, next) => {
         ctx.state.loaded = [id];
         return next();
       })
-      .param('d', (id, ctx, next) => {
+      .param('d', (id: string, ctx, next) => {
         ctx.state.loaded.push(id);
         return next();
       })
-      .param('c', (id, ctx, next) => {
+      .param('c', (id: string, ctx, next) => {
         ctx.state.loaded.push(id);
         return next();
       })
-      .param('b', (id, ctx, next) => {
+      .param('b', (id: string, ctx, next) => {
         ctx.state.loaded.push(id);
         return next();
       })
@@ -1948,7 +2255,7 @@ describe('Router#param()', () => {
       };
     });
     router
-      .param('id', (id, ctx, next) => {
+      .param('id', (id: string, ctx, next) => {
         ctx.params.id = 'ran';
         if (!id) {
           ctx.status = 404;
@@ -1973,20 +2280,20 @@ describe('Router#param()', () => {
   it('supports multiple param handlers for the same parameter', async () => {
     const app = new Koa();
     const router = new Router();
-    const calls = [];
+    const calls: string[] = [];
 
     router
-      .param('id', (id, ctx, next) => {
+      .param('id', (id: string, ctx, next) => {
         calls.push('param1');
         ctx.state.param1 = true;
         return next();
       })
-      .param('id', (id, ctx, next) => {
+      .param('id', (id: string, ctx, next) => {
         calls.push('param2');
         ctx.state.param2 = true;
         return next();
       })
-      .param('id', (id, ctx, next) => {
+      .param('id', (id: string, ctx, next) => {
         calls.push('param3');
         ctx.state.param3 = true;
         return next();
@@ -2015,10 +2322,10 @@ describe('Router#param()', () => {
   it('does not call param handlers multiple times with multiple matching routes', async () => {
     const app = new Koa();
     const router = new Router();
-    const calls = [];
+    const calls: string[] = [];
 
     router
-      .param('id', (id, ctx, next) => {
+      .param('id', (id: string, ctx, next) => {
         calls.push('param1');
         return next();
       })
@@ -2026,7 +2333,7 @@ describe('Router#param()', () => {
         calls.push('get1');
         return next();
       })
-      .param('id', (id, ctx, next) => {
+      .param('id', (id: string, ctx, next) => {
         calls.push('param2');
         return next();
       })
@@ -2057,14 +2364,14 @@ describe('Router#param()', () => {
   it('does not call param handler multiple times with use middleware', async () => {
     const app = new Koa();
     const router = new Router();
-    const calls = [];
+    const calls: string[] = [];
 
     router
       .use('/:id', (ctx, next) => {
         calls.push('use1');
         return next();
       })
-      .param('id', (id, ctx, next) => {
+      .param('id', (id: string, ctx, next) => {
         calls.push('param1');
         return next();
       })
@@ -2100,10 +2407,10 @@ describe('Router#param()', () => {
   it('calls param handlers for routes added after param() is called', async () => {
     const app = new Koa();
     const router = new Router();
-    const calls = [];
+    const calls: string[] = [];
 
     router
-      .param('id', (id, ctx, next) => {
+      .param('id', (id: string, ctx, next) => {
         calls.push('param1');
         ctx.state.id = id;
         return next();
@@ -2139,19 +2446,24 @@ describe('Router#param()', () => {
     const router = new Router();
     const calls: string[] = [];
 
-    router.params['id'] = ((id: string, ctx: any, next: any) => {
+    const firstParamHandler: RouterParameterMiddleware = (
+      id: string,
+      ctx,
+      next
+    ) => {
       calls.push('param1');
       ctx.state.param1 = true;
       return next();
-    }) as any;
+    };
+    router.params['id'] = firstParamHandler;
 
-    router.param('id', (id: string, ctx: any, next: any) => {
+    router.param('id', (id: string, ctx, next) => {
       calls.push('param2');
       ctx.state.param2 = true;
       return next();
     });
 
-    router.get('/:id', (ctx: any) => {
+    router.get('/:id', (ctx) => {
       calls.push('get');
       ctx.body = {
         param1: ctx.state.param1,
@@ -2168,6 +2480,71 @@ describe('Router#param()', () => {
     assert.deepStrictEqual(calls, ['param1', 'param2', 'get']);
     assert.strictEqual(res.body.param1, true);
     assert.strictEqual(res.body.param2, true);
+  });
+
+  it('should insert param middleware when all existing middleware have .param property', async () => {
+    const app = new Koa();
+    const router = new Router();
+    const callOrder: string[] = [];
+
+    router.param('id', (id: string, ctx, next) => {
+      callOrder.push(`param-id:${id}`);
+      return next();
+    });
+
+    router.param('subId', (subId: string, ctx, next) => {
+      callOrder.push(`param-subId:${subId}`);
+      return next();
+    });
+
+    router.get('/:id/:subId', (ctx) => {
+      callOrder.push('handler');
+      ctx.body = 'ok';
+    });
+
+    app.use(router.routes());
+
+    await request(http.createServer(app.callback()))
+      .get('/123/456')
+      .expect(200);
+
+    assert.deepStrictEqual(callOrder, [
+      'param-id:123',
+      'param-subId:456',
+      'handler'
+    ]);
+  });
+
+  it('should call param middleware in URL parameter order regardless of registration order', async () => {
+    const app = new Koa();
+    const router = new Router();
+    const callOrder: string[] = [];
+
+    router.param('c', (val: string, ctx, next) => {
+      callOrder.push(`c:${val}`);
+      return next();
+    });
+
+    router.param('a', (val: string, ctx, next) => {
+      callOrder.push(`a:${val}`);
+      return next();
+    });
+
+    router.param('b', (val: string, ctx, next) => {
+      callOrder.push(`b:${val}`);
+      return next();
+    });
+
+    router.get('/:a/:b/:c', (ctx) => {
+      callOrder.push('handler');
+      ctx.body = 'ok';
+    });
+
+    app.use(router.routes());
+
+    await request(http.createServer(app.callback())).get('/1/2/3').expect(200);
+
+    assert.deepStrictEqual(callOrder, ['a:1', 'b:2', 'c:3', 'handler']);
   });
 });
 
@@ -2254,17 +2631,17 @@ describe('router.routes()', () => {
     const app = new Koa();
     const router = new Router();
     let middlewareCount = 0;
-    const middlewareA = (ctx, next) => {
-      middlewareCount++;
-      return next();
-    };
 
-    const middlewareB = (ctx, next) => {
-      middlewareCount++;
-      return next();
-    };
-
-    router.use(middlewareA, middlewareB);
+    router.use(
+      (ctx, next) => {
+        middlewareCount++;
+        return next();
+      },
+      ((ctx, next) => {
+        middlewareCount++;
+        return next();
+      }) as RouterMiddleware
+    );
     router.get('/users/:id', (ctx) => {
       assert.strictEqual(Boolean(ctx.params.id), true);
       ctx.body = { hello: 'world' };
@@ -2287,7 +2664,7 @@ describe('router.routes()', () => {
   it('places a `_matchedRoute` value on context', async () => {
     const app = new Koa();
     const router = new Router();
-    const middleware = (ctx, next) => {
+    const middleware: RouterMiddleware = (ctx, next) => {
       next();
       assert.strictEqual(ctx._matchedRoute, '/users/:id');
     };
@@ -2783,12 +3160,62 @@ describe('Router#prefix', () => {
     });
   });
 
+  it('should replace prefix instead of stacking when called multiple times', async () => {
+    const app = new Koa();
+    const router = new Router();
+
+    router.get('/test', (ctx) => {
+      ctx.body = { path: ctx.path };
+    });
+
+    router.prefix('/api/v1');
+    router.prefix('/api/v2');
+
+    app.use(router.routes());
+
+    const res = await request(http.createServer(app.callback()))
+      .get('/api/v2/test')
+      .expect(200);
+
+    assert.strictEqual(res.body.path, '/api/v2/test');
+
+    await request(http.createServer(app.callback()))
+      .get('/api/v1/test')
+      .expect(404);
+
+    await request(http.createServer(app.callback()))
+      .get('/api/v2/api/v1/test')
+      .expect(404);
+  });
+
+  it('should handle raw regex middleware patterns with parameterized prefix', async () => {
+    const app = new Koa();
+    const router = new Router({ prefix: '/:version' });
+
+    router.use((ctx, next) => {
+      ctx.state.middlewareRan = true;
+      return next();
+    });
+
+    router.get('/test', (ctx) => {
+      ctx.body = { middlewareRan: ctx.state.middlewareRan };
+    });
+
+    app.use(router.routes());
+
+    const res = await request(http.createServer(app.callback()))
+      .get('/v1/test')
+      .expect(200);
+
+    assert.strictEqual(res.body.middlewareRan, true);
+  });
+
   describe('with trailing slash', testPrefix('/admin/'));
   describe('without trailing slash', testPrefix('/admin'));
 
-  function testPrefix(prefix) {
+  function testPrefix(prefix: string) {
     return () => {
-      let server;
+      let server: http.Server;
       let middlewareCount = 0;
 
       before(() => {
@@ -2992,10 +3419,12 @@ describe('Support host', () => {
 
   it('should return false for invalid host type (neither string, array, nor RegExp)', () => {
     const router = new Router();
-    (router as any).host = 123;
+    // @ts-expect-error - testing invalid host type
+    router.host = 123;
     assert.strictEqual(router.matchHost('test.domain'), false);
 
-    (router as any).host = {};
+    // @ts-expect-error - testing invalid host type
+    router.host = {};
     assert.strictEqual(router.matchHost('test.domain'), false);
   });
 
@@ -3005,10 +3434,9 @@ describe('Support host', () => {
     });
 
     assert.strictEqual(router.matchHost(''), false);
-
-    assert.strictEqual(router.matchHost(null as any), false);
-
-    assert.strictEqual(router.matchHost(undefined as any), false);
+    // @ts-expect-error
+    assert.strictEqual(router.matchHost(null), false);
+    assert.strictEqual(router.matchHost(undefined), false);
   });
 
   it('should handle empty array for host', () => {
@@ -3057,7 +3485,9 @@ describe('Less Common HTTP Methods', () => {
 
   it('should support PURGE method', async () => {
     const app = new Koa();
-    const router = new Router();
+    const router = new Router({
+      methods: ['GET', 'PURGE'] as const
+    });
     let cacheCleared = false;
 
     router.purge('/cache/:key', async (ctx) => {
@@ -3083,7 +3513,9 @@ describe('Less Common HTTP Methods', () => {
 
   it('should support COPY method', async () => {
     const app = new Koa();
-    const router = new Router();
+    const router = new Router({
+      methods: ['GET', 'COPY'] as const
+    });
 
     router.copy('/files/:source', async (ctx) => {
       ctx.body = {
@@ -3106,7 +3538,9 @@ describe('Less Common HTTP Methods', () => {
 
   it('should support CONNECT method', async () => {
     const app = new Koa();
-    const router = new Router();
+    const router = new Router({
+      methods: ['GET', 'CONNECT'] as const
+    });
 
     router.connect('/proxy/:host', async (ctx) => {
       ctx.body = {
@@ -3124,7 +3558,9 @@ describe('Less Common HTTP Methods', () => {
 
   it('should support TRACE method', async () => {
     const app = new Koa();
-    const router = new Router();
+    const router = new Router({
+      methods: ['GET', 'TRACE'] as const
+    });
 
     router.trace('/debug/:path', async (ctx) => {
       ctx.body = {
@@ -3195,7 +3631,7 @@ describe('RouterOptions: methods', () => {
   it('should allow PURGE when included in methods array', async () => {
     const app = new Koa();
     const router = new Router({
-      methods: ['GET', 'POST', 'PURGE']
+      methods: ['GET', 'POST', 'PURGE'] as const
     });
 
     router.purge('/cache/:key', (ctx) => {
@@ -3223,9 +3659,15 @@ describe('RouterOptions: methods', () => {
       ctx.body = { key: ctx.params.key, method: 'GET' };
     });
 
-    router.purge('/cache/:key', (ctx) => {
-      ctx.body = { key: ctx.params.key, method: 'PURGE' };
-    });
+    router.register(
+      '/cache/:key',
+      ['PURGE'],
+      [
+        (ctx) => {
+          ctx.body = { key: ctx.params.key, method: 'PURGE' };
+        }
+      ]
+    );
 
     app.use(router.routes());
     app.use(router.allowedMethods());
@@ -3455,9 +3897,6 @@ describe('RouterOptions: strict (comprehensive)', () => {
         ctx.body = { route: 'users', isAccount: ctx.state.isAccount };
       });
       usersRouter.get('/:userId/accounts', async (ctx) => {
-        // This should NOT have isAccount set because the /accounts middleware
-        // should only apply to the accountsRouter, not to paths that happen
-        // to contain "accounts" in them
         ctx.body = {
           route: 'user-accounts',
           isAccount: ctx.state.isAccount,
@@ -3470,18 +3909,14 @@ describe('RouterOptions: strict (comprehensive)', () => {
 
       const server = http.createServer(app.callback());
 
-      // /accounts should have isAccount = true
       const accountsRes = await request(server).get('/accounts').expect(200);
       assert.strictEqual(accountsRes.body.route, 'accounts');
       assert.strictEqual(accountsRes.body.isAccount, true);
 
-      // /users should NOT have isAccount
       const usersRes = await request(server).get('/users').expect(200);
       assert.strictEqual(usersRes.body.route, 'users');
       assert.strictEqual(usersRes.body.isAccount, undefined);
 
-      // /users/:userId/accounts should NOT have isAccount
-      // (the /accounts middleware should not match here)
       const userAccountsRes = await request(server)
         .get('/users/12345/accounts')
         .expect(200);
@@ -3536,11 +3971,9 @@ describe('RouterOptions: strict (comprehensive)', () => {
 
       const server = http.createServer(app.callback());
 
-      // Root should have middleware applied
       const res1 = await request(server).get('/accounts').expect(200);
       assert.strictEqual(res1.body.isAccount, true);
 
-      // Sub-routes should NOT have middleware applied (explicit "/" only matches root)
       const res2 = await request(server).get('/accounts/123').expect(200);
       assert.strictEqual(res2.body.isAccount, undefined);
       assert.strictEqual(res2.body.id, '123');
@@ -3575,14 +4008,12 @@ describe('RouterOptions: strict (comprehensive)', () => {
 
       const server = http.createServer(app.callback());
 
-      // /api/accounts should have isAccount = true
       const accountsRes = await request(server)
         .get('/api/accounts')
         .expect(200);
       assert.strictEqual(accountsRes.body.route, 'accounts');
       assert.strictEqual(accountsRes.body.isAccount, true);
 
-      // /api/users/:userId/accounts should NOT have isAccount
       const userAccountsRes = await request(server)
         .get('/api/users/12345/accounts')
         .expect(200);
