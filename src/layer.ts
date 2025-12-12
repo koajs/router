@@ -528,10 +528,12 @@ export default class Layer {
       this.paramNames = keys;
       this.opts.pathAsRegExp = false;
     } else if (treatAsRegExp) {
+      const pathString = this.path as string;
+      const anchoredPattern = pathString.startsWith('^')
+        ? pathString
+        : `^${pathString}`;
       this.regexp =
-        this.path instanceof RegExp
-          ? this.path
-          : new RegExp(this.path as string);
+        this.path instanceof RegExp ? this.path : new RegExp(anchoredPattern);
     } else {
       const options = normalizeLayerOptionsToPathToRegexp(this.opts);
       const { regexp, keys } = compilePathToRegexp(
