@@ -7,6 +7,7 @@
  * simultaneously with separate routers.
  */
 import Koa from 'koa';
+
 import Router from '../router-module-loader';
 import type { RouterContext } from '../router-module-loader';
 

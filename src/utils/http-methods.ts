@@ -13,7 +13,7 @@ export function getAllHttpMethods(): string[] {
 }
 
 /**
- * Common HTTP methods that are explicitly defined
+ * Common HTTP methods that are explicitly defined on the Router class
  */
 export const COMMON_HTTP_METHODS: string[] = [
   'get',

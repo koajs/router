@@ -6,18 +6,25 @@
  * Note: db and redis are placeholders. Replace with your actual
  * database and cache clients.
  */
-import Router from '../router-module-loader';
 import { db, redis } from '../common';
+import Router from '../router-module-loader';
 import type { RouterContext } from '../router-module-loader';
 
 const router = new Router();
 
+type HealthStatus = {
+  status: 'ok' | 'degraded';
+  timestamp: string;
+  uptime: number;
+  checks: Record<string, string>;
+};
+
 router.get('/health', async (ctx: RouterContext) => {
-  const health = {
+  const health: HealthStatus = {
     status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    checks: {} as Record<string, string>
+    checks: {}
   };
 
   try {

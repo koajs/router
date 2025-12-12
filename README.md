@@ -66,14 +66,38 @@ yarn add @koa/router
 
 ### Basic Usage
 
+Types are **automatically inferred** - no explicit type annotations needed:
+
 ```typescript
-import Router, { RouterContext } from '@koa/router';
+import Router from '@koa/router';
 
 const router = new Router();
 
-// Fully typed context
-router.get('/:id', (ctx: RouterContext, next) => {
-  const id = ctx.params.id; // Type-safe parameters
+// ctx and next are automatically inferred!
+router.get('/:id', (ctx, next) => {
+  const id = ctx.params.id; // ✅ Inferred as string
+  ctx.request.params.id; // ✅ Also available
+  ctx.body = { id }; // ✅ Works
+  return next(); // ✅ Works
+});
+
+// Also works for router.use()
+router.use((ctx, next) => {
+  ctx.state.startTime = Date.now();
+  return next();
+});
+```
+
+### Explicit Types (Optional)
+
+For cases where you need explicit types:
+
+```typescript
+import Router, { RouterContext } from '@koa/router';
+import type { Next } from 'koa';
+
+router.get('/:id', (ctx: RouterContext, next: Next) => {
+  const id = ctx.params.id;
   ctx.body = { id };
 });
 ```
@@ -194,11 +218,13 @@ type MyParamMiddleware = RouterParameterMiddleware<
 
 ### Type Safety Features
 
+- ✅ **Full type inference** - `ctx` and `next` are inferred automatically in route handlers
 - ✅ **Full generic support** - `Router<StateT, ContextT>` for custom state and context types
-- ✅ **Type-safe parameters** - `ctx.params` is fully typed
+- ✅ **Type-safe parameters** - `ctx.params` is fully typed and always defined
 - ✅ **Type-safe state** - `ctx.state` respects your state type
 - ✅ **Type-safe middleware** - Middleware functions are fully typed
 - ✅ **Type-safe HTTP methods** - Methods support generic type extensions
+- ✅ **Custom HTTP method inference** - Use `as const` with `methods` option for typed custom methods
 - ✅ **Compatible with @types/koa-router** - Matches official type structure
 
 ## Quick Start
@@ -280,42 +306,6 @@ router
   .put('/users/:id', updateUser)
   .delete('/users/:id', deleteUser)
   .all('/users/:id', logAccess); // Runs for any method
-```
-
-**Using Less Common HTTP Methods:**
-
-All standard HTTP methods from Node.js are automatically available. Here's an example using `PATCH` and `PURGE`:
-
-```javascript
-const router = new Router();
-
-// PATCH method (standard HTTP method for partial updates)
-router.patch('/users/:id', async (ctx) => {
-  // Partial update
-  ctx.body = { message: 'User partially updated' };
-});
-
-// PURGE method (standard HTTP method, commonly used for cache invalidation)
-router.purge('/cache/:key', async (ctx) => {
-  // Clear cache
-  await clearCache(ctx.params.key);
-  ctx.body = { message: 'Cache cleared' };
-});
-
-// COPY method (standard HTTP method)
-router.copy('/files/:source', async (ctx) => {
-  await copyFile(ctx.params.source, ctx.request.body.destination);
-  ctx.body = { message: 'File copied' };
-});
-
-// Limiting which methods the router responds to
-const apiRouter = new Router({
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] // Only these methods
-});
-
-apiRouter.get('/users', getUsers);
-apiRouter.post('/users', createUser);
-// router.purge() won't work here because PURGE is not in the methods array
 ```
 
 **Using Less Common HTTP Methods:**
@@ -1108,6 +1098,8 @@ describe('Router', () => {
 ```
 
 ## Migration Guides
+
+For detailed migration information, see **[FULL_MIGRATION_TO_V15+.md](./FULL_MIGRATION_TO_V15+.md)**.
 
 **Breaking Changes:**
 

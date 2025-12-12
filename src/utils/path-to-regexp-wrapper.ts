@@ -12,8 +12,9 @@ import type { LayerOptions } from '../types';
 /**
  * Options for path-to-regexp operations
  * Based on path-to-regexp v8 options
+ * @internal
  */
-export interface PathToRegexpOptions {
+type PathToRegexpOptions = {
   /**
    * Case sensitive matching
    */
@@ -49,16 +50,17 @@ export interface PathToRegexpOptions {
   /**
    * Additional options passed to path-to-regexp
    */
-  [key: string]: any;
-}
+  [key: string]: unknown;
+};
 
 /**
  * Result of path-to-regexp compilation
+ * @internal
  */
-export interface PathToRegexpResult {
+type PathToRegexpResult = {
   regexp: RegExp;
   keys: Key[];
-}
+};
 
 /**
  * Compile a path pattern to a regular expression
@@ -71,7 +73,7 @@ export function compilePathToRegexp(
   path: string,
   options: PathToRegexpOptions = {}
 ): PathToRegexpResult {
-  const normalizedOptions: any = { ...options };
+  const normalizedOptions: Record<string, unknown> = { ...options };
 
   if ('strict' in normalizedOptions && !('trailing' in normalizedOptions)) {
     normalizedOptions.trailing = normalizedOptions.strict !== true;
@@ -95,7 +97,7 @@ export function compilePathToRegexp(
  */
 export function compilePath(
   path: string,
-  options: Record<string, any> = {}
+  options: Record<string, unknown> = {}
 ): (parameters?: Record<string, string>) => string {
   return compile(path, options);
 }
@@ -109,7 +111,7 @@ export function compilePath(
  */
 export function parsePath(
   path: string,
-  options?: Record<string, any>
+  options?: Record<string, unknown>
 ): ReturnType<typeof parse> {
   return parse(path, options);
 }
@@ -127,8 +129,8 @@ export function parsePath(
  */
 export function normalizeLayerOptionsToPathToRegexp(
   options: LayerOptions = {}
-): Record<string, any> {
-  const normalized: Record<string, any> = {
+): Record<string, unknown> {
+  const normalized: Record<string, unknown> = {
     sensitive: options.sensitive,
     end: options.end,
     strict: options.strict,

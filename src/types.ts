@@ -2,16 +2,22 @@
  * Type definitions for @koa/router
  */
 
-import type {
+import type { ParameterizedContext, DefaultContext, DefaultState } from 'koa';
+import type { RouterInstance as Router } from './router';
+import type Layer from './layer';
+
+/**
+ * Re-export Koa types for convenience
+ * This makes types.ts the single source of truth for all type imports
+ */
+export type {
   Middleware,
   ParameterizedContext,
   DefaultContext,
   DefaultState
 } from 'koa';
-import type Router from './router';
-import type Layer from './layer';
 
-export interface RouterOptions {
+export type RouterOptions = {
   /**
    * Only run last matched route's controller when there are multiple matches
    */
@@ -49,9 +55,14 @@ export interface RouterOptions {
    * Whether trailing slashes are significant
    */
   strict?: boolean;
-}
 
-export interface LayerOptions {
+  /**
+   * Additional options passed through
+   */
+  [key: string]: unknown;
+};
+
+export type LayerOptions = {
   /**
    * Route name for URL generation
    */
@@ -91,21 +102,26 @@ export interface LayerOptions {
    * Treat path as a regular expression
    */
   pathAsRegExp?: boolean;
-}
 
-export interface UrlOptions {
+  /**
+   * Additional options passed through to path-to-regexp
+   */
+  [key: string]: unknown;
+};
+
+export type UrlOptions = {
   /**
    * Query string parameters
    */
-  query?: Record<string, any> | string;
+  query?: Record<string, unknown> | string;
 
-  [key: string]: any;
-}
+  [key: string]: unknown;
+};
 
-export interface RouterParameterContext<
+export type RouterParameterContext<
   StateT = DefaultState,
   ContextT = DefaultContext
-> {
+> = {
   /**
    * URL parameters
    */
@@ -125,38 +141,40 @@ export interface RouterParameterContext<
    * Matched route name (internal)
    */
   _matchedRouteName?: string;
-}
+};
 
-export interface RouterParameterMiddleware<
+export type RouterParameterMiddleware<
   StateT = DefaultState,
   ContextT = DefaultContext,
   BodyT = unknown
-> {
-  (
-    parameterValue: string,
-    context: RouterContext<StateT, ContextT, BodyT>,
-    next: () => Promise<any>
-  ): any;
-}
+> = (
+  parameterValue: string,
+  context: RouterContext<StateT, ContextT, BodyT>,
+  next: () => Promise<unknown>
+) => unknown | Promise<unknown>;
 
-export interface MatchResult {
+export type MatchResult<
+  StateT = DefaultState,
+  ContextT = DefaultContext,
+  BodyT = unknown
+> = {
   /**
    * Layers that matched the path
    */
-  path: Layer[];
+  path: Layer<StateT, ContextT, BodyT>[];
 
   /**
    * Layers that matched both path and HTTP method
    */
-  pathAndMethod: Layer[];
+  pathAndMethod: Layer<StateT, ContextT, BodyT>[];
 
   /**
    * Whether a route (not just middleware) was matched
    */
   route: boolean;
-}
+};
 
-export interface AllowedMethodsOptions {
+export type AllowedMethodsOptions = {
   /**
    * Throw error instead of setting status and header
    */
@@ -171,7 +189,7 @@ export interface AllowedMethodsOptions {
    * Throw the returned value in place of the default MethodNotAllowed error
    */
   methodNotAllowed?: () => Error;
-}
+};
 
 /**
  * Extended Koa context with router-specific properties
@@ -187,10 +205,10 @@ export type RouterContext<
   BodyT
 > & {
   /**
-   * Request with params (params added dynamically)
+   * Request with params (set by router during routing)
    */
   request: {
-    params?: Record<string, string>;
+    params: Record<string, string>;
   };
 
   /**
@@ -206,7 +224,7 @@ export type RouterContext<
   /**
    * Array of matched layers
    */
-  matched?: Layer[];
+  matched?: Layer<StateT, ContextT, BodyT>[];
 
   /**
    * Captured values from path
@@ -231,11 +249,10 @@ export type RouterMiddleware<
   StateT = DefaultState,
   ContextT = DefaultContext,
   BodyT = unknown
-> = Middleware<
-  StateT,
-  ContextT & RouterParameterContext<StateT, ContextT>,
-  BodyT
->;
+> = (
+  context: RouterContext<StateT, ContextT, BodyT>,
+  next: () => Promise<unknown>
+) => unknown | Promise<unknown>;
 
 /**
  * HTTP method names in lowercase
@@ -252,5 +269,44 @@ export type HttpMethod =
   | 'connect'
   | 'trace'
   | string;
+
+/**
+ * Router options with generic methods array for type inference
+ */
+export type RouterOptionsWithMethods<M extends string = string> = Omit<
+  RouterOptions,
+  'methods'
+> & {
+  methods?: readonly M[];
+};
+
+/**
+ * Type for a dynamic HTTP method function on Router
+ */
+export type RouterMethodFunction<
+  StateT = DefaultState,
+  ContextT = DefaultContext
+> = {
+  <T = {}, U = {}, B = unknown>(
+    name: string,
+    path: string | RegExp,
+    ...middleware: Array<RouterMiddleware<StateT & T, ContextT & U, B>>
+  ): Router<StateT, ContextT>;
+  <T = {}, U = {}, B = unknown>(
+    path: string | RegExp | Array<string | RegExp>,
+    ...middleware: Array<RouterMiddleware<StateT & T, ContextT & U, B>>
+  ): Router<StateT, ContextT>;
+};
+
+/**
+ * Router with additional HTTP methods based on the methods option.
+ * Use createRouter() factory function for automatic type inference.
+ */
+export type RouterWithMethods<
+  M extends string,
+  StateT = DefaultState,
+  ContextT = DefaultContext
+> = Router<StateT, ContextT> &
+  Record<Lowercase<M>, RouterMethodFunction<StateT, ContextT>>;
 
 export { type default as Layer } from './layer';

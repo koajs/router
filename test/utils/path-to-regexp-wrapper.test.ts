@@ -4,6 +4,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
+
 import {
   compilePathToRegexp,
   compilePath,
@@ -12,6 +13,22 @@ import {
   type Key
 } from '../../src/utils/path-to-regexp-wrapper';
 import type { LayerOptions } from '../../src/types';
+
+type ParsedToken = string | { name: string; [key: string]: unknown };
+
+function getTokens(
+  result: ReturnType<typeof parsePath>
+): (string | ParsedToken)[] {
+  if (Array.isArray(result)) {
+    return result as (string | ParsedToken)[];
+  }
+  const resultObj = result as unknown as { tokens?: (string | ParsedToken)[] };
+  return resultObj.tokens || [];
+}
+
+function isNamedToken(token: unknown): token is { name: string } {
+  return token !== null && typeof token === 'object' && 'name' in token;
+}
 
 describe('path-to-regexp-wrapper utilities', () => {
   describe('compilePathToRegexp()', () => {
@@ -175,50 +192,29 @@ describe('path-to-regexp-wrapper utilities', () => {
   describe('parsePath()', () => {
     it('should parse a simple path', () => {
       const result = parsePath('/users');
-
-      const tokens = Array.isArray(result)
-        ? result
-        : (result as any).tokens || [];
+      const tokens = getTokens(result);
       assert.strictEqual(tokens.length > 0, true);
     });
 
     it('should parse a path with parameters', () => {
       const result = parsePath('/users/:id');
-
-      const tokens = Array.isArray(result)
-        ? result
-        : (result as any).tokens || [];
+      const tokens = getTokens(result);
       assert.strictEqual(tokens.length > 0, true);
       const hasParam = tokens.some(
-        (token: any) =>
-          token &&
-          typeof token === 'object' &&
-          'name' in token &&
-          token.name === 'id'
+        (token) => isNamedToken(token) && token.name === 'id'
       );
       assert.strictEqual(hasParam, true);
     });
 
     it('should parse a path with multiple parameters', () => {
       const result = parsePath('/users/:userId/posts/:postId');
-
-      const tokens = Array.isArray(result)
-        ? result
-        : (result as any).tokens || [];
+      const tokens = getTokens(result);
       assert.strictEqual(tokens.length > 0, true);
       const userIdToken = tokens.find(
-        (token: any) =>
-          token &&
-          typeof token === 'object' &&
-          'name' in token &&
-          token.name === 'userId'
+        (token) => isNamedToken(token) && token.name === 'userId'
       );
       const postIdToken = tokens.find(
-        (token: any) =>
-          token &&
-          typeof token === 'object' &&
-          'name' in token &&
-          token.name === 'postId'
+        (token) => isNamedToken(token) && token.name === 'postId'
       );
 
       assert.strictEqual(userIdToken !== undefined, true);
@@ -227,28 +223,19 @@ describe('path-to-regexp-wrapper utilities', () => {
 
     it('should parse wildcard paths', () => {
       const result = parsePath('/files/{/*path}');
-
-      const tokens = Array.isArray(result)
-        ? result
-        : (result as any).tokens || [];
+      const tokens = getTokens(result);
       assert.strictEqual(tokens.length > 0, true);
     });
 
     it('should parse root path', () => {
       const result = parsePath('/');
-
-      const tokens = Array.isArray(result)
-        ? result
-        : (result as any).tokens || [];
+      const tokens = getTokens(result);
       assert.strictEqual(tokens.length > 0, true);
     });
 
     it('should handle options parameter', () => {
       const result = parsePath('/users/:id', {});
-
-      const tokens = Array.isArray(result)
-        ? result
-        : (result as any).tokens || [];
+      const tokens = getTokens(result);
       assert.strictEqual(tokens.length > 0, true);
     });
   });
@@ -335,9 +322,10 @@ describe('path-to-regexp-wrapper utilities', () => {
     });
 
     it('should handle undefined options', () => {
-      const normalized = normalizeLayerOptionsToPathToRegexp(undefined as any);
+      const normalized = normalizeLayerOptionsToPathToRegexp(undefined);
 
       assert.strictEqual(typeof normalized, 'object');
+      assert.strictEqual(Object.keys(normalized).length, 0);
     });
   });
 
@@ -358,14 +346,10 @@ describe('path-to-regexp-wrapper utilities', () => {
       const path = '/users/:userId/posts/:postId';
 
       const parseResult = parsePath(path);
-      const tokens = Array.isArray(parseResult)
-        ? parseResult
-        : (parseResult as any).tokens || [];
+      const tokens = getTokens(parseResult);
       const paramNames = tokens
-        .filter(
-          (token: any) => token && typeof token === 'object' && 'name' in token
-        )
-        .map((token: any) => token.name);
+        .filter((token) => isNamedToken(token))
+        .map((token) => (token as { name: string }).name);
 
       assert.strictEqual(paramNames.includes('userId'), true);
       assert.strictEqual(paramNames.includes('postId'), true);

@@ -1,53 +1,56 @@
+import type { UrlObject } from 'node:url';
 import { parse as parseUrl, format as formatUrl } from 'node:url';
 import type {
+  DefaultState,
+  DefaultContext,
   LayerOptions,
   RouterMiddleware,
   RouterParameterMiddleware,
   UrlOptions
 } from './types';
+import type { Key } from './utils/path-to-regexp-wrapper';
 import {
   compilePathToRegexp,
   compilePath,
   parsePath,
-  normalizeLayerOptionsToPathToRegexp,
-  type Key
+  normalizeLayerOptionsToPathToRegexp
 } from './utils/path-to-regexp-wrapper';
-
-/**
- * Safe decodeURIComponent, won't throw any error.
- * If `decodeURIComponent` error happen, just return the original value.
- *
- * Note: This function is used only for route/path parameters, not query parameters.
- * In URL path segments, `+` is a literal character (not a space), so we don't
- * replace `+` with spaces. For query parameters, use a different decoder that
- * handles `application/x-www-form-urlencoded` format.
- *
- * @param text - Text to decode
- * @returns URL decoded string
- * @private
- */
-function safeDecodeURIComponent(text: string): string {
-  try {
-    return decodeURIComponent(text);
-  } catch {
-    return text;
-  }
-}
+import { safeDecodeURIComponent } from './utils/safe-decode-uri-components';
 
 /**
  * Extended middleware with param metadata
+ * @internal
  */
-interface ParameterMiddleware extends Function {
+type ParameterMiddleware<
+  StateT = DefaultState,
+  ContextT = DefaultContext,
+  BodyT = unknown
+> = RouterMiddleware<StateT, ContextT, BodyT> & {
   param?: string;
-  _originalFn?: RouterParameterMiddleware;
-}
+  _originalFn?: RouterParameterMiddleware<StateT, ContextT, BodyT>;
+};
 
-export default class Layer {
+/**
+ * Layer class represents a single route or middleware layer.
+ * It handles path matching, parameter extraction, and middleware execution.
+ *
+ * @typeParam StateT - Custom state type extending Koa's DefaultState
+ * @typeParam ContextT - Custom context type extending Koa's DefaultContext
+ * @typeParam BodyT - Response body type
+ */
+export default class Layer<
+  StateT = DefaultState,
+  ContextT = DefaultContext,
+  BodyT = unknown
+> {
   opts: LayerOptions;
   name: string | undefined;
   methods: string[];
   paramNames: Key[];
-  stack: (RouterMiddleware | ParameterMiddleware)[];
+  stack: Array<
+    | RouterMiddleware<StateT, ContextT, BodyT>
+    | ParameterMiddleware<StateT, ContextT, BodyT>
+  >;
   path: string | RegExp;
   regexp!: RegExp;
 
@@ -63,7 +66,9 @@ export default class Layer {
   constructor(
     path: string | RegExp,
     methods: string[],
-    middleware: RouterMiddleware<any, any> | RouterMiddleware<any, any>[],
+    middleware:
+      | RouterMiddleware<StateT, ContextT, BodyT>
+      | Array<RouterMiddleware<StateT, ContextT, BodyT>>,
     options: LayerOptions = {}
   ) {
     this.opts = options;
@@ -106,10 +111,12 @@ export default class Layer {
    * @private
    */
   private _normalizeAndValidateMiddleware(
-    middleware: RouterMiddleware | RouterMiddleware[],
+    middleware:
+      | RouterMiddleware<StateT, ContextT, BodyT>
+      | Array<RouterMiddleware<StateT, ContextT, BodyT>>,
     methods: string[],
     path: string | RegExp
-  ): RouterMiddleware[] {
+  ): Array<RouterMiddleware<StateT, ContextT, BodyT>> {
     const middlewareArray = Array.isArray(middleware)
       ? middleware
       : [middleware];
@@ -222,12 +229,19 @@ export default class Layer {
    *
    * @param args - URL parameters (various formats supported)
    * @returns Generated URL
+   * @throws Error if route path is a RegExp (cannot generate URL from RegExp)
    * @private
    */
-  url(...arguments_: any[]): string {
+  url(...arguments_: unknown[]): string {
+    if (this.path instanceof RegExp) {
+      throw new TypeError(
+        'Cannot generate URL for routes defined with RegExp paths. Use string paths with named parameters instead.'
+      );
+    }
+
     const { params, options } = this._parseUrlArguments(arguments_);
 
-    const cleanPath = (this.path as string).replaceAll('(.*)', '');
+    const cleanPath = this.path.replaceAll('(.*)', '');
 
     const pathCompiler = compilePath(cleanPath, {
       encode: encodeURIComponent,
@@ -257,26 +271,39 @@ export default class Layer {
    * - url({ id: 1 }, { query: {...} })
    * @private
    */
-  private _parseUrlArguments(allArguments: any[]): {
-    params: any;
+  private _parseUrlArguments(allArguments: unknown[]): {
+    params: Record<string, unknown> | unknown[];
     options?: UrlOptions;
   } {
-    let parameters: any = allArguments[0];
-    let options: UrlOptions | undefined = allArguments[1];
+    let parameters: Record<string, unknown> | unknown[] =
+      (allArguments[0] as Record<string, unknown>) ?? {};
+    let options: UrlOptions | undefined = allArguments[1] as
+      | UrlOptions
+      | undefined;
 
-    if (typeof parameters !== 'object') {
+    if (typeof parameters !== 'object' || parameters === null) {
       const argumentsList = [...allArguments];
       const lastArgument = argumentsList.at(-1);
 
-      if (typeof lastArgument === 'object') {
-        options = lastArgument;
+      if (typeof lastArgument === 'object' && lastArgument !== null) {
+        options = lastArgument as UrlOptions;
         parameters = argumentsList.slice(0, -1);
       } else {
         parameters = argumentsList;
       }
-    } else if (parameters && parameters.query && !options) {
-      options = parameters;
-      parameters = {};
+    } else if (parameters && !options) {
+      const parameterKeys = Object.keys(parameters);
+      const isOnlyOptions =
+        parameterKeys.length === 1 && parameterKeys[0] === 'query';
+
+      if (isOnlyOptions) {
+        options = parameters as UrlOptions;
+        parameters = {};
+      } else if ('query' in parameters && parameters.query) {
+        const { query, ...restParameters } = parameters;
+        options = { query: query as Record<string, unknown> | string };
+        parameters = restParameters;
+      }
     }
 
     return { params: parameters, options };
@@ -287,7 +314,7 @@ export default class Layer {
    * @private
    */
   private _buildParamReplacements(
-    parameters: any,
+    parameters: Record<string, unknown> | unknown[],
     cleanPath: string
   ): Record<string, string> {
     const { tokens } = parsePath(cleanPath);
@@ -309,7 +336,7 @@ export default class Layer {
     } else if (
       hasNamedParameters &&
       typeof parameters === 'object' &&
-      !parameters.query
+      !('query' in parameters)
     ) {
       for (const [parameterName, parameterValue] of Object.entries(
         parameters
@@ -327,18 +354,32 @@ export default class Layer {
    */
   private _addQueryString(
     baseUrl: string,
-    query: Record<string, any> | string
+    query: Record<string, unknown> | string
   ): string {
-    const parsedUrl: any = parseUrl(baseUrl);
+    const parsed = parseUrl(baseUrl);
+    const urlObject: UrlObject = {
+      ...parsed,
+      query: parsed.query ?? undefined
+    };
 
     if (typeof query === 'string') {
-      parsedUrl.search = query;
+      urlObject.search = query;
+      urlObject.query = undefined;
     } else {
-      parsedUrl.search = undefined;
-      parsedUrl.query = query;
+      urlObject.search = undefined;
+      urlObject.query = query as Record<
+        string,
+        | string
+        | number
+        | boolean
+        | readonly string[]
+        | readonly number[]
+        | readonly boolean[]
+        | null
+      >;
     }
 
-    return formatUrl(parsedUrl);
+    return formatUrl(urlObject);
   }
 
   /**
@@ -365,8 +406,8 @@ export default class Layer {
    */
   param(
     parameterName: string,
-    parameterHandler: RouterParameterMiddleware
-  ): Layer {
+    parameterHandler: RouterParameterMiddleware<StateT, ContextT, BodyT>
+  ): Layer<StateT, ContextT, BodyT> {
     const middlewareStack = this.stack;
     const routeParameterNames = this.paramNames;
 
@@ -399,13 +440,16 @@ export default class Layer {
    */
   private _createParamMiddleware(
     parameterName: string,
-    parameterHandler: RouterParameterMiddleware
-  ): ParameterMiddleware {
-    const middleware: ParameterMiddleware = function (
-      this: any,
-      context: any,
-      next: () => Promise<any>
-    ) {
+    parameterHandler: RouterParameterMiddleware<StateT, ContextT, BodyT>
+  ): ParameterMiddleware<StateT, ContextT, BodyT> {
+    // Create a wrapper middleware that handles param deduplication
+    const middleware = ((
+      context: Parameters<RouterMiddleware<StateT, ContextT, BodyT>>[0] & {
+        params: Record<string, string>;
+        _matchedParams?: WeakMap<object, boolean>;
+      },
+      next: Parameters<RouterMiddleware<StateT, ContextT, BodyT>>[1]
+    ) => {
       if (!context._matchedParams) {
         context._matchedParams = new WeakMap();
       }
@@ -416,13 +460,8 @@ export default class Layer {
 
       context._matchedParams.set(parameterHandler, true);
 
-      return parameterHandler.call(
-        this,
-        context.params[parameterName],
-        context,
-        next
-      );
-    };
+      return parameterHandler(context.params[parameterName], context, next);
+    }) as ParameterMiddleware<StateT, ContextT, BodyT>;
 
     middleware.param = parameterName;
     middleware._originalFn = parameterHandler;
@@ -435,27 +474,47 @@ export default class Layer {
    * @private
    */
   private _insertParamMiddleware(
-    middlewareStack: (RouterMiddleware | ParameterMiddleware)[],
-    parameterMiddleware: ParameterMiddleware,
+    middlewareStack: Array<
+      | RouterMiddleware<StateT, ContextT, BodyT>
+      | ParameterMiddleware<StateT, ContextT, BodyT>
+    >,
+    parameterMiddleware: ParameterMiddleware<StateT, ContextT, BodyT>,
     parameterNamesList: string[],
     currentParameterPosition: number
   ): void {
-    middlewareStack.some((existingMiddleware: any, stackIndex) => {
+    let inserted = false;
+
+    for (
+      let stackIndex = 0;
+      stackIndex < middlewareStack.length;
+      stackIndex++
+    ) {
+      const existingMiddleware = middlewareStack[
+        stackIndex
+      ] as ParameterMiddleware<StateT, ContextT, BodyT>;
+
       if (!existingMiddleware.param) {
+        // Insert before first non-param middleware
         middlewareStack.splice(stackIndex, 0, parameterMiddleware);
-        return true;
+        inserted = true;
+        break;
       }
 
       const existingParameterPosition = parameterNamesList.indexOf(
         existingMiddleware.param
       );
       if (existingParameterPosition > currentParameterPosition) {
+        // Insert before param middleware that comes later in the URL
         middlewareStack.splice(stackIndex, 0, parameterMiddleware);
-        return true;
+        inserted = true;
+        break;
       }
+    }
 
-      return false;
-    });
+    // If not inserted yet, append to the end of the stack
+    if (!inserted) {
+      middlewareStack.push(parameterMiddleware);
+    }
   }
 
   /**
@@ -465,7 +524,7 @@ export default class Layer {
    * @returns This layer instance
    * @private
    */
-  setPrefix(prefixPath: string): Layer {
+  setPrefix(prefixPath: string): Layer<StateT, ContextT, BodyT> {
     if (!this.path) {
       return this;
     }
@@ -496,7 +555,7 @@ export default class Layer {
       const currentPath = this.path as string;
       if (
         currentPath === String.raw`(?:\/|$)` ||
-        currentPath === String.raw`(?:\/|$)`
+        currentPath === String.raw`(?:\\\/|$)`
       ) {
         this.path = '{/*rest}';
         this.opts.pathAsRegExp = false;

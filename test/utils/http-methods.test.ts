@@ -98,7 +98,7 @@ describe('http-methods utilities', () => {
       assert.strictEqual(COMMON_HTTP_METHODS.includes('del'), true);
     });
 
-    it('should not include less common methods', () => {
+    it('should not include less common methods (they are dynamically added)', () => {
       assert.strictEqual(COMMON_HTTP_METHODS.includes('connect'), false);
       assert.strictEqual(COMMON_HTTP_METHODS.includes('trace'), false);
       assert.strictEqual(COMMON_HTTP_METHODS.includes('purge'), false);

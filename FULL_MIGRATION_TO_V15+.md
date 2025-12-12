@@ -18,14 +18,16 @@ The guide is written so you can either:
   - [4.1. Custom regex parameters (`:param(regex)`) removed](#41-custom-regex-parameters-paramregex-removed)
   - [4.2. `strict` vs `trailing` behavior](#42-strict-vs-trailing-behavior)
   - [4.3. Rest-style routes and `pathAsRegExp` options](#43-rest-style-routes-and-pathasregexp-options)
+  - [4.4. Middleware path boundary matching (fixed)](#44-middleware-path-boundary-matching-fixed)
 - [5. TypeScript & Types Changes](#5-typescript--types-changes)
   - [5.1. Built-in types, no `@types/@koa/router`](#51-built-in-types-no-typeskoarouter)
   - [5.2. New/updated exported types](#52-newupdated-exported-types)
+  - [5.3. Full type inference (no explicit types needed)](#53-full-type-inference-no-explicit-types-needed)
 - [6. Behavioral Changes and Best Practices](#6-behavioral-changes-and-best-practices)
   - [6.1. Parameter validation (replacement for `:param(regex)`)](#61-parameter-validation-replacement-for-paramregex)
   - [6.2. Nested routers and prefixes](#62-nested-routers-and-prefixes)
 - [7. Migration Recipes](#7-migration-recipes)
-  - [7.1. Minimal “just works” upgrade](#71-minimal-just-works-upgrade)
+  - [7.1. Minimal "just works" upgrade](#71-minimal-just-works-upgrade)
   - [7.2. Strictly typed TypeScript upgrade](#72-strictly-typed-typescript-upgrade)
 - [8. Troubleshooting](#8-troubleshooting)
 
@@ -187,7 +189,7 @@ The new version uses **`path-to-regexp` v8** via a wrapper (`src/utils/path-to-r
   - `LayerOptions` includes:
 
     ```ts
-    interface LayerOptions {
+    type LayerOptions = {
       sensitive?: boolean;
       strict?: boolean;
       trailing?: boolean;
@@ -195,7 +197,7 @@ The new version uses **`path-to-regexp` v8** via a wrapper (`src/utils/path-to-r
       prefix?: string;
       ignoreCaptures?: boolean;
       pathAsRegExp?: boolean;
-    }
+    };
     ```
 
   - `normalizeLayerOptionsToPathToRegexp()` converts `strict` and `trailing` into the shape expected by v8.
@@ -220,6 +222,31 @@ The new version uses **`path-to-regexp` v8** via a wrapper (`src/utils/path-to-r
 
 - If you manually created routes with raw regexes, or rely on special middleware paths, test them carefully after upgrade.
 - Prefer **string paths with parameters** where possible; use middleware for validation and complex patterns.
+
+### 4.4. Middleware path boundary matching (fixed)
+
+**Important fix:** Middleware scoped to a specific path now correctly respects path boundaries.
+
+- **Previously (buggy behavior):** Middleware on `/accounts` might incorrectly run for `/users/:userId/accounts`
+- **Now (correct behavior):** Middleware on `/accounts` only runs for paths starting with `/accounts`
+
+**Example:**
+
+```javascript
+const accountsRouter = new Router({ prefix: '/accounts' });
+accountsRouter.use(async (ctx, next) => {
+  ctx.state.isAccount = true; // Only runs for /accounts/*
+  return next();
+});
+
+const usersRouter = new Router({ prefix: '/users' });
+usersRouter.get('/:userId/accounts', async (ctx) => {
+  // ctx.state.isAccount is correctly undefined
+  // The /accounts middleware does NOT run here
+});
+```
+
+**Migration tip:** If you were accidentally relying on the incorrect behavior, you'll need to explicitly add the middleware to the routes where you want it to run.
 
 ---
 
@@ -251,7 +278,7 @@ Key types live in `src/types.ts` and are exported from the main entry:
 - **RouterOptions**
 
   ```ts
-  interface RouterOptions {
+  type RouterOptions = {
     exclusive?: boolean;
     prefix?: string;
     host?: string | string[] | RegExp;
@@ -259,13 +286,13 @@ Key types live in `src/types.ts` and are exported from the main entry:
     routerPath?: string;
     sensitive?: boolean;
     strict?: boolean;
-  }
+  };
   ```
 
 - **LayerOptions** (used by individual routes)
 
   ```ts
-  interface LayerOptions {
+  type LayerOptions = {
     name?: string | null;
     sensitive?: boolean;
     strict?: boolean;
@@ -274,7 +301,7 @@ Key types live in `src/types.ts` and are exported from the main entry:
     prefix?: string;
     ignoreCaptures?: boolean;
     pathAsRegExp?: boolean;
-  }
+  };
   ```
 
 - **RouterContext** – extended Koa context including router-specific fields.
@@ -289,13 +316,14 @@ Key types live in `src/types.ts` and are exported from the main entry:
     ContextT & RouterParameterContext<StateT, ContextT>,
     BodyT
   > & {
-    request: { params?: Record<string, string> };
+    params: Record<string, string>; // Always defined in route handlers
+    request: { params: Record<string, string> }; // Always defined in route handlers
     routerPath?: string;
     routerName?: string;
     matched?: Layer[];
     captures?: string[];
     newRouterPath?: string;
-    _matchedParams?: WeakMap<Function, boolean>;
+    router: Router<StateT, ContextT>;
   };
   ```
 
@@ -316,6 +344,64 @@ Key types live in `src/types.ts` and are exported from the main entry:
 
 - If you had your own `ContextWithRouter` types, you can usually replace them with the provided `RouterContext` or extend it.
 
+### 5.3. Full type inference (no explicit types needed)
+
+The router now provides **full type inference** out of the box. You no longer need to explicitly type `ctx` and `next` in most cases:
+
+**Before (manual types required):**
+
+```typescript
+import Router, { RouterContext } from '@koa/router';
+import type { Next } from 'koa';
+
+router.get('/users/:id', (ctx: RouterContext, next: Next) => {
+  ctx.params.id; // Required explicit type for ctx
+  return next();
+});
+```
+
+**After (types are inferred):**
+
+```typescript
+import Router from '@koa/router';
+
+router.get('/users/:id', (ctx, next) => {
+  ctx.params.id;        // ✅ Inferred as string
+  ctx.request.params;   // ✅ Inferred as Record<string, string>
+  ctx.body = { ... };   // ✅ Works
+  return next();        // ✅ Works
+});
+
+// Also works for router.use()
+router.use((ctx, next) => {
+  ctx.state.foo = 'bar';  // ✅ Works
+  return next();          // ✅ Works
+});
+```
+
+**Key improvements:**
+
+| Feature                            | Before                      | After             |
+| ---------------------------------- | --------------------------- | ----------------- |
+| `ctx` in `.get()`, `.post()`, etc. | Manual type required        | ✅ Inferred       |
+| `next` parameter                   | Manual type required        | ✅ Inferred       |
+| `ctx.params`                       | Optional (`ctx.params?.id`) | ✅ Always defined |
+| `ctx.request.params`               | Required `!` assertion      | ✅ Always defined |
+| `router.use()` middleware          | Manual types required       | ✅ Inferred       |
+
+**Custom HTTP methods with inference:**
+
+```typescript
+const router = new Router({
+  methods: ['GET', 'POST', 'PURGE'] as const
+});
+
+// The purge method is automatically typed!
+router.purge('/cache/:key', (ctx) => {
+  ctx.body = { key: ctx.params.key };
+});
+```
+
 ---
 
 ## 6. Behavioral Changes and Best Practices
@@ -333,7 +419,7 @@ Key types live in `src/types.ts` and are exported from the main entry:
     const uuidRegex =
       /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 
-    return async (ctx: RouterContext, next: () => Promise<any>) => {
+    return async (ctx: RouterContext, next: () => Promise<unknown>) => {
       if (!uuidRegex.test(ctx.params[paramName])) {
         ctx.status = 400;
         ctx.body = { error: `Invalid ${paramName} format` };

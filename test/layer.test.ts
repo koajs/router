@@ -8,8 +8,18 @@ import http from 'node:http';
 import Koa from 'koa';
 import request from 'supertest';
 
-import Router from '../src';
+import Router, { RouterContext } from '../src';
 import Layer from '../src/layer';
+
+type TestState = {
+  user?: { name: string };
+  [key: string]: unknown;
+};
+
+type TestContext = RouterContext<TestState> & {
+  user?: { name: string };
+  captures?: string[];
+};
 
 describe('Layer', () => {
   it('composes multiple callbacks/middleware', async () => {
@@ -18,11 +28,11 @@ describe('Layer', () => {
     app.use(router.routes());
     router.get(
       '/:category/:title',
-      (ctx: any, next: any) => {
+      (ctx, next) => {
         ctx.status = 500;
         return next();
       },
-      (ctx: any, next: any) => {
+      (ctx, next) => {
         ctx.status = 204;
         return next();
       }
@@ -38,7 +48,7 @@ describe('Layer', () => {
       const app = new Koa();
       const router = new Router();
       app.use(router.routes());
-      router.get('/:category/:title', (ctx: any) => {
+      router.get('/:category/:title', (ctx) => {
         assert.strictEqual(typeof ctx.params, 'object');
         assert.strictEqual(ctx.params.category, 'match');
         assert.strictEqual(ctx.params.title, 'this');
@@ -53,7 +63,7 @@ describe('Layer', () => {
       const app = new Koa();
       const router = new Router();
       app.use(router.routes());
-      router.get('/:category/:title', (ctx: any) => {
+      router.get('/:category/:title', (ctx) => {
         assert.strictEqual(typeof ctx.params, 'object');
         assert.strictEqual(ctx.params.category, '100%');
         assert.strictEqual(ctx.params.title, '101%');
@@ -68,7 +78,7 @@ describe('Layer', () => {
       const app = new Koa();
       const router = new Router();
       app.use(router.routes());
-      router.get('/users/:username', (ctx: any) => {
+      router.get('/users/:username', (ctx) => {
         assert.strictEqual(ctx.params.username, 'john+doe');
         ctx.status = 200;
         ctx.body = { username: ctx.params.username };
@@ -81,18 +91,18 @@ describe('Layer', () => {
 
     it('populates ctx.captures with regexp captures', async () => {
       const app = new Koa();
-      const router = new Router();
+      const router = new Router<TestState, TestContext>();
       app.use(router.routes());
       router.get(
         /^\/api\/([^/]+)\/?/i,
-        (ctx: any, next: any) => {
+        (ctx, next) => {
           assert.strictEqual(Array.isArray(ctx.captures), true);
-          assert.strictEqual(ctx.captures[0], '1');
+          assert.strictEqual(ctx.captures?.[0], '1');
           return next();
         },
-        (ctx: any) => {
+        (ctx) => {
           assert.strictEqual(Array.isArray(ctx.captures), true);
-          assert.strictEqual(ctx.captures[0], '1');
+          assert.strictEqual(ctx.captures?.[0], '1');
           ctx.status = 204;
         }
       );
@@ -103,18 +113,18 @@ describe('Layer', () => {
 
     it('return original ctx.captures when decodeURIComponent throw error', async () => {
       const app = new Koa();
-      const router = new Router();
+      const router = new Router<TestState, TestContext>();
       app.use(router.routes());
       router.get(
         /^\/api\/([^/]+)\/?/i,
-        (ctx: any, next: any) => {
+        (ctx, next) => {
           assert.strictEqual(typeof ctx.captures, 'object');
-          assert.strictEqual(ctx.captures[0], '101%');
+          assert.strictEqual(ctx.captures?.[0], '101%');
           return next();
         },
-        (ctx: any) => {
+        (ctx) => {
           assert.strictEqual(typeof ctx.captures, 'object');
-          assert.strictEqual(ctx.captures[0], '101%');
+          assert.strictEqual(ctx.captures?.[0], '101%');
           ctx.status = 204;
         }
       );
@@ -125,18 +135,18 @@ describe('Layer', () => {
 
     it('populates ctx.captures with regexp captures include undefined', async () => {
       const app = new Koa();
-      const router = new Router();
+      const router = new Router<TestState, TestContext>();
       app.use(router.routes());
       router.get(
         /^\/api(\/.+)?/i,
-        (ctx: any, next: any) => {
+        (ctx, next) => {
           assert.strictEqual(typeof ctx.captures, 'object');
-          assert.strictEqual(ctx.captures[0], undefined);
+          assert.strictEqual(ctx.captures?.[0], undefined);
           return next();
         },
-        (ctx: any) => {
+        (ctx) => {
           assert.strictEqual(typeof ctx.captures, 'object');
-          assert.strictEqual(ctx.captures[0], undefined);
+          assert.strictEqual(ctx.captures?.[0], undefined);
           ctx.status = 204;
         }
       );
@@ -149,21 +159,24 @@ describe('Layer', () => {
       app.use(router.routes());
       const notexistHandle = undefined;
       assert.throws(
-        () => router.get('/foo', notexistHandle as any),
+        // @ts-expect-error - testing invalid input
+        () => router.get('/foo', notexistHandle),
         new Error(
           'get `/foo`: `middleware` must be a function, not `undefined`'
         )
       );
 
       assert.throws(
-        () => router.get('foo router', '/foo', notexistHandle as any),
+        // @ts-expect-error - testing invalid input
+        () => router.get('foo router', '/foo', notexistHandle),
         new Error(
           'get `foo router`: `middleware` must be a function, not `undefined`'
         )
       );
 
       assert.throws(
-        () => router.post('/foo', () => {}, notexistHandle as any),
+        // @ts-expect-error - testing invalid input
+        () => router.post('/foo', () => {}, notexistHandle),
         new Error(
           'post `/foo`: `middleware` must be a function, not `undefined`'
         )
@@ -174,17 +187,17 @@ describe('Layer', () => {
   describe('Layer#param()', () => {
     it('composes middleware for param fn', async () => {
       const app = new Koa();
-      const router = new Router();
-      const route = new Layer(
+      const router = new Router<TestState, TestContext>();
+      const route = new Layer<TestState, TestContext>(
         '/users/:user',
         ['GET'],
         [
-          (ctx: any) => {
+          (ctx) => {
             ctx.body = ctx.user;
           }
         ]
       );
-      route.param('user', (id, ctx: any, next) => {
+      route.param('user', (id, ctx, next) => {
         ctx.user = { name: 'alex' };
         if (!id) {
           ctx.status = 404;
@@ -203,17 +216,17 @@ describe('Layer', () => {
 
     it('ignores params which are not matched', async () => {
       const app = new Koa();
-      const router = new Router();
-      const route = new Layer(
+      const router = new Router<TestState, TestContext>();
+      const route = new Layer<TestState, TestContext>(
         '/users/:user',
         ['GET'],
         [
-          (ctx: any) => {
+          (ctx) => {
             ctx.body = ctx.user;
           }
         ]
       );
-      route.param('user', (id, ctx: any, next) => {
+      route.param('user', (id, ctx, next) => {
         ctx.user = { name: 'alex' };
         if (!id) {
           ctx.status = 404;
@@ -222,7 +235,7 @@ describe('Layer', () => {
 
         return next();
       });
-      route.param('title', (id, ctx: any, next) => {
+      route.param('title', (id, ctx, next) => {
         ctx.user = { name: 'mark' };
         if (!id) {
           ctx.status = 404;
@@ -323,6 +336,23 @@ describe('Layer', () => {
       const prefix = route.setPrefix('TEST');
       assert.strictEqual(prefix.path, 'TEST/hunter2');
     });
+
+    it('should throw TypeError when attempting to generate URL for RegExp path', () => {
+      const route = new Layer(/\/users\/\d+/, ['GET'], [() => {}], {
+        pathAsRegExp: true
+      });
+
+      assert.throws(
+        () => route.url({ id: 123 }),
+        /Cannot generate URL for routes defined with RegExp paths/
+      );
+    });
+
+    it('should generate URL correctly for string path with named parameters', () => {
+      const route = new Layer('/users/:id', ['GET'], [() => {}]);
+      const url = route.url({ id: 123 });
+      assert.strictEqual(url, '/users/123');
+    });
   });
 
   describe('Layer#prefix', () => {
@@ -336,10 +366,12 @@ describe('Layer', () => {
     });
 
     it('setPrefix method fails check Layer for path', () => {
-      const route = new Layer(false as any, ['get'], [() => {}], {
+      // @ts-expect-error - testing invalid input
+      const route = new Layer(false, ['get'], [() => {}], {
         name: 'books'
       });
-      route.path = false as any;
+      // @ts-expect-error - testing invalid input
+      route.path = false;
       const prefix = route.setPrefix('/TEST');
       assert.strictEqual(prefix.path, false);
     });
@@ -355,7 +387,7 @@ describe('Layer', () => {
         '/users/:id',
         ['GET'],
         [
-          (ctx: any) => {
+          (ctx) => {
             ctx.body = { userId: ctx.params.id };
           }
         ],

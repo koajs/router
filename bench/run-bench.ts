@@ -2,17 +2,19 @@
  * Benchmark runner - runs router.match() benchmarks
  *
  * This script benchmarks the router matching performance.
+ * Results are printed to console and saved to bench-result.txt
  */
 
+import { writeFileSync } from 'node:fs';
 import Router from '../src';
-import { now, print } from './util';
+import { now, print, title, warmup, operations } from './util';
 
 const router = new Router();
 
-interface Route {
-  method: string;
+type Route = {
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
   url: string;
-}
+};
 
 const routes: Route[] = [
   { method: 'GET', url: '/user' },
@@ -23,6 +25,8 @@ const routes: Route[] = [
   { method: 'GET', url: '/event/:id' },
   { method: 'GET', url: '/event/:id/comments' },
   { method: 'POST', url: '/event/:id/comment' },
+  { method: 'PUT', url: '/event/:id' },
+  { method: 'DELETE', url: '/event/:id' },
   { method: 'GET', url: '/map/:location/events' },
   { method: 'GET', url: '/status' },
   { method: 'GET', url: '/very/deeply/nested/route/hello/there' },
@@ -31,70 +35,92 @@ const routes: Route[] = [
 
 function noop(): void {}
 
-let i = 0;
-let time = 0;
-
+// Register all routes
 for (const route of routes) {
-  if (route.method === 'GET') {
-    router.get(route.url, noop);
-  } else {
-    router.post(route.url, noop);
-  }
+  router[route.method.toLowerCase() as 'get' | 'post' | 'put' | 'delete'](
+    route.url,
+    noop
+  );
 }
 
-time = now();
-for (i = 0; i < 1_000_000; i++) {
-  router.match('/user', 'GET');
-}
+title('Router Match Benchmarks');
+console.log(`Running ${operations.toLocaleString()} iterations per test\n`);
 
-print('short static:', time);
-
-time = now();
-for (i = 0; i < 1_000_000; i++) {
-  router.match('/user/comments', 'GET');
-}
-
-print('static with same radix:', time);
-
-time = now();
-for (i = 0; i < 1_000_000; i++) {
-  router.match('/user/lookup/username/john', 'GET');
-}
-
-print('dynamic route:', time);
-
-time = now();
-for (i = 0; i < 1_000_000; i++) {
-  router.match('/event/abcd1234/comments', 'GET');
-}
-
-print('mixed static dynamic:', time);
-
-time = now();
-for (i = 0; i < 1_000_000; i++) {
-  router.match('/very/deeply/nested/route/hello/there', 'GET');
-}
-
-print('long static:', time);
-
-time = now();
-for (i = 0; i < 1_000_000; i++) {
-  router.match('/static/index.html', 'GET');
-}
-
-print('wildcard:', time);
-
-time = now();
-for (i = 0; i < 1_000_000; i++) {
+// Warmup - runs each match once to warm up JIT compiler
+warmup(() => {
   router.match('/user', 'GET');
   router.match('/user/comments', 'GET');
   router.match('/user/lookup/username/john', 'GET');
   router.match('/event/abcd1234/comments', 'GET');
   router.match('/very/deeply/nested/route/hello/there', 'GET');
   router.match('/static/index.html', 'GET');
+});
+
+const results: Record<string, number> = {};
+let time: number;
+
+// Short static route
+time = now();
+for (let i = 0; i < operations; i++) {
+  router.match('/user', 'GET');
 }
+results['short static'] = print('short static', time);
 
-const output = print('all together:', time);
+// Static with same radix
+time = now();
+for (let i = 0; i < operations; i++) {
+  router.match('/user/comments', 'GET');
+}
+results['static with same radix'] = print('static with same radix', time);
 
-import { writeFileSync } from 'node:fs';
-writeFileSync('bench-result.txt', String(output));
+// Dynamic route
+time = now();
+for (let i = 0; i < operations; i++) {
+  router.match('/user/lookup/username/john', 'GET');
+}
+results['dynamic route'] = print('dynamic route', time);
+
+// Mixed static and dynamic
+time = now();
+for (let i = 0; i < operations; i++) {
+  router.match('/event/abcd1234/comments', 'GET');
+}
+results['mixed static dynamic'] = print('mixed static dynamic', time);
+
+// Long static route
+time = now();
+for (let i = 0; i < operations; i++) {
+  router.match('/very/deeply/nested/route/hello/there', 'GET');
+}
+results['long static'] = print('long static', time);
+
+// Wildcard route
+time = now();
+for (let i = 0; i < operations; i++) {
+  router.match('/static/index.html', 'GET');
+}
+results['wildcard'] = print('wildcard', time);
+
+// POST method
+time = now();
+for (let i = 0; i < operations; i++) {
+  router.match('/event/abcd1234/comment', 'POST');
+}
+results['POST method'] = print('POST method', time);
+
+// All together (6 matches per iteration)
+time = now();
+for (let i = 0; i < operations; i++) {
+  router.match('/user', 'GET');
+  router.match('/user/comments', 'GET');
+  router.match('/user/lookup/username/john', 'GET');
+  router.match('/event/abcd1234/comments', 'GET');
+  router.match('/very/deeply/nested/route/hello/there', 'GET');
+  router.match('/static/index.html', 'GET');
+}
+results['all together (6 matches)'] = print('all together (6 matches)', time);
+
+// Save results
+const output = JSON.stringify(results, null, 2);
+writeFileSync('bench-result.txt', output);
+console.log('\nResults saved to bench-result.txt');

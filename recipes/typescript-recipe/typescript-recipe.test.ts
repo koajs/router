@@ -10,6 +10,14 @@ import request from 'supertest';
 import Koa from 'koa';
 import { Next } from '../common';
 
+type RequestBody = Record<string, unknown>;
+
+type ContextWithBody = RouterContext & {
+  request: RouterContext['request'] & {
+    body?: RequestBody;
+  };
+};
+
 describe('TypeScript Recipe', () => {
   it('should work with typed route handlers', async () => {
     const app = new Koa();
@@ -22,19 +30,19 @@ describe('TypeScript Recipe', () => {
           body += chunk;
         }
         try {
-          (ctx.request as any).body = JSON.parse(body);
+          (ctx.request as { body?: RequestBody }).body = JSON.parse(body);
         } catch {
-          (ctx.request as any).body = {};
+          (ctx.request as { body?: RequestBody }).body = {};
         }
       }
       await next();
     });
 
-    interface User {
+    type User = {
       id: number;
       name: string;
       email: string;
-    }
+    };
 
     const getUserById = async (id: number): Promise<User> => {
       return { id, name: 'John Doe', email: 'john@example.com' };
@@ -57,14 +65,15 @@ describe('TypeScript Recipe', () => {
       const user: User = await getUserById(userId);
       ctx.body = user;
     });
-    interface CreateUserBody {
+
+    type CreateUserBody = {
       name: string;
       email: string;
-    }
+    };
 
-    router.post('/users', async (ctx: RouterContext) => {
+    router.post('/users', async (ctx: ContextWithBody) => {
       const body =
-        ((ctx.request as any).body as CreateUserBody) || ({} as CreateUserBody);
+        (ctx.request.body as CreateUserBody) || ({} as CreateUserBody);
       const { name, email } = body;
 
       const user = await createUser({ name, email });

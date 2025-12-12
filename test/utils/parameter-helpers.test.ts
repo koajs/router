@@ -4,7 +4,8 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import Router from '../../src/router';
+
+import Router from '../../src';
 import Layer from '../../src/layer';
 import {
   normalizeParameterMiddleware,
@@ -149,7 +150,8 @@ describe('parameter-helpers utilities', () => {
     it('should handle undefined middleware gracefully', () => {
       const router = new Router();
 
-      applyParameterMiddlewareToRoute(router, 'id', undefined as any);
+      // @ts-expect-error - testing undefined middleware
+      applyParameterMiddlewareToRoute(router, 'id', undefined);
 
       assert.strictEqual(router instanceof Router, true);
     });
