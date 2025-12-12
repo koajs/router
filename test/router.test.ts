@@ -3436,4 +3436,158 @@ describe('RouterOptions: strict (comprehensive)', () => {
       .get('/v1/users/')
       .expect(404);
   });
+
+  describe('middleware prefix matching', () => {
+    it('should not match middleware from other routers with same prefix in path', async () => {
+      const app = new Koa();
+
+      const accountsRouter = new Router({ prefix: '/accounts' });
+      accountsRouter.use(async (ctx, next) => {
+        ctx.state.isAccount = true;
+        return next();
+      });
+      accountsRouter.get('/', async (ctx) => {
+        ctx.body = { route: 'accounts', isAccount: ctx.state.isAccount };
+      });
+
+      const usersRouter = new Router({ prefix: '/users' });
+      usersRouter.get('/', async (ctx) => {
+        ctx.body = { route: 'users', isAccount: ctx.state.isAccount };
+      });
+      usersRouter.get('/:userId/accounts', async (ctx) => {
+        // This should NOT have isAccount set because the /accounts middleware
+        // should only apply to the accountsRouter, not to paths that happen
+        // to contain "accounts" in them
+        ctx.body = {
+          route: 'user-accounts',
+          isAccount: ctx.state.isAccount,
+          userId: ctx.params.userId
+        };
+      });
+
+      app.use(accountsRouter.routes());
+      app.use(usersRouter.routes());
+
+      const server = http.createServer(app.callback());
+
+      // /accounts should have isAccount = true
+      const accountsRes = await request(server).get('/accounts').expect(200);
+      assert.strictEqual(accountsRes.body.route, 'accounts');
+      assert.strictEqual(accountsRes.body.isAccount, true);
+
+      // /users should NOT have isAccount
+      const usersRes = await request(server).get('/users').expect(200);
+      assert.strictEqual(usersRes.body.route, 'users');
+      assert.strictEqual(usersRes.body.isAccount, undefined);
+
+      // /users/:userId/accounts should NOT have isAccount
+      // (the /accounts middleware should not match here)
+      const userAccountsRes = await request(server)
+        .get('/users/12345/accounts')
+        .expect(200);
+      assert.strictEqual(userAccountsRes.body.route, 'user-accounts');
+      assert.strictEqual(userAccountsRes.body.isAccount, undefined);
+      assert.strictEqual(userAccountsRes.body.userId, '12345');
+    });
+
+    it('should match middleware with explicit empty path', async () => {
+      const app = new Koa();
+
+      const accountsRouter = new Router({ prefix: '/accounts' });
+      accountsRouter.use('', async (ctx, next) => {
+        ctx.state.isAccount = true;
+        return next();
+      });
+      accountsRouter.get('/', async (ctx) => {
+        ctx.body = { isAccount: ctx.state.isAccount };
+      });
+      accountsRouter.get('/:id', async (ctx) => {
+        ctx.body = { isAccount: ctx.state.isAccount, id: ctx.params.id };
+      });
+
+      app.use(accountsRouter.routes());
+
+      const server = http.createServer(app.callback());
+
+      const res1 = await request(server).get('/accounts').expect(200);
+      assert.strictEqual(res1.body.isAccount, true);
+
+      const res2 = await request(server).get('/accounts/123').expect(200);
+      assert.strictEqual(res2.body.isAccount, true);
+      assert.strictEqual(res2.body.id, '123');
+    });
+
+    it('should match middleware with explicit "/" path only on root', async () => {
+      const app = new Koa();
+
+      const accountsRouter = new Router({ prefix: '/accounts' });
+      accountsRouter.use('/', async (ctx, next) => {
+        ctx.state.isAccount = true;
+        return next();
+      });
+      accountsRouter.get('/', async (ctx) => {
+        ctx.body = { isAccount: ctx.state.isAccount };
+      });
+      accountsRouter.get('/:id', async (ctx) => {
+        ctx.body = { isAccount: ctx.state.isAccount, id: ctx.params.id };
+      });
+
+      app.use(accountsRouter.routes());
+
+      const server = http.createServer(app.callback());
+
+      // Root should have middleware applied
+      const res1 = await request(server).get('/accounts').expect(200);
+      assert.strictEqual(res1.body.isAccount, true);
+
+      // Sub-routes should NOT have middleware applied (explicit "/" only matches root)
+      const res2 = await request(server).get('/accounts/123').expect(200);
+      assert.strictEqual(res2.body.isAccount, undefined);
+      assert.strictEqual(res2.body.id, '123');
+    });
+
+    it('should work correctly with nested subrouters', async () => {
+      const app = new Koa();
+
+      const accountsRouter = new Router({ prefix: '/accounts' });
+      accountsRouter.use(async (ctx, next) => {
+        ctx.state.isAccount = true;
+        return next();
+      });
+      accountsRouter.get('/', async (ctx) => {
+        ctx.body = { route: 'accounts', isAccount: ctx.state.isAccount };
+      });
+
+      const usersRouter = new Router({ prefix: '/users' });
+      usersRouter.get('/:userId/accounts', async (ctx) => {
+        ctx.body = {
+          route: 'user-accounts',
+          isAccount: ctx.state.isAccount,
+          userId: ctx.params.userId
+        };
+      });
+
+      const apiRouter = new Router({ prefix: '/api' });
+      apiRouter.use(accountsRouter.routes());
+      apiRouter.use(usersRouter.routes());
+
+      app.use(apiRouter.routes());
+
+      const server = http.createServer(app.callback());
+
+      // /api/accounts should have isAccount = true
+      const accountsRes = await request(server)
+        .get('/api/accounts')
+        .expect(200);
+      assert.strictEqual(accountsRes.body.route, 'accounts');
+      assert.strictEqual(accountsRes.body.isAccount, true);
+
+      // /api/users/:userId/accounts should NOT have isAccount
+      const userAccountsRes = await request(server)
+        .get('/api/users/12345/accounts')
+        .expect(200);
+      assert.strictEqual(userAccountsRes.body.route, 'user-accounts');
+      assert.strictEqual(userAccountsRes.body.isAccount, undefined);
+    });
+  });
 });
