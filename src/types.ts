@@ -2,7 +2,12 @@
  * Type definitions for @koa/router
  */
 
-import type { ParameterizedContext, DefaultContext, DefaultState } from 'koa';
+import type {
+  ParameterizedContext,
+  DefaultContext,
+  DefaultState,
+  Middleware
+} from 'koa';
 import type { RouterInstance as Router } from './router';
 import type Layer from './layer';
 
@@ -249,10 +254,7 @@ export type RouterMiddleware<
   StateT = DefaultState,
   ContextT = DefaultContext,
   BodyT = unknown
-> = (
-  context: RouterContext<StateT, ContextT, BodyT>,
-  next: () => Promise<unknown>
-) => unknown | Promise<unknown>;
+> = Middleware<StateT, RouterContext<StateT, ContextT, BodyT>, BodyT>;
 
 /**
  * HTTP method names in lowercase
