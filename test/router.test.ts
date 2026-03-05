@@ -4020,25 +4020,25 @@ describe('RouterOptions: strict (comprehensive)', () => {
     });
   });
 
-  describe('Catch-all routes (gh-222)', () => {
-    it('catch-all route should return 404 for unmatched routes', async () => {
+  describe('Catch-all routes', () => {
+    it('catch-all route runs for unmatched routes', async () => {
       const app = new Koa();
       const router = new Router();
 
       router.get('/users', (ctx) => {
         ctx.status = 200;
-        ctx.body = { route: 'users' };
+        ctx.body = 'Users';
       });
       router.get('/posts', (ctx) => {
         ctx.status = 200;
-        ctx.body = { route: 'posts' };
+        ctx.body = 'Posts';
       });
 
       // Catch-all for unmatched routes (from README example)
       router.all('{/*rest}', (ctx) => {
         if (!ctx.matched || ctx.matched.length === 0) {
-          ctx.status = 404;
-          ctx.body = { error: 'Not Found' };
+          ctx.status = 200;
+          ctx.body = 'Catch-all';
         }
       });
 
@@ -4047,13 +4047,13 @@ describe('RouterOptions: strict (comprehensive)', () => {
       const server = http.createServer(app.callback());
 
       // Known routes should work normally
-      await request(server).get('/users').expect(200);
-      await request(server).get('/posts').expect(200);
+      await request(server).get('/users').expect(200).expect('Users');
+      await request(server).get('/posts').expect(200).expect('Posts');
 
-      // Unknown route should get 404 from the catch-all
+      // Unknown route should be handled by the catch-all
       const res = await request(server).get('/unknown');
-      assert.strictEqual(res.status, 404);
-      assert.deepStrictEqual(res.body, { error: 'Not Found' });
+      assert.strictEqual(res.status, 200);
+      assert.strictEqual(res.text, 'Catch-all');
     });
   });
 });
