@@ -473,7 +473,7 @@ router.get('/:category/:title', (ctx) => {
 **Optional parameters:**
 
 ```javascript
-router.get('/user{/:id}?', (ctx) => {
+router.get('/user{/:id}', (ctx) => {
   // Matches both /user and /user/123
   ctx.body = { id: ctx.params.id || 'all' };
 });
