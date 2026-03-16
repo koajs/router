@@ -67,7 +67,7 @@ class RouterImplementation<
 > {
   opts: RouterOptions;
   methods: string[];
-  exclusive: boolean;
+  exclusive: 'first' | 'last' | undefined;
   params: Record<
     string,
     | RouterParameterMiddleware<StateT, ContextT>
@@ -121,7 +121,11 @@ class RouterImplementation<
       'POST',
       'DELETE'
     ];
-    this.exclusive = Boolean(this.opts.exclusive);
+    if (typeof this.opts.exclusive === 'boolean') {
+      this.exclusive = this.opts.exclusive ? 'last' : 'first';
+    } else if (typeof this.opts.exclusive === 'string') {
+      this.exclusive = this.opts.exclusive;
+    }
 
     this.params = {};
     this.stack = [];
@@ -641,11 +645,11 @@ class RouterImplementation<
     matchedLayers: Layer<StateT, ContextT>[],
     requestPath: string
   ): RouterMiddleware<StateT, ContextT>[] {
-    const layersToExecute = this.opts.exclusive
-      ? [matchedLayers.at(-1)].filter(
-          (layer): layer is Layer<StateT, ContextT> => layer !== undefined
-        )
-      : matchedLayers;
+    let layersToExecute = matchedLayers;
+    if (this.exclusive) {
+      const matchedLayer = this.exclusive === 'first' ? matchedLayers.at(0) : matchedLayers.at(-1);
+      layersToExecute = [matchedLayer].filter((layer): layer is Layer<StateT, ContextT> => !!layer);
+    }
 
     const middlewareChain: RouterMiddleware<StateT, ContextT>[] = [];
 

@@ -269,7 +269,7 @@ Create a new router instance.
 | Option      | Type                           | Description                               |
 | ----------- | ------------------------------ | ----------------------------------------- |
 | `prefix`    | `string`                       | Prefix all routes with this path          |
-| `exclusive` | `boolean`                      | Only run the most specific matching route |
+| `exclusive` | `boolean \| "first" \| "last"` | Only run the most specific matching route |
 | `host`      | `string \| string[] \| RegExp` | Match routes only for this hostname(s)    |
 | `methods`   | `string[]`                     | Custom HTTP methods to support            |
 | `sensitive` | `boolean`                      | Enable case-sensitive routing             |

@@ -280,7 +280,7 @@ describe('Router', () => {
     const router = new Router({ exclusive: true });
 
     router
-      .get('users_single', new RegExp('/users/:id(.*)'), (ctx, next) => {
+      .get('users_single', '/users/:id{/*path}', (ctx, next) => {
         ctx.body = { single: true };
         next();
       })
@@ -297,6 +297,54 @@ describe('Router', () => {
 
     assert.strictEqual('single' in res.body, false);
     assert.strictEqual('all' in res.body, true);
+  });
+
+  it("runs only the last match when the 'exclusive' option is set to 'last'", async () => {
+    const app = new Koa();
+    const router = new Router({ exclusive: 'last' });
+
+    router
+      .get('users_single', '/users/:id{/*path}', (ctx, next) => {
+        ctx.body = { single: true };
+        next();
+      })
+      .get('users_all', '/users/all', (ctx, next) => {
+        ctx.body = { ...(ctx.body as object), all: true };
+        next();
+      });
+
+    const res = await request(
+      http.createServer(app.use(router.routes()).callback())
+    )
+      .get('/users/all')
+      .expect(200);
+
+    assert.strictEqual('single' in res.body, false);
+    assert.strictEqual('all' in res.body, true);
+  });
+
+  it("runs only the last match when the 'exclusive' option is set to 'first'", async () => {
+    const app = new Koa();
+    const router = new Router({ exclusive: 'first' });
+
+    router
+      .get('users_single', '/users/:id{/*path}', (ctx, next) => {
+        ctx.body = { single: true };
+        next();
+      })
+      .get('users_all', '/users/all', (ctx, next) => {
+        ctx.body = { ...(ctx.body as object), all: true };
+        next();
+      });
+
+    const res = await request(
+      http.createServer(app.use(router.routes()).callback())
+    )
+      .get('/users/all')
+      .expect(200);
+
+    assert.strictEqual('single' in res.body, true);
+    assert.strictEqual('all' in res.body, false);
   });
 
   it('does not run subsequent middleware without calling next', async () => {
@@ -1582,7 +1630,7 @@ it('nested router middleware does not affect unrelated routes (gh-90)', async ()
 
 it('nested router middleware has access to parent path parameters', async () => {
   const app = new Koa();
-  let capturedUserId = null;
+  let capturedUserId: string | null = null;
 
   const usersRouter = new Router();
   usersRouter.use(async (ctx, next) => {

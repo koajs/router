@@ -26,7 +26,7 @@ export type RouterOptions = {
   /**
    * Only run last matched route's controller when there are multiple matches
    */
-  exclusive?: boolean;
+  exclusive?: boolean | 'first' | 'last';
 
   /**
    * Prefix for all routes
