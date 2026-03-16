@@ -422,6 +422,24 @@ exclusiveRouter.get('/exclusive', async (ctx) => {
   true as Assert<IsAny<ExclusiveCtx> extends false ? true : false>;
 });
 
+const exclusiveRouterFirst = new Router<AppState, AppContext>({
+  exclusive: 'first'
+});
+
+exclusiveRouterFirst.get('/exclusive', async (ctx) => {
+  type ExclusiveCtx = typeof ctx;
+  true as Assert<IsAny<ExclusiveCtx> extends false ? true : false>;
+});
+
+const exclusiveRouterLast = new Router<AppState, AppContext>({
+  exclusive: 'last'
+});
+
+exclusiveRouterLast.get('/exclusive', async (ctx) => {
+  type ExclusiveCtx = typeof ctx;
+  true as Assert<IsAny<ExclusiveCtx> extends false ? true : false>;
+});
+
 // ===========================================
 // Test 25: Type narrowing and property access
 // ===========================================

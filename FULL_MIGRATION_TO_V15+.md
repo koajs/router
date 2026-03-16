@@ -309,7 +309,7 @@ Key types live in `src/types.ts` and are exported from the main entry:
 
   ```ts
   type RouterOptions = {
-    exclusive?: boolean;
+    exclusive?: boolean | 'first' | 'last';
     prefix?: string;
     host?: string | string[] | RegExp;
     methods?: string[];
