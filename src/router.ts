@@ -643,11 +643,26 @@ class RouterImplementation<
     matchedLayers: Layer<StateT, ContextT>[],
     requestPath: string
   ): RouterMiddleware<StateT, ContextT>[] {
-    const layersToExecute = this.opts.exclusive
-      ? [matchedLayers.at(-1)].filter(
-          (layer): layer is Layer<StateT, ContextT> => layer !== undefined
-        )
-      : matchedLayers;
+    let layersToExecute: Layer<StateT, ContextT>[];
+    if (this.exclusive) {
+      let chosenLayer: Layer<StateT, ContextT> | undefined;
+      if (this.opts.exclusive === 'specificity') {
+        for (const layer of matchedLayers) {
+          if (
+            !chosenLayer ||
+            layer.paramNames.length < chosenLayer.paramNames.length
+          ) {
+            chosenLayer = layer;
+          }
+        }
+      } else {
+        chosenLayer = matchedLayers.at(-1);
+      }
+
+      layersToExecute = chosenLayer ? [chosenLayer] : [];
+    } else {
+      layersToExecute = matchedLayers;
+    }
 
     const middlewareChain: RouterMiddleware<StateT, ContextT>[] = [];
 

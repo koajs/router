@@ -266,14 +266,14 @@ Create a new router instance.
 
 **Options:**
 
-| Option      | Type                           | Description                               |
-| ----------- | ------------------------------ | ----------------------------------------- |
-| `prefix`    | `string`                       | Prefix all routes with this path          |
-| `exclusive` | `boolean`                      | Only run the most specific matching route |
-| `host`      | `string \| string[] \| RegExp` | Match routes only for this hostname(s)    |
-| `methods`   | `string[]`                     | Custom HTTP methods to support            |
-| `sensitive` | `boolean`                      | Enable case-sensitive routing             |
-| `strict`    | `boolean`                      | Require trailing slashes                  |
+| Option      | Type                           | Description                                                                                                                                                                    |
+| ----------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `prefix`    | `string`                       | Prefix all routes with this path                                                                                                                                               |
+| `exclusive` | `boolean \| 'specificity'`     | `true`: only run the last-registered matching route. `'specificity'`: only run the route with the fewest path parameters (OpenAPI-compliant). Omit to run all matching routes. |
+| `host`      | `string \| string[] \| RegExp` | Match routes only for this hostname(s)                                                                                                                                         |
+| `methods`   | `string[]`                     | Custom HTTP methods to support                                                                                                                                                 |
+| `sensitive` | `boolean`                      | Enable case-sensitive routing                                                                                                                                                  |
+| `strict`    | `boolean`                      | Require trailing slashes                                                                                                                                                       |
 
 **Example:**
 

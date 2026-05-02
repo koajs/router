@@ -24,9 +24,18 @@ export type {
 
 export type RouterOptions = {
   /**
-   * Only run last matched route's controller when there are multiple matches
+   * Control which route is executed when multiple routes match a request.
+   *
+   * - `true` — run only the last registered matching route (legacy behaviour)
+   * - `'specificity'` — run only the most specific matching route, defined as
+   *   the one with the fewest path parameters. This is OpenAPI-compliant
+   *   (see https://spec.openapis.org/oas/v3.0.3#path-templating-matching) and
+   *   is the recommended mode for code generated from OpenAPI specifications.
+   *   When two routes have an equal number of parameters the last registered
+   *   one wins, preserving deterministic behaviour.
+   * - `false` / omitted — all matching routes run in registration order
    */
-  exclusive?: boolean;
+  exclusive?: boolean | 'specificity';
 
   /**
    * Prefix for all routes

@@ -299,6 +299,133 @@ describe('Router', () => {
     assert.strictEqual('all' in res.body, true);
   });
 
+  describe("exclusive: 'specificity' mode (OpenAPI-compliant route selection)", () => {
+    it('picks the route with fewest path parameters regardless of registration order', async () => {
+      const app = new Koa();
+      // Deliberately register the parameterised route FIRST (as OpenAPI generators do)
+      // to confirm that registration order does not affect the outcome
+      const router = new Router({ exclusive: 'specificity' });
+
+      router
+        .get('pet_by_id', '/pet/:petId', (ctx, next) => {
+          ctx.body = { ...(ctx.body as object), byId: true };
+          next();
+        })
+        .get('pet_find_by_status', '/pet/findByStatus', (ctx, next) => {
+          ctx.body = { ...(ctx.body as object), findByStatus: true };
+          next();
+        });
+
+      const res = await request(
+        http.createServer(app.use(router.routes()).callback())
+      )
+        .get('/pet/findByStatus')
+        .expect(200);
+
+      // The static route (0 params) must win over the parameterised one (1 param)
+      assert.strictEqual('findByStatus' in res.body, true);
+      assert.strictEqual('byId' in res.body, false);
+    });
+
+    it('picks the route with fewest params even when the static route is registered first', async () => {
+      const app = new Koa();
+      const router = new Router({ exclusive: 'specificity' });
+
+      router
+        .get('pet_find_by_status', '/pet/findByStatus', (ctx, next) => {
+          ctx.body = { ...(ctx.body as object), findByStatus: true };
+          next();
+        })
+        .get('pet_by_id', '/pet/:petId', (ctx, next) => {
+          ctx.body = { ...(ctx.body as object), byId: true };
+          next();
+        });
+
+      const res = await request(
+        http.createServer(app.use(router.routes()).callback())
+      )
+        .get('/pet/findByStatus')
+        .expect(200);
+
+      assert.strictEqual('findByStatus' in res.body, true);
+      assert.strictEqual('byId' in res.body, false);
+    });
+
+    it('falls back to first-registered when two routes have equal param counts', async () => {
+      const app = new Koa();
+      const router = new Router({ exclusive: 'specificity' });
+
+      router
+        .get('users_by_id', '/users/:id', (ctx, next) => {
+          ctx.body = { ...(ctx.body as object), byId: true };
+          next();
+        })
+        .get('any_all', '/:any/all', (ctx, next) => {
+          ctx.body = { ...(ctx.body as object), anyAll: true };
+          next();
+        });
+
+      const res = await request(
+        http.createServer(app.use(router.routes()).callback())
+      )
+        .get('/users/all')
+        .expect(200);
+
+      // Both have 1 param — reduce keeps the first accumulated best, so the
+      // first registered route ('/users/:id') wins on ties
+      assert.strictEqual('byId' in res.body, true);
+      assert.strictEqual('anyAll' in res.body, false);
+    });
+
+    it('still routes normally to the parameterised route when no static match exists', async () => {
+      const app = new Koa();
+      const router = new Router({ exclusive: 'specificity' });
+
+      router
+        .get('pet_find_by_status', '/pet/findByStatus', (ctx) => {
+          ctx.body = { findByStatus: true };
+        })
+        .get('pet_by_id', '/pet/:petId', (ctx) => {
+          ctx.body = { petId: ctx.params.petId };
+        });
+
+      const res = await request(
+        http.createServer(app.use(router.routes()).callback())
+      )
+        .get('/pet/123')
+        .expect(200);
+
+      assert.strictEqual(res.body.petId, '123');
+      assert.strictEqual('findByStatus' in res.body, false);
+    });
+
+    it('does not affect exclusive: true (legacy last-registered behaviour is unchanged)', async () => {
+      const app = new Koa();
+      // With exclusive: true the LAST registered matching route must win
+      const router = new Router({ exclusive: true });
+
+      router
+        .get('pet_find_by_status', '/pet/findByStatus', (ctx, next) => {
+          ctx.body = { ...(ctx.body as object), findByStatus: true };
+          next();
+        })
+        .get('pet_by_id', '/pet/:petId', (ctx, next) => {
+          ctx.body = { ...(ctx.body as object), byId: true };
+          next();
+        });
+
+      const res = await request(
+        http.createServer(app.use(router.routes()).callback())
+      )
+        .get('/pet/findByStatus')
+        .expect(200);
+
+      // pet_by_id was registered last so it wins under exclusive: true
+      assert.strictEqual('byId' in res.body, true);
+      assert.strictEqual('findByStatus' in res.body, false);
+    });
+  });
+
   it('does not run subsequent middleware without calling next', async () => {
     const app = new Koa();
     const router = new Router();
