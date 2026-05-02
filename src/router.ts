@@ -484,12 +484,14 @@ class RouterImplementation<
     this.opts.prefix = normalizedPrefix;
 
     for (const route of this.stack) {
-      if (
-        previousPrefix &&
-        typeof route.path === 'string' &&
-        route.path.startsWith(previousPrefix)
-      ) {
-        route.path = route.path.slice(previousPrefix.length) || '/';
+      if (typeof route.path === 'string' && previousPrefix) {
+        const stripBoundary = previousPrefix + '/';
+        if (
+          route.path === previousPrefix ||
+          route.path.startsWith(stripBoundary)
+        ) {
+          route.path = route.path.slice(previousPrefix.length) || '/';
+        }
       }
 
       route.setPrefix(normalizedPrefix);

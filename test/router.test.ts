@@ -3303,6 +3303,103 @@ describe('Router#prefix', () => {
     await request(server).get('/bar').expect(404);
     await request(server).get('/bar/').expect(200);
   });
+
+  describe('prefix() segment-boundary strip', () => {
+    it('should not corrupt route.path when route was registered without a leading slash', () => {
+      const router = new Router({ prefix: '/api' });
+      router.get('foo', (ctx) => {
+        ctx.body = 'ok';
+      });
+      // _applyPrefix concatenates prefix + path directly: '/api' + 'foo' = '/apifoo'
+      assert.strictEqual(router.stack[0].path, '/apifoo');
+
+      router.prefix('/v1');
+      // Old bug: '/apifoo'.startsWith('/api') → true → strip 4 chars → 'foo'
+      //          → setPrefix('/v1') → '/v1foo'  (corrupted)
+      // Fixed:   '/apifoo' !== '/api' && !'/apifoo'.startsWith('/api/')
+      //          → no strip → setPrefix('/v1') → '/v1/apifoo'
+      assert.strictEqual(router.stack[0].path, '/v1/apifoo');
+    });
+
+    it('should correctly replace previous prefix when path has a proper slash separator', () => {
+      const router = new Router({ prefix: '/api/v1' });
+      router.get('/users', (ctx) => {
+        ctx.body = 'ok';
+      });
+      assert.strictEqual(router.stack[0].path, '/api/v1/users');
+
+      router.prefix('/api/v2');
+      assert.strictEqual(router.stack[0].path, '/api/v2/users');
+    });
+
+    it('should handle root route whose stored path equals the previous prefix exactly', () => {
+      const router = new Router({ prefix: '/api' });
+      router.get('/', (ctx) => {
+        ctx.body = 'ok';
+      });
+      // _applyPrefix with isRootPath=true and non-strict returns just the prefix
+      assert.strictEqual(router.stack[0].path, '/api');
+
+      router.prefix('/v2');
+      // route.path === previousPrefix → strip → '' || '/' → setPrefix('/v2') → '/v2'
+      assert.strictEqual(router.stack[0].path, '/v2');
+    });
+
+    it('should handle a second prefix() call after a slashless route without further corruption', () => {
+      const router = new Router({ prefix: '/api' });
+      router.get('foo', (ctx) => {
+        ctx.body = 'ok';
+      });
+
+      router.prefix('/v1');
+      // path is now '/v1/apifoo'
+      assert.strictEqual(router.stack[0].path, '/v1/apifoo');
+
+      router.prefix('/v2');
+      // '/v1/apifoo'.startsWith('/v1/') → true → strip → '/apifoo' → setPrefix('/v2') → '/v2/apifoo'
+      assert.strictEqual(router.stack[0].path, '/v2/apifoo');
+    });
+
+    it('should route to the non-corrupted path after prefix change with a slashless-registered route', async () => {
+      const app = new Koa();
+      const router = new Router({ prefix: '/api' });
+      router.get('foo', (ctx) => {
+        ctx.body = { ok: true };
+      });
+
+      router.prefix('/v1');
+      app.use(router.routes());
+
+      const server = http.createServer(app.callback());
+
+      // Correct path produced by the fix: /v1/apifoo
+      await request(server).get('/v1/apifoo').expect(200);
+      // Corrupted path from the old bug: /v1foo — must NOT match
+      await request(server).get('/v1foo').expect(404);
+    });
+
+    it('should not corrupt a route that starts with prefix chars but has no slash boundary', async () => {
+      const app = new Koa();
+      const router = new Router({ prefix: '/api' });
+      // '/apidocs' starts with '/api' but has no '/' after it when seen as a raw string,
+      // however _applyPrefix produces '/api/apidocs' (slash separator is present)
+      // so the normal strip SHOULD fire here and the result SHOULD be '/v1/apidocs'
+      router.get('/apidocs', (ctx) => {
+        ctx.body = { ok: true };
+      });
+      assert.strictEqual(router.stack[0].path, '/api/apidocs');
+
+      router.prefix('/v1');
+      // '/api/apidocs'.startsWith('/api/') → true → strip → '/apidocs' → setPrefix('/v1') → '/v1/apidocs'
+      assert.strictEqual(router.stack[0].path, '/v1/apidocs');
+
+      app.use(router.routes());
+      const server = http.createServer(app.callback());
+
+      await request(server).get('/v1/apidocs').expect(200);
+      await request(server).get('/api/apidocs').expect(404);
+    });
+  });
 });
 
 describe('Static Router#url()', () => {
