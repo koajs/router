@@ -457,9 +457,15 @@ class RouterImplementation<
       usePathToRegexp = false;
     }
 
+    const ignoreWildcardParameter =
+      effectiveExplicitPath === '' && middlewarePath === '{/*rest}'
+        ? 'rest'
+        : undefined;
+
     this.register(finalPath, [], middleware, {
       end: isRootPath,
       ignoreCaptures: !effectiveHasExplicitPath && !prefixHasParameters,
+      ignoreWildcardParameter,
       pathAsRegExp: usePathToRegexp
     });
   }
@@ -1135,6 +1141,7 @@ class RouterImplementation<
       strict: options.strict || false,
       prefix: options.prefix || '',
       ignoreCaptures: options.ignoreCaptures,
+      ignoreWildcardParameter: options.ignoreWildcardParameter,
       pathAsRegExp: options.pathAsRegExp
     });
   }
