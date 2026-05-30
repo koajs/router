@@ -40,6 +40,7 @@
 - ✅ **405 Method Not Allowed** - Automatic method validation
 - ✅ **501 Not Implemented** - Proper HTTP status codes
 - ✅ **Async/Await** - Full promise-based middleware support
+- ✅ **Clean ctx.params** - Only URL parameters you define are present in `ctx.params`; no internal routing keys leak out
 
 ## Installation
 
@@ -457,7 +458,26 @@ router.get('/users', (ctx) => {
 // Responds to /api/v1/users, /api/v2/users, etc.
 ```
 
-**Note:** Middleware now correctly executes when the prefix contains parameters.
+**Middleware on a parameterized prefix:**
+
+When `router.use()` is attached to a router whose prefix contains URL parameters, `ctx.params` inside the middleware will contain **only** the parameters defined by the prefix — no internal routing keys are ever added.
+
+```javascript
+const router = new Router({ prefix: '/:tenantId' });
+
+// Auth / authz middleware — receives only the defined prefix param
+router.use(async (ctx, next) => {
+  console.log(ctx.params); // => { tenantId: 'acme' }  (no extraneous keys)
+  await next();
+});
+
+router.get('/users', (ctx) => {
+  console.log(ctx.params); // => { tenantId: 'acme' }
+  ctx.body = ctx.params;
+});
+```
+
+This is particularly useful when running **strict parameter validation** inside a `router.use()` middleware — the shape of `ctx.params` is predictable and contains only what you defined.
 
 ### URL Parameters
 
@@ -564,6 +584,8 @@ router.use('/nested', nestedRouter.routes());
 ```
 
 **Note:** Middleware path boundaries are correctly enforced. Middleware scoped to `/api` will only run for routes matching `/api/*`, not for unrelated routes.
+
+**Note:** When `router.use()` is used on a router with a parameterized prefix (e.g. `prefix: '/:id'`), `ctx.params` inside that middleware will contain **only** the parameters defined by the prefix and route path — no internal wildcard keys are exposed. See [Router Prefixes](#router-prefixes) for a full example.
 
 ### router.prefix()
 

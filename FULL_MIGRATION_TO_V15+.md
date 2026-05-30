@@ -247,11 +247,13 @@ The new version uses **`path-to-regexp` v8** via a wrapper (`src/utils/path-to-r
   - `pathAsRegExp` – treat the path literally as a regular expression.
 
 - Some internal patterns (like `'{/*rest}'` or raw `RegExp` paths) are handled more explicitly when dealing with prefixes or middleware.
+- The internal `{/*rest}` wildcard that the router injects when you call `router.use()` on a parameterized-prefix router is now **hidden from `ctx.params`**. Only the parameters you explicitly define appear in `ctx.params` — no `rest` key is ever leaked.
 
 **Migration tip:**
 
 - If you manually created routes with raw regexes, or rely on special middleware paths, test them carefully after upgrade.
 - Prefer **string paths with parameters** where possible; use middleware for validation and complex patterns.
+- If you were previously working around an extraneous `rest` key in `ctx.params` (e.g. filtering it out before strict validation), that workaround can be safely removed on the latest v15.
 
 ### 4.4. Middleware path boundary matching (fixed)
 
@@ -548,6 +550,34 @@ onion model) — the same way route middleware stacks work.
 
 > **Experimental:** This API may change in future minor versions.
 
+### Clean `ctx.params` on parameterized-prefix middleware (bug fix)
+
+**Symptom (pre-fix):** When a router had a parameterized prefix (e.g. `prefix: '/:id'`) and a middleware was registered with `router.use()`, `ctx.params` inside that middleware contained an extraneous `rest` key alongside the defined parameters:
+
+```javascript
+// Before fix — ctx.params unexpectedly contained 'rest'
+middleware { id: '1243', rest: 'some-thing' }
+route     { id: '1243', rest: 'some-thing' }
+```
+
+**Fix:** `ctx.params` now contains only the parameters you defined. The internal wildcard used for routing is fully hidden:
+
+```javascript
+const router = new Router({ prefix: '/:id' });
+
+router.use(async (ctx, next) => {
+  console.log(ctx.params); // => { id: '1243' }  ✅ no 'rest'
+  await next();
+});
+
+router.get('/some-thing', (ctx) => {
+  console.log(ctx.params); // => { id: '1243' }  ✅ no 'rest'
+  ctx.body = ctx.params;
+});
+```
+
+**Impact:** Any strict parameter validation running inside a `router.use()` middleware on a parameterized-prefix router will now work without extra workarounds. If you previously stripped the `rest` key before validation, that workaround can be removed.
+
 ### New exports
 
 | Export                | Kind    | Description                                                             |
@@ -649,6 +679,11 @@ import type { RouterEvent, RouterEventSelector } from '@koa/router';
 - **“TypeScript now reports type errors for router context”**
   - Update imports to use the new exported types.
   - Make sure you’re not mixing types from `@types/@koa/router` with the new ones.
+
+- **"`ctx.params` contains an unexpected `rest` key when using `router.use()` with a parameterized prefix"**
+  - This was a bug in earlier v15 releases where the internal `{/*rest}` wildcard injected for middleware routing leaked into `ctx.params`.
+  - **Fix:** Upgrade to the latest v15 — the `rest` key is now hidden and `ctx.params` only contains the parameters you defined.
+  - If you added a workaround (e.g. `delete ctx.params.rest` or filtering before validation), it can be safely removed after upgrading.
 
 - **“Something that worked in v10 is now broken but not covered here”**
   - The new version aims to be mostly backward compatible aside from the documented breaking changes.
