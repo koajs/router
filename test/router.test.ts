@@ -4248,6 +4248,32 @@ describe('RouterOptions: strict (comprehensive)', () => {
     });
   });
 
+  it('does not expose internal rest param for prefixed router middleware', async () => {
+    const app = new Koa();
+    const router = new Router({ prefix: '/:id' });
+    const middlewareParams: Record<string, string>[] = [];
+    const routeParams: Record<string, string>[] = [];
+
+    router
+      .use(async (ctx, next) => {
+        middlewareParams.push({ ...ctx.params });
+        await next();
+      })
+      .get('/some-thing', (ctx) => {
+        routeParams.push({ ...ctx.params });
+        ctx.body = ctx.params;
+      });
+
+    app.use(router.routes());
+
+    await request(http.createServer(app.callback()))
+      .get('/1243/some-thing')
+      .expect(200, { id: '1243' });
+
+    assert.deepStrictEqual(middlewareParams, [{ id: '1243' }]);
+    assert.deepStrictEqual(routeParams, [{ id: '1243' }]);
+  });
+
   describe('Not Found Handling', () => {
     describe('ctx.routeMatched property', () => {
       it('routeMatched is true when a named route matches', async () => {

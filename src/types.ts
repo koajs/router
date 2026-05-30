@@ -113,6 +113,13 @@ export type LayerOptions = {
   ignoreCaptures?: boolean;
 
   /**
+   * Ignore a generated wildcard route parameter when populating ctx.params
+   *
+   * @internal
+   */
+  ignoreWildcardParameter?: string | number;
+
+  /**
    * Treat path as a regular expression
    */
   pathAsRegExp?: boolean;
