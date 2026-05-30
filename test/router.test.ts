@@ -3148,6 +3148,183 @@ describe('Router#prefix', () => {
     assert.deepStrictEqual(routeParams, [{ id: '1243' }]);
   });
 
+  it('does not expose internal rest param with multi-segment dynamic prefix', async () => {
+    const app = new Koa();
+    const router = new Router({ prefix: '/:org/:project' });
+    const middlewareParams: Record<string, string>[] = [];
+    const routeParams: Record<string, string>[] = [];
+
+    router
+      .use(async (ctx, next) => {
+        middlewareParams.push({ ...ctx.params });
+        await next();
+      })
+      .get('/settings', (ctx) => {
+        routeParams.push({ ...ctx.params });
+        ctx.body = ctx.params;
+      });
+
+    app.use(router.routes());
+
+    await request(http.createServer(app.callback()))
+      .get('/acme/api/settings')
+      .expect(200, { org: 'acme', project: 'api' });
+
+    assert.deepStrictEqual(middlewareParams, [{ org: 'acme', project: 'api' }]);
+    assert.deepStrictEqual(routeParams, [{ org: 'acme', project: 'api' }]);
+  });
+
+  it('does not expose internal rest param with multiple chained router.use() calls', async () => {
+    const app = new Koa();
+    const router = new Router({ prefix: '/:id' });
+    const first: Record<string, string>[] = [];
+    const second: Record<string, string>[] = [];
+    const route: Record<string, string>[] = [];
+
+    router
+      .use(async (ctx, next) => {
+        first.push({ ...ctx.params });
+        await next();
+      })
+      .use(async (ctx, next) => {
+        second.push({ ...ctx.params });
+        await next();
+      })
+      .get('/item', (ctx) => {
+        route.push({ ...ctx.params });
+        ctx.body = ctx.params;
+      });
+
+    app.use(router.routes());
+
+    await request(http.createServer(app.callback()))
+      .get('/42/item')
+      .expect(200, { id: '42' });
+
+    assert.deepStrictEqual(first, [{ id: '42' }]);
+    assert.deepStrictEqual(second, [{ id: '42' }]);
+    assert.deepStrictEqual(route, [{ id: '42' }]);
+  });
+
+  it('does not filter a user-defined route param named rest', async () => {
+    const app = new Koa();
+    const router = new Router({ prefix: '/:id' });
+    const middlewareParams: Record<string, string>[] = [];
+    const routeParams: Record<string, string>[] = [];
+
+    router
+      .use(async (ctx, next) => {
+        middlewareParams.push({ ...ctx.params });
+        await next();
+      })
+      .get('/:rest', (ctx) => {
+        routeParams.push({ ...ctx.params });
+        ctx.body = ctx.params;
+      });
+
+    app.use(router.routes());
+
+    await request(http.createServer(app.callback()))
+      .get('/123/hello')
+      .expect(200, { id: '123', rest: 'hello' });
+
+    assert.deepStrictEqual(middlewareParams, [{ id: '123' }]);
+    assert.deepStrictEqual(routeParams, [{ id: '123', rest: 'hello' }]);
+  });
+
+  it('does not expose internal rest param with mixed static+dynamic prefix', async () => {
+    const app = new Koa();
+    const router = new Router({ prefix: '/api/:version' });
+    const middlewareParams: Record<string, string>[] = [];
+    const routeParams: Record<string, string>[] = [];
+
+    router
+      .use(async (ctx, next) => {
+        middlewareParams.push({ ...ctx.params });
+        await next();
+      })
+      .get('/users', (ctx) => {
+        routeParams.push({ ...ctx.params });
+        ctx.body = ctx.params;
+      });
+
+    app.use(router.routes());
+
+    await request(http.createServer(app.callback()))
+      .get('/api/v2/users')
+      .expect(200, { version: 'v2' });
+
+    assert.deepStrictEqual(middlewareParams, [{ version: 'v2' }]);
+    assert.deepStrictEqual(routeParams, [{ version: 'v2' }]);
+  });
+
+  it('does not expose internal rest param across multiple different routes', async () => {
+    const app = new Koa();
+    const router = new Router({ prefix: '/:tenantId' });
+    const middlewareSnapshots: Record<string, string>[] = [];
+
+    router
+      .use(async (ctx, next) => {
+        middlewareSnapshots.push({ ...ctx.params });
+        await next();
+      })
+      .get('/orders', (ctx) => {
+        ctx.body = ctx.params;
+      })
+      .get('/invoices', (ctx) => {
+        ctx.body = ctx.params;
+      })
+      .post('/orders', (ctx) => {
+        ctx.body = ctx.params;
+      });
+
+    app.use(router.routes());
+
+    const server = http.createServer(app.callback());
+    await request(server).get('/t1/orders').expect(200, { tenantId: 't1' });
+    await request(server).get('/t2/invoices').expect(200, { tenantId: 't2' });
+    await request(server).post('/t3/orders').expect(200, { tenantId: 't3' });
+
+    for (const params of middlewareSnapshots) {
+      assert.strictEqual(
+        'rest' in params,
+        false,
+        `Expected no rest key but got: ${JSON.stringify(params)}`
+      );
+    }
+    assert.deepStrictEqual(middlewareSnapshots, [
+      { tenantId: 't1' },
+      { tenantId: 't2' },
+      { tenantId: 't3' }
+    ]);
+  });
+
+  it('does not expose internal rest param with path-scoped router.use()', async () => {
+    const app = new Koa();
+    const router = new Router({ prefix: '/:id' });
+    const middlewareParams: Record<string, string>[] = [];
+    const routeParams: Record<string, string>[] = [];
+
+    router
+      .use('/resource', async (ctx, next) => {
+        middlewareParams.push({ ...ctx.params });
+        await next();
+      })
+      .get('/resource/detail', (ctx) => {
+        routeParams.push({ ...ctx.params });
+        ctx.body = ctx.params;
+      });
+
+    app.use(router.routes());
+
+    await request(http.createServer(app.callback()))
+      .get('/99/resource/detail')
+      .expect(200, { id: '99' });
+
+    assert.deepStrictEqual(middlewareParams, [{ id: '99' }]);
+    assert.deepStrictEqual(routeParams, [{ id: '99' }]);
+  });
+
   it('populates ctx.params correctly for more complex router prefix (including use)', async () => {
     const app = new Koa();
     const router = new Router({ prefix: '/:category/:color' });
