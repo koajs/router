@@ -193,7 +193,6 @@ export default class Layer<
 
       if (parameterDefinition && capturedValue && capturedValue.length > 0) {
         const parameterName = parameterDefinition.name;
-
         if (
           this.opts.ignoreWildcardParameter === parameterName &&
           parameterDefinition.type === 'wildcard'
