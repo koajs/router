@@ -19,8 +19,7 @@ usersRouter.get('/', async (ctx: RouterContext) => {
 });
 usersRouter.post('/', async (ctx: ContextWithBody) => {
   const body = ctx.request.body as
-    | { email?: string; name?: string }
-    | undefined;
+    { email?: string; name?: string } | undefined;
   ctx.body = await User.create(body || {});
 });
 usersRouter.get('/:id', async (ctx: RouterContext) => {
@@ -28,8 +27,7 @@ usersRouter.get('/:id', async (ctx: RouterContext) => {
 });
 usersRouter.put('/:id', async (ctx: ContextWithBody) => {
   const body = ctx.request.body as
-    | { email?: string; name?: string }
-    | undefined;
+    { email?: string; name?: string } | undefined;
   ctx.body = await User.update(ctx.params.id, body || {});
 });
 usersRouter.delete('/:id', async (ctx: RouterContext) => {

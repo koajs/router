@@ -103,8 +103,7 @@ export type RouterEvent = (typeof RouterEvents)[keyof typeof RouterEvents];
  * @experimental
  */
 export type RouterEventSelector =
-  | RouterEvent
-  | ((events: typeof RouterEvents) => RouterEvent);
+  RouterEvent | ((events: typeof RouterEvents) => RouterEvent);
 
 // ---------------------------------------------------------------------------
 // Helpers

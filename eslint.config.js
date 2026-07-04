@@ -31,7 +31,17 @@ module.exports = [
       parserOptions: { project: './tsconfig.json' }
     },
     plugins: { '@typescript-eslint': tsPlugin, unicorn: unicornPlugin },
-    rules: unicornPlugin.configs.recommended.rules
+    rules: {
+      ...unicornPlugin.configs.recommended.rules,
+      'unicorn/consistent-class-member-order': 'off',
+      'unicorn/no-this-outside-of-class': 'off',
+      'unicorn/consistent-class-member-order': 'off',
+      'unicorn/prefer-array-last-methods': 'off',
+      'unicorn/prefer-await': 'off',
+      'unicorn/no-computed-property-existence': 'off',
+      'unicorn/no-computed-property-existence-check': 'off',
+      'unicorn/prefer-private-class-fields': 'off'
+    }
   },
   // TypeScript test files (relaxed)
   {

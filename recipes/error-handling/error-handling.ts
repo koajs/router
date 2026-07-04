@@ -167,8 +167,7 @@ router.get('/users/:id', async (ctx) => {
 router.post('/users', async (ctx) => {
   // ctx.request.body is typed by @koa/bodyparser
   const body = ctx.request.body as
-    | { email?: string; name?: string }
-    | undefined;
+    { email?: string; name?: string } | undefined;
 
   if (!body?.email || !body?.name) {
     throw new ValidationError('Email and name are required', {

@@ -232,11 +232,11 @@ class RouterImplementation<
       | RouterComposedMiddleware<StateT, ContextT>
     )[]
   ): Router<StateT, ContextT> {
-    let explicitPath: string | RegExp | undefined;
-
     if (this._isPathArray(middleware[0])) {
       return this._useWithPathArray(middleware);
     }
+
+    let explicitPath: string | RegExp | undefined;
 
     const hasExplicitPath = this._hasExplicitPath(middleware[0]);
     if (hasExplicitPath) {
@@ -428,33 +428,33 @@ class RouterImplementation<
     explicitPath?: string | RegExp,
     hasExplicitPath?: boolean
   ): void {
-    const prefixHasParameters = hasPathParameters(
+    const isPrefixHasParameters = hasPathParameters(
       this.opts.prefix || '',
       this.opts
     );
 
     const effectiveExplicitPath = (() => {
       if (explicitPath !== undefined) return explicitPath;
-      if (prefixHasParameters) return '';
+      if (isPrefixHasParameters) return '';
       return;
     })();
 
-    const effectiveHasExplicitPath =
-      hasExplicitPath || (explicitPath === undefined && prefixHasParameters);
+    const isEffectiveHasExplicitPath =
+      hasExplicitPath || (explicitPath === undefined && isPrefixHasParameters);
 
     const { path: middlewarePath, pathAsRegExp } = determineMiddlewarePath(
       effectiveExplicitPath,
-      prefixHasParameters
+      isPrefixHasParameters
     );
 
     let finalPath: string | RegExp = middlewarePath;
-    let usePathToRegexp = pathAsRegExp;
+    let isUsePathToRegexp = pathAsRegExp;
 
-    const isRootPath = effectiveHasExplicitPath && middlewarePath === '/';
+    const isRootPath = isEffectiveHasExplicitPath && middlewarePath === '/';
 
-    if (effectiveHasExplicitPath && typeof middlewarePath === 'string') {
+    if (isEffectiveHasExplicitPath && typeof middlewarePath === 'string') {
       finalPath = middlewarePath;
-      usePathToRegexp = false;
+      isUsePathToRegexp = false;
     }
 
     const ignoreWildcardParameter =
@@ -464,9 +464,9 @@ class RouterImplementation<
 
     this.register(finalPath, [], middleware, {
       end: isRootPath,
-      ignoreCaptures: !effectiveHasExplicitPath && !prefixHasParameters,
+      ignoreCaptures: !isEffectiveHasExplicitPath && !isPrefixHasParameters,
       ignoreWildcardParameter,
-      pathAsRegExp: usePathToRegexp
+      pathAsRegExp: isUsePathToRegexp
     });
   }
 
@@ -1068,8 +1068,7 @@ class RouterImplementation<
     path: string | RegExp | string[],
     methods: string[],
     middleware:
-      | RouterMiddleware<StateT, ContextT>
-      | RouterMiddleware<StateT, ContextT>[],
+      RouterMiddleware<StateT, ContextT> | RouterMiddleware<StateT, ContextT>[],
     additionalOptions: LayerOptions = {}
   ): Layer<StateT, ContextT> | Router<StateT, ContextT> {
     const mergedOptions = { ...this.opts, ...additionalOptions };
@@ -1111,8 +1110,7 @@ class RouterImplementation<
     pathArray: string[],
     methods: string[],
     middleware:
-      | RouterMiddleware<StateT, ContextT>
-      | RouterMiddleware<StateT, ContextT>[],
+      RouterMiddleware<StateT, ContextT> | RouterMiddleware<StateT, ContextT>[],
     options: LayerOptions
   ): Router<StateT, ContextT> {
     for (const singlePath of pathArray) {
@@ -1130,8 +1128,7 @@ class RouterImplementation<
     path: string | RegExp,
     methods: string[],
     middleware:
-      | RouterMiddleware<StateT, ContextT>
-      | RouterMiddleware<StateT, ContextT>[],
+      RouterMiddleware<StateT, ContextT> | RouterMiddleware<StateT, ContextT>[],
     options: LayerOptions
   ): Layer<StateT, ContextT> {
     return new Layer<StateT, ContextT>(path, methods, middleware, {
@@ -1193,6 +1190,7 @@ class RouterImplementation<
     const route = this.route(name);
     if (route) return route.url(...arguments_);
 
+    // eslint-disable-next-line unicorn/no-useless-coercion
     return new Error(`No route found for name: ${String(name)}`);
   }
 
@@ -1217,14 +1215,13 @@ class RouterImplementation<
     for (const layer of this.stack) {
       debug('test %s %s', layer.path, layer.regexp);
 
-      // eslint-disable-next-line unicorn/prefer-regexp-test -- layer.match() is a method, not String.match()
       if (layer.match(path)) {
         matchResult.path.push(layer);
 
         const isMiddleware = layer.methods.length === 0;
-        const matchesMethod = layer.methods.includes(normalizedMethod);
+        const isMatchesMethod = layer.methods.includes(normalizedMethod);
 
-        if (isMiddleware || matchesMethod) {
+        if (isMiddleware || isMatchesMethod) {
           matchResult.pathAndMethod.push(layer);
 
           if (layer.methods.length > 0) {

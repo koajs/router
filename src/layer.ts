@@ -285,8 +285,7 @@ export default class Layer<
     let parameters: Record<string, unknown> | unknown[] =
       (allArguments[0] as Record<string, unknown>) ?? {};
     let options: UrlOptions | undefined = allArguments[1] as
-      | UrlOptions
-      | undefined;
+      UrlOptions | undefined;
 
     if (typeof parameters !== 'object' || parameters === null) {
       const argumentsList = [...allArguments];
@@ -489,7 +488,7 @@ export default class Layer<
     parameterNamesList: string[],
     currentParameterPosition: number
   ): void {
-    let inserted = false;
+    let isInserted = false;
 
     for (
       let stackIndex = 0;
@@ -503,7 +502,7 @@ export default class Layer<
       if (!existingMiddleware.param) {
         // Insert before first non-param middleware
         middlewareStack.splice(stackIndex, 0, parameterMiddleware);
-        inserted = true;
+        isInserted = true;
         break;
       }
 
@@ -513,13 +512,13 @@ export default class Layer<
       if (existingParameterPosition > currentParameterPosition) {
         // Insert before param middleware that comes later in the URL
         middlewareStack.splice(stackIndex, 0, parameterMiddleware);
-        inserted = true;
+        isInserted = true;
         break;
       }
     }
 
     // If not inserted yet, append to the end of the stack
-    if (!inserted) {
+    if (!isInserted) {
       middlewareStack.push(parameterMiddleware);
     }
   }
@@ -554,11 +553,11 @@ export default class Layer<
   private _applyPrefix(prefixPath: string): string {
     const isRootPath = this.path === '/';
     const isStrictMode = this.opts.strict === true;
-    const prefixHasParameters = prefixPath.includes(':');
-    const pathIsRawRegex =
+    const isPrefixHasParameters = prefixPath.includes(':');
+    const isPathIsRawRegex =
       this.opts.pathAsRegExp === true && typeof this.path === 'string';
 
-    if (prefixHasParameters && pathIsRawRegex) {
+    if (isPrefixHasParameters && isPathIsRawRegex) {
       const currentPath = this.path as string;
       if (
         currentPath === String.raw`(?:\/|$)` ||
@@ -581,10 +580,10 @@ export default class Layer<
    * @private
    */
   private _reconfigurePathMatching(prefixPath: string): void {
-    const treatAsRegExp = this.opts.pathAsRegExp === true;
+    const isTreatAsRegExp = this.opts.pathAsRegExp === true;
     const prefixHasParameters = prefixPath && prefixPath.includes(':');
 
-    if (prefixHasParameters && treatAsRegExp) {
+    if (prefixHasParameters && isTreatAsRegExp) {
       const options = normalizeLayerOptionsToPathToRegexp(this.opts);
       const { regexp, keys } = compilePathToRegexp(
         this.path as string,
@@ -593,7 +592,7 @@ export default class Layer<
       this.regexp = regexp;
       this.paramNames = keys;
       this.opts.pathAsRegExp = false;
-    } else if (treatAsRegExp) {
+    } else if (isTreatAsRegExp) {
       const pathString = this.path as string;
       const anchoredPattern = pathString.startsWith('^')
         ? pathString
