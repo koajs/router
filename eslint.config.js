@@ -40,7 +40,8 @@ module.exports = [
       'unicorn/prefer-await': 'off',
       'unicorn/no-computed-property-existence': 'off',
       'unicorn/no-computed-property-existence-check': 'off',
-      'unicorn/prefer-private-class-fields': 'off'
+      'unicorn/prefer-private-class-fields': 'off',
+      'unicorn/prefer-simple-condition-first': 'off'
     }
   },
   // TypeScript test files (relaxed)
