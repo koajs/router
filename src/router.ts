@@ -490,6 +490,10 @@ class RouterImplementation<
   prefix(prefixPath: string): Router<StateT, ContextT> {
     const normalizedPrefix = prefixPath.replace(/\/$/, '');
     const previousPrefix = this.opts.prefix || '';
+    const isPrefixHasParameters = hasPathParameters(
+      normalizedPrefix,
+      this.opts
+    );
 
     this.opts.prefix = normalizedPrefix;
 
@@ -505,6 +509,10 @@ class RouterImplementation<
       }
 
       route.setPrefix(normalizedPrefix);
+
+      if (route.methods.length === 0 && isPrefixHasParameters) {
+        route.opts.ignoreCaptures = false;
+      }
     }
 
     return this;
