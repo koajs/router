@@ -559,12 +559,15 @@ export default class Layer<
 
     if (isPrefixHasParameters && isPathIsRawRegex) {
       const currentPath = this.path as string;
-      if (
-        currentPath === String.raw`(?:\/|$)` ||
-        currentPath === String.raw`(?:\\\/|$)`
-      ) {
-        this.path = '{/*rest}';
+      const middlewareBoundary = [
+        String.raw`(?:\/|$)`,
+        String.raw`(?:\\\/|$)`
+      ].find((boundary) => currentPath.endsWith(boundary));
+
+      if (middlewareBoundary) {
+        this.path = `${currentPath.slice(0, -middlewareBoundary.length)}{/*rest}`;
         this.opts.pathAsRegExp = false;
+        this.opts.ignoreWildcardParameter = 'rest';
       }
     }
 
