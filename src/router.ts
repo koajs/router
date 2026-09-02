@@ -329,10 +329,11 @@ class RouterImplementation<
 
     const clonedRouter = this._cloneRouter(nestedRouter);
 
-    const mountPathHasParameters =
-      mountPath &&
-      typeof mountPath === 'string' &&
-      hasPathParameters(mountPath, this.opts);
+    const isMountPathHasParameters =
+      typeof mountPath === 'string' && hasPathParameters(mountPath, this.opts);
+    const isRouterPrefixHasParameters =
+      typeof this.opts.prefix === 'string' &&
+      hasPathParameters(this.opts.prefix, this.opts);
 
     for (
       let routeIndex = 0;
@@ -349,7 +350,10 @@ class RouterImplementation<
         clonedLayer.setPrefix(this.opts.prefix);
       }
 
-      if (clonedLayer.methods.length === 0 && mountPathHasParameters) {
+      if (
+        clonedLayer.methods.length === 0 &&
+        (isMountPathHasParameters || isRouterPrefixHasParameters)
+      ) {
         clonedLayer.opts.ignoreCaptures = false;
       }
 
@@ -486,6 +490,10 @@ class RouterImplementation<
   prefix(prefixPath: string): Router<StateT, ContextT> {
     const normalizedPrefix = prefixPath.replace(/\/$/, '');
     const previousPrefix = this.opts.prefix || '';
+    const isPrefixHasParameters = hasPathParameters(
+      normalizedPrefix,
+      this.opts
+    );
 
     this.opts.prefix = normalizedPrefix;
 
@@ -501,6 +509,10 @@ class RouterImplementation<
       }
 
       route.setPrefix(normalizedPrefix);
+
+      if (route.methods.length === 0 && isPrefixHasParameters) {
+        route.opts.ignoreCaptures = false;
+      }
     }
 
     return this;
