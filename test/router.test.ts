@@ -1740,6 +1740,57 @@ it('nested router middleware has access to parent path parameters', async () => 
   assert.strictEqual(res.body.id, '123');
 });
 
+it('mounts prefixed child middleware under a parameterized router prefix', async () => {
+  const app = new Koa();
+  const itemRouter = new Router({ prefix: '/:id' });
+  const childRouter = new Router({ prefix: '/child' });
+  const middlewareParameters: Record<string, string>[] = [];
+
+  childRouter
+    .use(async (ctx, next) => {
+      middlewareParameters.push({ ...ctx.params });
+      await next();
+    })
+    .get('/detail', (ctx) => {
+      ctx.body = ctx.params;
+    });
+
+  itemRouter.use(childRouter.routes());
+  app.use(itemRouter.routes());
+
+  await request(http.createServer(app.callback()))
+    .get('/123/child/detail')
+    .expect(200, { id: '123' });
+
+  assert.deepStrictEqual(middlewareParameters, [{ id: '123' }]);
+});
+
+it('mounts prefixed child middleware before setting a parameterized router prefix', async () => {
+  const app = new Koa();
+  const itemRouter = new Router();
+  const childRouter = new Router({ prefix: '/child' });
+  const middlewareParameters: Record<string, string>[] = [];
+
+  childRouter
+    .use(async (ctx, next) => {
+      middlewareParameters.push({ ...ctx.params });
+      await next();
+    })
+    .get('/detail', (ctx) => {
+      ctx.body = ctx.params;
+    });
+
+  itemRouter.use(childRouter.routes());
+  itemRouter.prefix('/:id');
+  app.use(itemRouter.routes());
+
+  await request(http.createServer(app.callback()))
+    .get('/123/child/detail')
+    .expect(200, { id: '123' });
+
+  assert.deepStrictEqual(middlewareParameters, [{ id: '123' }]);
+});
+
 it('uses a same router middleware at given paths continuously - ZijianHe/koa-router#gh-244 gh-18', async () => {
   const app = new Koa();
   const base = new Router({ prefix: '/api' });
