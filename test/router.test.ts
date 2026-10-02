@@ -4193,6 +4193,59 @@ describe('RouterOptions: sensitive', () => {
       .get('/api/items')
       .expect(404);
   });
+
+  it('runs pathless middleware case-insensitively when a prefix is set (gh-guard-bypass)', async () => {
+    const app = new Koa();
+    const router = new Router({ prefix: '/api' });
+
+    router.use((ctx, next) => {
+      ctx.status = 401;
+      ctx.body = 'blocked';
+      return next();
+    });
+
+    router.get('/secret', (ctx) => {
+      ctx.body = 'secret';
+    });
+
+    app.use(router.routes());
+
+    await request(http.createServer(app.callback()))
+      .get('/api/secret')
+      .expect(401);
+
+    // The guard must also run for a differently-cased path, since routes
+    // match case-insensitively by default.
+    await request(http.createServer(app.callback()))
+      .get('/API/secret')
+      .expect(401);
+  });
+
+  it('applies sensitive option to pathless middleware when a prefix is set', async () => {
+    const app = new Koa();
+    const router = new Router({ prefix: '/api', sensitive: true });
+
+    router.use((ctx, next) => {
+      ctx.status = 401;
+      ctx.body = 'blocked';
+      return next();
+    });
+
+    router.get('/secret', (ctx) => {
+      ctx.body = 'secret';
+    });
+
+    app.use(router.routes());
+
+    await request(http.createServer(app.callback()))
+      .get('/api/secret')
+      .expect(401);
+
+    // With case-sensitive routing, neither the guard nor the route match.
+    await request(http.createServer(app.callback()))
+      .get('/API/secret')
+      .expect(404);
+  });
 });
 
 describe('RouterOptions: strict (comprehensive)', () => {
