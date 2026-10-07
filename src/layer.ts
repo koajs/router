@@ -598,7 +598,9 @@ export default class Layer<
         ? pathString
         : `^${pathString}`;
       this.regexp =
-        this.path instanceof RegExp ? this.path : new RegExp(anchoredPattern);
+        this.path instanceof RegExp
+          ? this.path
+          : new RegExp(anchoredPattern, this.opts.sensitive ? '' : 'i');
     } else {
       const options = normalizeLayerOptionsToPathToRegexp(this.opts);
       const { regexp, keys } = compilePathToRegexp(
