@@ -1302,6 +1302,25 @@ describe('Router#use()', () => {
     assert.strictEqual(res.body.foobar, 'foobar');
   });
 
+  it('runs pathless middleware case-insensitively on a prefixed router', async () => {
+    const app = new Koa();
+    const router = new Router({ prefix: '/api' });
+
+    router.use((ctx) => {
+      ctx.status = 401;
+      ctx.body = 'blocked';
+    });
+    router.get('/secret', (ctx) => {
+      ctx.body = 'secret';
+    });
+
+    app.use(router.routes());
+
+    await request(http.createServer(app.callback()))
+      .get('/API/secret')
+      .expect(401, 'blocked');
+  });
+
   it('uses router middleware at given path', async () => {
     const app = new Koa();
     const router = new Router();
