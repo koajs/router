@@ -662,10 +662,13 @@ class RouterImplementation<
     requestPath: string
   ): RouterMiddleware<StateT, ContextT>[] {
     let layersToExecute: Layer<StateT, ContextT>[];
+    let chosenLayer: Layer<StateT, ContextT> | undefined;
     if (this.exclusive) {
-      let chosenLayer: Layer<StateT, ContextT> | undefined;
+      const routeLayers = matchedLayers.filter(
+        (layer) => layer.methods.length > 0
+      );
       if (this.opts.exclusive === 'specificity') {
-        for (const layer of matchedLayers) {
+        for (const layer of routeLayers) {
           if (
             !chosenLayer ||
             layer.paramNames.length < chosenLayer.paramNames.length
@@ -674,10 +677,12 @@ class RouterImplementation<
           }
         }
       } else {
-        chosenLayer = matchedLayers.at(-1);
+        chosenLayer = routeLayers.at(-1);
       }
 
-      layersToExecute = chosenLayer ? [chosenLayer] : [];
+      layersToExecute = matchedLayers.filter(
+        (layer) => layer.methods.length === 0 || layer === chosenLayer
+      );
     } else {
       layersToExecute = matchedLayers;
     }
@@ -685,6 +690,7 @@ class RouterImplementation<
     const middlewareChain: RouterMiddleware<StateT, ContextT>[] = [];
 
     for (const layer of layersToExecute) {
+      const metadataLayer = chosenLayer ?? layer;
       middlewareChain.push(
         (
           context: ParameterizedContext<
@@ -701,12 +707,12 @@ class RouterImplementation<
             routerContext.params
           );
           routerContext.params = routerContext.request.params;
-          routerContext.routerPath = layer.path as string;
-          routerContext.routerName = layer.name || undefined;
-          routerContext._matchedRoute = layer.path as string;
+          routerContext.routerPath = metadataLayer.path as string;
+          routerContext.routerName = metadataLayer.name || undefined;
+          routerContext._matchedRoute = metadataLayer.path as string;
 
-          if (layer.name) {
-            routerContext._matchedRouteName = layer.name;
+          if (this.exclusive || metadataLayer.name) {
+            routerContext._matchedRouteName = metadataLayer.name || undefined;
           }
 
           return next();
