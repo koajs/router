@@ -452,7 +452,7 @@ export default class Layer<
     const middleware = ((
       context: Parameters<RouterMiddleware<StateT, ContextT, BodyT>>[0] & {
         params: Record<string, string>;
-        _matchedParams?: WeakMap<object, boolean>;
+        _matchedParams?: WeakMap<object, Map<string, string>>;
       },
       next: Parameters<RouterMiddleware<StateT, ContextT, BodyT>>[1]
     ) => {
@@ -460,13 +460,22 @@ export default class Layer<
         context._matchedParams = new WeakMap();
       }
 
-      if (context._matchedParams.has(parameterHandler)) {
+      const parameterValue = context.params[parameterName];
+      const matchedParameters =
+        context._matchedParams.get(parameterHandler) ??
+        new Map<string, string>();
+      const hasMatchedParameter = matchedParameters.has(parameterName);
+      const matchedValue = matchedParameters.get(parameterName);
+      const hasMatchedValue =
+        hasMatchedParameter && matchedValue === parameterValue;
+      if (hasMatchedValue) {
         return next();
       }
 
-      context._matchedParams.set(parameterHandler, true);
+      matchedParameters.set(parameterName, parameterValue);
+      context._matchedParams.set(parameterHandler, matchedParameters);
 
-      return parameterHandler(context.params[parameterName], context, next);
+      return parameterHandler(parameterValue, context, next);
     }) as ParameterMiddleware<StateT, ContextT, BodyT>;
 
     middleware.param = parameterName;

@@ -278,13 +278,33 @@ describe('Router', () => {
   it("runs only the last match when the 'exclusive' option is enabled", async () => {
     const app = new Koa();
     const router = new Router({ exclusive: true });
+    const routeCalls: string[] = [];
 
+    router.use('/users', (ctx, next) => {
+      assert.deepStrictEqual(
+        [
+          ctx.routerPath,
+          ctx._matchedRoute,
+          ctx.routerName,
+          ctx._matchedRouteName
+        ],
+        ['/users/all', '/users/all', 'users_all', 'users_all']
+      );
+      if (ctx.get('authorization') === 'scoped') ctx.throw(401);
+      return next();
+    });
     router
+      .use((ctx, next) => {
+        const isAuthorized = Boolean(ctx.get('authorization'));
+        if (!isAuthorized) ctx.throw(401);
+        return next();
+      })
       .get('users_single', new RegExp('/users/:id(.*)'), (ctx, next) => {
         ctx.body = { single: true };
         next();
       })
       .get('users_all', '/users/all', (ctx, next) => {
+        routeCalls.push(ctx.get('authorization'));
         ctx.body = { ...(ctx.body as object), all: true };
         next();
       });
@@ -293,10 +313,17 @@ describe('Router', () => {
       http.createServer(app.use(router.routes()).callback())
     )
       .get('/users/all')
+      .set('authorization', 'allowed')
       .expect(200);
 
     assert.strictEqual('single' in res.body, false);
     assert.strictEqual('all' in res.body, true);
+    await request(app.callback()).get('/users/all').expect(401);
+    await request(app.callback())
+      .get('/users/all')
+      .set('authorization', 'scoped')
+      .expect(401);
+    assert.deepStrictEqual(routeCalls, ['allowed']);
   });
 
   describe("exclusive: 'specificity' mode (OpenAPI-compliant route selection)", () => {
@@ -305,13 +332,24 @@ describe('Router', () => {
       // Deliberately register the parameterised route FIRST (as OpenAPI generators do)
       // to confirm that registration order does not affect the outcome
       const router = new Router({ exclusive: 'specificity' });
+      const routeCalls: string[] = [];
 
+      router.use('/pet', (ctx, next) => {
+        if (ctx.get('authorization') === 'scoped') ctx.throw(401);
+        return next();
+      });
       router
+        .use((ctx, next) => {
+          const isAuthorized = Boolean(ctx.get('authorization'));
+          if (!isAuthorized) ctx.throw(401);
+          return next();
+        })
         .get('pet_by_id', '/pet/:petId', (ctx, next) => {
           ctx.body = { ...(ctx.body as object), byId: true };
           next();
         })
         .get('pet_find_by_status', '/pet/findByStatus', (ctx, next) => {
+          routeCalls.push(ctx.get('authorization'));
           ctx.body = { ...(ctx.body as object), findByStatus: true };
           next();
         });
@@ -320,11 +358,18 @@ describe('Router', () => {
         http.createServer(app.use(router.routes()).callback())
       )
         .get('/pet/findByStatus')
+        .set('authorization', 'allowed')
         .expect(200);
 
       // The static route (0 params) must win over the parameterised one (1 param)
       assert.strictEqual('findByStatus' in res.body, true);
       assert.strictEqual('byId' in res.body, false);
+      await request(app.callback()).get('/pet/findByStatus').expect(401);
+      await request(app.callback())
+        .get('/pet/findByStatus')
+        .set('authorization', 'scoped')
+        .expect(401);
+      assert.deepStrictEqual(routeCalls, ['allowed']);
     });
 
     it('picks the route with fewest params even when the static route is registered first', async () => {
@@ -332,7 +377,19 @@ describe('Router', () => {
       const router = new Router({ exclusive: 'specificity' });
 
       router
-        .get('pet_find_by_status', '/pet/findByStatus', (ctx, next) => {
+        .use('/pet', (ctx, next) => {
+          assert.deepStrictEqual(
+            [
+              ctx.routerPath,
+              ctx._matchedRoute,
+              ctx.routerName,
+              ctx._matchedRouteName
+            ],
+            ['/pet/findByStatus', '/pet/findByStatus', undefined, undefined]
+          );
+          return next();
+        })
+        .get('/pet/findByStatus', (ctx, next) => {
           ctx.body = { ...(ctx.body as object), findByStatus: true };
           next();
         })
@@ -2550,6 +2607,39 @@ describe('Router#param()', () => {
       'get1 should only be called once'
     );
     assert.strictEqual(calls.length, 3, 'Should have exactly 3 calls total');
+
+    for (const exclusive of [true, 'specificity', false] as const) {
+      const scopedRouter = new Router({ exclusive });
+      const parameterCalls: string[] = [];
+      scopedRouter
+        .param('id', (id, ctx, next) => {
+          parameterCalls.push(id);
+          ctx.state.id = id;
+          return next();
+        })
+        .use('/:id', (ctx, next) => next())
+        .get('/groups/:id', (ctx) => {
+          ctx.body = ctx.state.id;
+        });
+      const scopedApp = new Koa().use(scopedRouter.routes());
+      await request(scopedApp.callback()).get('/groups/42').expect(200, '42');
+      assert.deepStrictEqual(parameterCalls, ['groups', '42']);
+    }
+
+    const sharedCalls: string[] = [];
+    const sharedHandler: RouterParameterMiddleware = (value, ctx, next) => {
+      sharedCalls.push(value);
+      return next();
+    };
+    router
+      .param('first', sharedHandler)
+      .param('second', sharedHandler)
+      .use('/shared/:first/:second', (ctx, next) => next())
+      .get('/shared/:first/:second', (ctx) => {
+        ctx.status = 200;
+      });
+    await request(app.callback()).get('/shared/42/42').expect(200);
+    assert.deepStrictEqual(sharedCalls, ['42', '42']);
   });
 
   it('calls param handlers for routes added after param() is called', async () => {
@@ -2835,9 +2925,13 @@ describe('router.routes()', () => {
     const app = new Koa();
     const router = new Router();
 
-    router.get('users#show', '/users/:id', (ctx) => {
+    router.get('users#show', '/users/:id', (ctx, next) => {
       assert.strictEqual(ctx._matchedRouteName, 'users#show');
       ctx.status = 200;
+      return next();
+    });
+    router.use('/users', (ctx) => {
+      assert.strictEqual(ctx._matchedRouteName, 'users#show');
     });
 
     await request(http.createServer(app.use(router.routes()).callback()))

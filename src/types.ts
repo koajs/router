@@ -280,7 +280,7 @@ export type RouterContext<
   /**
    * Track param middleware execution (internal)
    */
-  _matchedParams?: WeakMap<Function, boolean>;
+  _matchedParams?: WeakMap<Function, Map<string, string>>;
 };
 
 /**
