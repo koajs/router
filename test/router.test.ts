@@ -1816,6 +1816,40 @@ it('nested router middleware has access to parent path parameters', async () => 
   assert.strictEqual(res.body.id, '123');
 });
 
+it('mounts prefixed child middleware under a parameterized router prefix', async () => {
+  for (const prefix of ['/:rest', undefined]) {
+    const itemRouter = new Router({ prefix });
+    const childRouter = new Router({ prefix: '/child' });
+    const middlewareParameters: Record<string, string>[] = [];
+    childRouter
+      .use((ctx, next) => {
+        middlewareParameters.push({ ...ctx.params });
+        return next();
+      })
+      .get('/detail', (ctx) => {
+        ctx.body = ctx.params;
+      });
+    const originalPath = childRouter.stack[0].path;
+    const originalOptions = { ...childRouter.stack[0].opts };
+
+    itemRouter.use(childRouter.routes());
+    if (!prefix) itemRouter.prefix('/:rest');
+    const app = new Koa().use(itemRouter.routes());
+    await request(app.callback())
+      .get('/123/child/detail')
+      .set('Connection', 'close')
+      .expect(200, { rest: '123' });
+
+    assert.deepStrictEqual(middlewareParameters, [{ rest: '123' }]);
+    assert.strictEqual(
+      itemRouter.stack[0].match('/123/childish/detail'),
+      false
+    );
+    assert.strictEqual(childRouter.stack[0].path, originalPath);
+    assert.deepStrictEqual(childRouter.stack[0].opts, originalOptions);
+  }
+});
+
 it('uses a same router middleware at given paths continuously - ZijianHe/koa-router#gh-244 gh-18', async () => {
   const app = new Koa();
   const base = new Router({ prefix: '/api' });
