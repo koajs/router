@@ -7,10 +7,7 @@ import {
   applyAllParameterMiddleware,
   applyParameterMiddlewareToRoute
 } from './utils/parameter-helpers';
-import {
-  hasPathParameters,
-  determineMiddlewarePath
-} from './utils/path-helpers';
+import { compilePathToRegexp } from './utils/path-to-regexp-wrapper';
 import { debug } from './utils/debug';
 import {
   RouterEvents,
@@ -329,11 +326,10 @@ class RouterImplementation<
 
     const clonedRouter = this._cloneRouter(nestedRouter);
 
-    const isMountPathHasParameters =
-      typeof mountPath === 'string' && hasPathParameters(mountPath, this.opts);
-    const isRouterPrefixHasParameters =
-      typeof this.opts.prefix === 'string' &&
-      hasPathParameters(this.opts.prefix, this.opts);
+    const isMountPathHasParameters = this._hasPathParameters(mountPath);
+    const isRouterPrefixHasParameters = this._hasPathParameters(
+      this.opts.prefix
+    );
 
     for (
       let routeIndex = 0;
@@ -432,10 +428,7 @@ class RouterImplementation<
     explicitPath?: string | RegExp,
     hasExplicitPath?: boolean
   ): void {
-    const isPrefixHasParameters = hasPathParameters(
-      this.opts.prefix || '',
-      this.opts
-    );
+    const isPrefixHasParameters = this._hasPathParameters(this.opts.prefix);
 
     const effectiveExplicitPath = (() => {
       if (explicitPath !== undefined) return explicitPath;
@@ -446,10 +439,8 @@ class RouterImplementation<
     const isEffectiveHasExplicitPath =
       hasExplicitPath || (explicitPath === undefined && isPrefixHasParameters);
 
-    const { path: middlewarePath, pathAsRegExp } = determineMiddlewarePath(
-      effectiveExplicitPath,
-      isPrefixHasParameters
-    );
+    const { path: middlewarePath, pathAsRegExp } =
+      this._determineMiddlewarePath(effectiveExplicitPath);
 
     let finalPath: string | RegExp = middlewarePath;
     let isUsePathToRegexp = pathAsRegExp;
@@ -488,34 +479,82 @@ class RouterImplementation<
    * @returns This router instance
    */
   prefix(prefixPath: string): Router<StateT, ContextT> {
-    const normalizedPrefix = prefixPath.replace(/\/$/, '');
+    this._updatePrefix(prefixPath);
+    return this;
+  }
+
+  private _determineMiddlewarePath(explicitPath?: string | RegExp): {
+    path: string | RegExp;
+    pathAsRegExp: boolean;
+  } {
+    if (explicitPath === '') {
+      return { path: '{/*rest}', pathAsRegExp: false };
+    }
+    if (explicitPath === undefined) {
+      return { path: String.raw`(?:\/|$)`, pathAsRegExp: true };
+    }
+
+    const isPathAsRegExp = typeof explicitPath !== 'string';
+    return { path: explicitPath, pathAsRegExp: isPathAsRegExp };
+  }
+
+  private _hasPathParameters(path: string | RegExp = ''): boolean {
+    if (typeof path !== 'string' || !path) return false;
+
+    const { keys } = compilePathToRegexp(path, this.opts);
+    return keys.length > 0;
+  }
+
+  private _updatePrefix(currentPrefix: string): void {
     const previousPrefix = this.opts.prefix || '';
-    const isPrefixHasParameters = hasPathParameters(
-      normalizedPrefix,
-      this.opts
-    );
+    const normalizedPrefix = currentPrefix.replace(/\/$/, '');
+    const isPrefixHasParameters = this._hasPathParameters(normalizedPrefix);
 
     this.opts.prefix = normalizedPrefix;
 
     for (const route of this.stack) {
-      if (typeof route.path === 'string' && previousPrefix) {
-        const stripBoundary = previousPrefix + '/';
-        if (
-          route.path === previousPrefix ||
-          route.path.startsWith(stripBoundary)
-        ) {
-          route.path = route.path.slice(previousPrefix.length) || '/';
-        }
-      }
-
-      route.setPrefix(normalizedPrefix);
-
-      if (route.methods.length === 0 && isPrefixHasParameters) {
-        route.opts.ignoreCaptures = false;
-      }
+      this._updateRoutePrefix(route, previousPrefix);
+      this._updateRouteCaptureOptions(route, isPrefixHasParameters);
     }
+  }
 
-    return this;
+  private _getUnprefixedPath(
+    route: Readonly<Layer<StateT, ContextT>>,
+    previousPrefix: string
+  ): string | RegExp {
+    if (typeof route.path !== 'string' || !previousPrefix) return route.path;
+
+    const prefixedMiddlewarePaths = new Set([
+      previousPrefix + String.raw`(?:\/|$)`,
+      previousPrefix + '{/*rest}'
+    ]);
+    const stripBoundary = previousPrefix + '/';
+    const isExactPrefix = route.path === previousPrefix;
+    const hasPrefixBoundary = route.path.startsWith(stripBoundary);
+    const isPathlessMiddleware =
+      route.methods.length === 0 && prefixedMiddlewarePaths.has(route.path);
+    const hasReplaceablePrefix =
+      isExactPrefix || hasPrefixBoundary || isPathlessMiddleware;
+    if (!hasReplaceablePrefix) return route.path;
+
+    return route.path.slice(previousPrefix.length) || '/';
+  }
+
+  private _updateRoutePrefix(
+    route: Layer<StateT, ContextT>,
+    previousPrefix: string
+  ): void {
+    route.path = this._getUnprefixedPath(route, previousPrefix);
+    route.setPrefix(this.opts.prefix || '');
+  }
+
+  private _updateRouteCaptureOptions(
+    route: Layer<StateT, ContextT>,
+    isPrefixHasParameters: boolean
+  ): void {
+    if (route.methods.length === 0 && isPrefixHasParameters) {
+      route.opts.ignoreCaptures = false;
+    }
   }
 
   /**

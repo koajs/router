@@ -238,10 +238,6 @@ The new version uses **`path-to-regexp` v8** via a wrapper (`src/utils/path-to-r
 
 ### 4.3. Rest-style routes and `pathAsRegExp` options
 
-- The router introduces helper utilities:
-  - `hasPathParameters(path, options)`
-  - `determineMiddlewarePath(explicitPath, hasPrefixParameters)`
-
 - `LayerOptions` gains:
   - `ignoreCaptures` – ignore regexp captures for middleware-only routes.
   - `pathAsRegExp` – treat the path literally as a regular expression.

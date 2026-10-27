@@ -145,7 +145,7 @@ export default class Layer<
         this.path instanceof RegExp
           ? this.path
           : new RegExp(this.path as string);
-    } else if (this.path) {
+    } else if (this.path || this.path === '') {
       this._configurePathToRegexp();
     }
   }
@@ -540,11 +540,7 @@ export default class Layer<
    * @private
    */
   setPrefix(prefixPath: string): Layer<StateT, ContextT, BodyT> {
-    if (!this.path) {
-      return this;
-    }
-
-    if (this.path instanceof RegExp) {
+    if (typeof this.path !== 'string') {
       return this;
     }
 

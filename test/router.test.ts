@@ -1018,7 +1018,30 @@ it('allowedMethods check if flow (allowedArr.length)', async () => {
 
   router.get('');
 
-  await request(http.createServer(app.callback())).get('/users');
+  await request(http.createServer(app.callback())).get('/users').expect(404);
+});
+
+it('keeps empty-path routes and their guards under the router prefix', async () => {
+  for (const prefix of ['/v1', undefined]) {
+    const router = new Router({ prefix });
+    router.use((ctx, next) => {
+      if (!ctx.get('authorization')) ctx.throw(401);
+      return next();
+    });
+    router.get('', (ctx) => {
+      ctx.body = 'allowed';
+    });
+    if (!prefix) router.prefix('/v1');
+
+    const client = request(new Koa().use(router.routes()).callback());
+    await client.get('/').set('Connection', 'close').expect(404);
+    await client.get('/v1').set('Connection', 'close').expect(401);
+    await client
+      .get('/v1')
+      .set('Connection', 'close')
+      .set('authorization', 'allowed')
+      .expect(200, 'allowed');
+  }
 });
 
 it('supports custom routing detect path: ctx.routerPath', async () => {
@@ -3665,6 +3688,60 @@ describe('Router#prefix', () => {
     await request(http.createServer(app.callback()))
       .get('/api/v2/api/v1/test')
       .expect(404);
+
+    for (const [prefix, replacement, explicit] of [
+      ['/v1', '/v2', false],
+      ['/v1', '/v1', false],
+      ['/v1', '/v2', true],
+      ['/v1', '/v1', true],
+      ['/:tenant/api', '/v2', false],
+      ['/:tenant/api', '/:tenant/api', true],
+      ['/v1', '/:tenant/api', false]
+    ] as const) {
+      const guardedRouter = new Router({ prefix });
+      const expectedParameters = replacement.includes(':tenant')
+        ? { tenant: 'acme' }
+        : {};
+      const guard: RouterMiddleware = (ctx, next) => {
+        assert.deepStrictEqual(ctx.params, expectedParameters);
+        if (!ctx.get('authorization')) ctx.throw(401);
+        return next();
+      };
+      if (explicit) guardedRouter.use('', guard);
+      else guardedRouter.use(guard);
+      guardedRouter.get('/secret', (ctx) => {
+        ctx.body = 'allowed';
+      });
+      guardedRouter.prefix(replacement);
+      const guardedApp = new Koa().use(guardedRouter.routes());
+      const client = request(guardedApp.callback());
+      const path = replacement.replace(':tenant', 'acme') + '/secret';
+      await client.get(path).set('Connection', 'close').expect(401);
+      await client
+        .get(path)
+        .set('Connection', 'close')
+        .set('authorization', 'allowed')
+        .expect(200, 'allowed');
+    }
+
+    const childRouter = new Router();
+    childRouter.use((ctx, next) => {
+      if (!ctx.get('authorization')) ctx.throw(401);
+      return next();
+    });
+    childRouter.get('/secret', (ctx) => {
+      ctx.body = 'allowed';
+    });
+    const parentRouter = new Router({ prefix: '/v1' });
+    parentRouter.use(childRouter.routes()).prefix('/v2');
+    const client = request(new Koa().use(parentRouter.routes()).callback());
+    await client.get('/v2/secret').set('Connection', 'close').expect(401);
+    await client
+      .get('/v2/secret')
+      .set('Connection', 'close')
+      .set('authorization', 'allowed')
+      .expect(200, 'allowed');
+    await client.get('/v1/secret').set('Connection', 'close').expect(404);
   });
 
   it('should handle raw regex middleware patterns with parameterized prefix', async () => {
