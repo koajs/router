@@ -546,6 +546,10 @@ onion model) — the same way route middleware stacks work.
 
 > **Experimental:** This API may change in future minor versions.
 
+### Empty-path routes (bug fix)
+
+`router.get('', handler)` now matches the router's prefix instead of throwing a `TypeError` (HTTP 500). Pathless `router.use()` middleware continues to guard that route.
+
 ### Clean `ctx.params` on parameterized-prefix middleware (bug fix)
 
 **Symptom (pre-fix):** When a router had a parameterized prefix (e.g. `prefix: '/:id'`) and a middleware was registered with `router.use()`, `ctx.params` inside that middleware contained an extraneous `rest` key alongside the defined parameters:

@@ -1021,8 +1021,11 @@ it('allowedMethods check if flow (allowedArr.length)', async () => {
   await request(http.createServer(app.callback())).get('/users').expect(404);
 });
 
-it('keeps empty-path routes and their guards under the router prefix', async () => {
-  for (const prefix of ['/v1', undefined]) {
+[
+  ['set at construction', '/v1'],
+  ['set after registration', undefined]
+].forEach(([description, prefix]) => {
+  it(`keeps empty-path routes and their guards under a prefix ${description}`, async () => {
     const router = new Router({ prefix });
     router.use((ctx, next) => {
       if (!ctx.get('authorization')) ctx.throw(401);
@@ -1041,7 +1044,7 @@ it('keeps empty-path routes and their guards under the router prefix', async () 
       .set('Connection', 'close')
       .set('authorization', 'allowed')
       .expect(200, 'allowed');
-  }
+  });
 });
 
 it('supports custom routing detect path: ctx.routerPath', async () => {
@@ -3688,8 +3691,10 @@ describe('Router#prefix', () => {
     await request(http.createServer(app.callback()))
       .get('/api/v2/api/v1/test')
       .expect(404);
+  });
 
-    for (const [prefix, replacement, explicit] of [
+  (
+    [
       ['/v1', '/v2', false],
       ['/v1', '/v1', false],
       ['/v1', '/v2', true],
@@ -3697,7 +3702,10 @@ describe('Router#prefix', () => {
       ['/:tenant/api', '/v2', false],
       ['/:tenant/api', '/:tenant/api', true],
       ['/v1', '/:tenant/api', false]
-    ] as const) {
+    ] as const
+  ).forEach(([prefix, replacement, explicit]) => {
+    const registration = explicit ? "use('', guard)" : 'use(guard)';
+    it(`preserves guards with ${registration} when replacing ${prefix} with ${replacement}`, async () => {
       const guardedRouter = new Router({ prefix });
       const expectedParameters = replacement.includes(':tenant')
         ? { tenant: 'acme' }
@@ -3722,8 +3730,10 @@ describe('Router#prefix', () => {
         .set('Connection', 'close')
         .set('authorization', 'allowed')
         .expect(200, 'allowed');
-    }
+    });
+  });
 
+  it('preserves nested router guards when replacing the parent prefix', async () => {
     const childRouter = new Router();
     childRouter.use((ctx, next) => {
       if (!ctx.get('authorization')) ctx.throw(401);
