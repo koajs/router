@@ -32,6 +32,8 @@ import type {
 } from './types';
 
 const httpMethods = getAllHttpMethods();
+const MIDDLEWARE_BOUNDARY_PATH = String.raw`(?:\/|$)`;
+const MIDDLEWARE_WILDCARD_PATH = '{/*rest}';
 
 // Public instance type and default export type surface.
 // These are intentionally declared in the type namespace (and can reference RouterImpl below).
@@ -453,7 +455,8 @@ class RouterImplementation<
     }
 
     const ignoreWildcardParameter =
-      effectiveExplicitPath === '' && middlewarePath === '{/*rest}'
+      effectiveExplicitPath === '' &&
+      middlewarePath === MIDDLEWARE_WILDCARD_PATH
         ? 'rest'
         : undefined;
 
@@ -488,10 +491,10 @@ class RouterImplementation<
     pathAsRegExp: boolean;
   } {
     if (explicitPath === '') {
-      return { path: '{/*rest}', pathAsRegExp: false };
+      return { path: MIDDLEWARE_WILDCARD_PATH, pathAsRegExp: false };
     }
     if (explicitPath === undefined) {
-      return { path: String.raw`(?:\/|$)`, pathAsRegExp: true };
+      return { path: MIDDLEWARE_BOUNDARY_PATH, pathAsRegExp: true };
     }
 
     const isPathAsRegExp = typeof explicitPath !== 'string';
@@ -525,8 +528,8 @@ class RouterImplementation<
     if (typeof route.path !== 'string' || !previousPrefix) return route.path;
 
     const prefixedMiddlewarePaths = new Set([
-      previousPrefix + String.raw`(?:\/|$)`,
-      previousPrefix + '{/*rest}'
+      previousPrefix + MIDDLEWARE_BOUNDARY_PATH,
+      previousPrefix + MIDDLEWARE_WILDCARD_PATH
     ]);
     const stripBoundary = previousPrefix + '/';
     const isExactPrefix = route.path === previousPrefix;
