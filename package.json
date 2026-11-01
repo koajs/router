@@ -62,6 +62,13 @@
   "engines": {
     "node": ">= 20"
   },
+  "devEngines": {
+    "packageManager": {
+      "name": "npm",
+      "version": ">=11.15.0",
+      "onFail": "warn"
+    }
+  },
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
