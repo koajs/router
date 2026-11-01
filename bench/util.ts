@@ -1,5 +1,4 @@
 import process from 'node:process';
-import chalk from 'chalk';
 
 export const operations = 1_000_000;
 
@@ -24,7 +23,7 @@ export function getOpsSec(ms: number): number {
 export function print(name: string, time: number): number {
   const opsSec = getOpsSec(now() - time);
   console.log(
-    chalk.yellow(name.padEnd(30)),
+    name.padEnd(30),
     opsSec.toLocaleString().padStart(12),
     'ops/sec'
   );
@@ -35,12 +34,10 @@ export function print(name: string, time: number): number {
  * Print section title
  */
 export function title(name: string): void {
-  console.log(
-    chalk.green(`
+  console.log(`
 ${'='.repeat(name.length + 4)}
   ${name}
-${'='.repeat(name.length + 4)}`)
-  );
+${'='.repeat(name.length + 4)}`);
 }
 
 /**

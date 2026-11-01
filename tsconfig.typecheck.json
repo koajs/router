@@ -9,6 +9,7 @@
     "src/**/*.ts",
     "recipes/**/*.ts",
     "bench/**/*.ts",
+    "scripts/**/*.ts",
     "test/**/*.ts"
   ],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]

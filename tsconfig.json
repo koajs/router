@@ -7,8 +7,6 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
     "removeComments": false,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
@@ -31,11 +29,6 @@
     "noPropertyAccessFromIndexSignature": false,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "paths": {
-      "@/*": ["./src/*"]
-    },
     "types": ["node"]
   },
   "include": ["src/**/*.ts"],

@@ -211,7 +211,7 @@ The new version uses **`path-to-regexp` v8** via a wrapper (`src/utils/path-to-r
     });
     ```
 
-- The tests in `test/router.test.ts` show this **“v15 approach”** for UUID validation, which is a good reference.
+- The tests in `test/integration/router.test.ts` show this **“v15 approach”** for UUID validation, which is a good reference.
 
 ### 4.2. `strict` vs `trailing` behavior
 
@@ -289,8 +289,6 @@ usersRouter.get('/:userId/accounts', async (ctx) => {
 
   ```bash
   npm uninstall @types/@koa/router
-  # or
-  yarn remove @types/@koa/router
   ```
 
 - Import types directly from `@koa/router`:
