@@ -20,17 +20,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node_version }}
-          cache: 'yarn'
+          cache: 'npm'
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: npm ci
       - name: Run lint
-        run: yarn run lint
+        run: npm run lint
       - name: Build
-        run: yarn run build
+        run: npm run build
       - name: Run typecheck
-        run: yarn run ts:check
+        run: npm run ts:check
       - name: Run test coverage
-        run: yarn run test:coverage
+        run: npm run test:coverage
 
   benchmarks:
     runs-on: ubuntu-latest
@@ -49,45 +49,32 @@ jobs:
           fi
           echo "wrk installed successfully: $(wrk --version 2>&1 | head -1)"
       # First checkout master and run benchmarks
+      - name: Checkout PR lockfile
+        uses: actions/checkout@v4
+      - name: Preserve PR lockfile
+        run: cp package-lock.json "$RUNNER_TEMP/router-package-lock.json"
       - name: Checkout master branch
         uses: actions/checkout@v4
         with:
           ref: master
-      - name: Check if yarn.lock exists
-        id: check-yarn-lock
-        run: |
-          if [ -f yarn.lock ]; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-            echo "yarn.lock found: $(wc -l < yarn.lock) lines"
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-            echo "yarn.lock not found on master branch"
-          fi
+      - name: Use PR lockfile for baseline
+        run: cp "$RUNNER_TEMP/router-package-lock.json" package-lock.json
       - name: Setup node
-        if: steps.check-yarn-lock.outputs.exists == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: 'yarn'
-      - name: Setup node without cache
-        if: steps.check-yarn-lock.outputs.exists == 'false'
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
+          cache: 'npm'
       - name: Install dependencies
-        run: |
-          if [ -f yarn.lock ]; then
-            yarn install --frozen-lockfile
-          else
-            yarn install
-          fi
+        run: npm ci
       - name: Run benchmarks
-        run: yarn run benchmark || echo "0" > bench-result.txt
+        run: npm run --silent benchmark > bench-result.txt || echo "0" > bench-result.txt
       # Store output of bench-result.txt to workflow output
       - name: Store benchmark result
         id: main_benchmark
         run: |
-          echo "result=$(cat bench-result.txt)" >> $GITHUB_OUTPUT
+          result=$(awk '/^[[:space:]]*[0-9]+([.][0-9]+)?[[:space:]]*$/ { print $1 }' bench-result.txt)
+          [[ "$result" =~ ^[0-9]+([.][0-9]+)?$ ]] || exit 1
+          echo "result=$result" >> "$GITHUB_OUTPUT"
 
       # Now checkout the PR branch and run benchmarks
       - name: Checkout PR branch
@@ -96,22 +83,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: 'yarn'
+          cache: 'npm'
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: npm ci
       - name: Run benchmarks
-        run: yarn run benchmark
+        run: npm run --silent benchmark > bench-result.txt
       # Store output of bench-result.txt to workflow output
       - name: Store benchmark result
         id: branch_benchmark
         run: |
-          echo "result=$(cat bench-result.txt)" >> $GITHUB_OUTPUT
+          result=$(awk '/^[[:space:]]*[0-9]+([.][0-9]+)?[[:space:]]*$/ { print $1 }' bench-result.txt)
+          [[ "$result" =~ ^[0-9]+([.][0-9]+)?$ ]] || exit 1
+          echo "result=$result" >> "$GITHUB_OUTPUT"
 
       # Verify difference between main and branch benchmark outputs aren't greater than THRESHOLD env var
       - name: Verify benchmark results
         run: |
-          main_result=${{ steps.main_benchmark.outputs.result }}
-          branch_result=${{ steps.branch_benchmark.outputs.result }}
+          main_result="${{ steps.main_benchmark.outputs.result }}"
+          branch_result="${{ steps.branch_benchmark.outputs.result }}"
           difference=$(echo "$main_result - $branch_result" | bc)
           echo "Main benchmark result: $main_result"
           echo "Branch benchmark result: $branch_result"
