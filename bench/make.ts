@@ -22,19 +22,15 @@ async function runBenchmark(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const childProcess = spawn(
-      'node',
+      process.execPath,
       [
         '--require',
-        'ts-node/register',
+        'ts-node/register/transpile-only',
         'bench/run.ts',
         String(factor),
         String(useMiddleware)
       ],
       {
-        env: {
-          ...process.env,
-          TS_NODE_PROJECT: 'tsconfig.bench.json'
-        },
         stdio: 'inherit',
         cwd: projectRoot
       }

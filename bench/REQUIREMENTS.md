@@ -81,9 +81,9 @@ After installing `wrk`, you can run benchmarks:
 
 ```bash
 # Single benchmark
-npm run bench <factor> <useMiddleware>
-npm run bench 10 false
+npm run benchmark -- <factor> <useMiddleware>
+npm run benchmark -- 10 false
 
 # Run all benchmarks
-npm run bench:all
+npm run benchmark:all
 ```

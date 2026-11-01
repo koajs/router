@@ -7,7 +7,7 @@
  * - Type-safe validation middleware using generics
  * - Proper body parsing with @koa/bodyparser
  *
- * Requires: yarn add joi @koa/bodyparser
+ * Requires: npm install joi @koa/bodyparser
  */
 import Router from '../router-module-loader';
 import type { RouterMiddleware } from '../router-module-loader';

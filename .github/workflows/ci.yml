@@ -2,6 +2,8 @@ name: CI
 on:
   - push
   - pull_request
+permissions:
+  contents: read
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -15,22 +17,45 @@ jobs:
           - '26'
     name: Node ${{ matrix.node_version }} on ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ matrix.node_version }}
-          cache: 'yarn'
+          cache: 'npm'
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: npm ci
       - name: Run lint
-        run: yarn run lint
-      - name: Build
-        run: yarn run build
+        run: npm run lint:ci
       - name: Run typecheck
-        run: yarn run ts:check
+        run: npm run ts:check
       - name: Run test coverage
-        run: yarn run test:coverage
+        run: npm run test:coverage
+
+  windows-setup:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26'
+          cache: 'npm'
+      - name: Install dependencies and native Git hooks
+        shell: bash
+        env:
+          CI: 'false'
+        run: npm run setup
+      - name: Verify commit-message hook
+        shell: bash
+        run: |
+          printf 'chore: verify Windows setup\n' > .git/setup-test-message
+          git hook run commit-msg -- .git/setup-test-message
+      - name: Validate Windows development commands
+        run: npm run validate
 
   benchmarks:
     runs-on: ubuntu-latest
@@ -50,62 +75,52 @@ jobs:
           echo "wrk installed successfully: $(wrk --version 2>&1 | head -1)"
       # First checkout master and run benchmarks
       - name: Checkout master branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: master
-      - name: Check if yarn.lock exists
-        id: check-yarn-lock
-        run: |
-          if [ -f yarn.lock ]; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-            echo "yarn.lock found: $(wc -l < yarn.lock) lines"
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-            echo "yarn.lock not found on master branch"
-          fi
+          persist-credentials: false
       - name: Setup node
-        if: steps.check-yarn-lock.outputs.exists == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          cache: 'yarn'
-      - name: Setup node without cache
-        if: steps.check-yarn-lock.outputs.exists == 'false'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
       - name: Install dependencies
         run: |
-          if [ -f yarn.lock ]; then
-            yarn install --frozen-lockfile
+          if [ -f package-lock.json ]; then
+            npm ci
           else
-            yarn install
+            npm install --package-lock=true
           fi
       - name: Run benchmarks
-        run: yarn run benchmark || echo "0" > bench-result.txt
+        run: npm run --silent benchmark > bench-result.txt || echo "0" > bench-result.txt
       # Store output of bench-result.txt to workflow output
       - name: Store benchmark result
         id: main_benchmark
         run: |
-          echo "result=$(cat bench-result.txt)" >> $GITHUB_OUTPUT
+          result=$(xargs < bench-result.txt)
+          [[ "$result" =~ ^[0-9]+([.][0-9]+)?$ ]] || exit 1
+          echo "result=$result" >> "$GITHUB_OUTPUT"
 
       # Now checkout the PR branch and run benchmarks
       - name: Checkout PR branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Setup node for PR branch
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
-          cache: 'yarn'
+          cache: 'npm'
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: npm ci
       - name: Run benchmarks
-        run: yarn run benchmark
+        run: npm run --silent benchmark > bench-result.txt
       # Store output of bench-result.txt to workflow output
       - name: Store benchmark result
         id: branch_benchmark
         run: |
-          echo "result=$(cat bench-result.txt)" >> $GITHUB_OUTPUT
+          result=$(xargs < bench-result.txt)
+          [[ "$result" =~ ^[0-9]+([.][0-9]+)?$ ]] || exit 1
+          echo "result=$result" >> "$GITHUB_OUTPUT"
 
       # Verify difference between main and branch benchmark outputs aren't greater than THRESHOLD env var
       - name: Verify benchmark results

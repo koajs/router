@@ -2,8 +2,8 @@
  * Benchmark runner script
  *
  * Runs a single benchmark test with specified factor and middleware usage.
- * Usage: node --require ts-node/register bench/run.ts <factor> <useMiddleware>
- * Example: node --require ts-node/register bench/run.ts 10 false
+ * Usage: npm run benchmark -- <factor> <useMiddleware>
+ * Example: npm run benchmark -- 10 false
  */
 
 import { spawn } from 'node:child_process';
@@ -20,12 +20,11 @@ const port = process.env.PORT || '3000';
 const host = `http://localhost:${port}`;
 
 const serverProcess = spawn(
-  'node',
-  ['--require', 'ts-node/register', 'bench/server.ts'],
+  process.execPath,
+  ['--require', 'ts-node/register/transpile-only', 'bench/server.ts'],
   {
     env: {
       ...process.env,
-      TS_NODE_PROJECT: 'tsconfig.bench.json',
       FACTOR: factor,
       USE_MIDDLEWARE: String(useMiddleware),
       PORT: port
