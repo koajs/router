@@ -3,7 +3,7 @@
 > Modern TypeScript Router middleware for [Koa](https://github.com/koajs/koa). Maintained by [Forward Email][forward-email] and [Lad][].
 
 [![build status](https://github.com/koajs/router/actions/workflows/ci.yml/badge.svg)](https://github.com/koajs/router/actions/workflows/ci.yml)
-[![styled with prettier](https://img.shields.io/badge/styled_with-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
+[![formatted with oxfmt](https://img.shields.io/badge/formatted_with-oxfmt-blue.svg)](https://oxc.rs/docs/guide/usage/formatter)
 [![made with lass](https://img.shields.io/badge/made_with-lass-95CC28.svg)](https://lass.js.org)
 [![license](https://img.shields.io/github/license/koajs/router.svg)](LICENSE)
 
@@ -1253,10 +1253,10 @@ Each recipe file contains complete, runnable TypeScript code that you can copy a
 
 ```bash
 # Run benchmarks
-yarn benchmark
+npm run benchmark
 
 # Run all benchmark scenarios
-yarn benchmark:all
+npm run benchmark:all
 ```
 
 ## Testing
@@ -1265,28 +1265,28 @@ yarn benchmark:all
 
 ```bash
 # Run all tests (core + recipes)
-yarn test:all
+npm run test:all
 
 # Run core tests only
-yarn test:core
+npm run test:core
 
 # Run recipe tests only
-yarn test:recipes
+npm run test:recipes
 
 # Run tests with coverage
-yarn test:coverage
+npm run test:coverage
 
 # Type check
-yarn ts:check
+npm run ts:check
 
-# Format code with Prettier
-yarn format
+# Format code with Oxfmt
+npm run format
 
 # Check code formatting
-yarn format:check
+npm run format:check
 
 # Lint code
-yarn lint
+npm run lint
 ```
 
 **Example test:**
@@ -1348,29 +1348,29 @@ Contributions are welcome!
 git clone https://github.com/koajs/router.git
 cd router
 
-# Install dependencies (using yarn)
-yarn install
+# Install dependencies and native Git hooks
+npm run setup
 
 # Run tests
-yarn test:all
+npm run test:all
 
 # Run tests with coverage
-yarn test:coverage
+npm run test:coverage
 
 # Format code
-yarn format
+npm run format
 
 # Check formatting
-yarn format:check
+npm run format:check
 
 # Lint code
-yarn lint
+npm run lint
 
 # Build TypeScript
-yarn build
+npm run build
 
 # Type check
-yarn ts:check
+npm run ts:check
 ```
 
 ## Contributors

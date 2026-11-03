@@ -1,0 +1,14 @@
+{
+  "printWidth": 80,
+  "semi": true,
+  "singleQuote": true,
+  "trailingComma": "none",
+  "sortPackageJson": false,
+  "ignorePatterns": [
+    "dist/**",
+    "coverage/**",
+    "tmp/**",
+    "**/*.md",
+    "package-lock.json"
+  ]
+}
