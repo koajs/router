@@ -371,6 +371,13 @@ export default class Layer<
       for (const [parameterName, parameterValue] of Object.entries(
         parameters
       )) {
+        const isOptional = namedTokens.some(
+          (token) => token.name === parameterName && token.isOptional
+        );
+        if (isOptional && parameterValue === undefined) {
+          continue;
+        }
+
         parameterReplacements[parameterName] = String(parameterValue);
       }
     }
