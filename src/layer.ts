@@ -350,7 +350,7 @@ export default class Layer<
     const { tokens } = parsePath(cleanPath);
     const namedTokens = collectNamedTokens(tokens);
     const hasNamedParameters = namedTokens.length > 0;
-    const parameterReplacements: Record<string, string> = {};
+    const parameterReplacements: Record<string, string> = Object.create(null);
 
     if (Array.isArray(parameters)) {
       let parameterIndex = 0;

@@ -368,6 +368,17 @@ describe('Layer', () => {
         '/programming/how-to-node'
       );
     });
+
+    it('does not read optional parameters from Object.prototype', () => {
+      const route = new Layer('/users{/:toString}', ['GET'], [() => {}]);
+      assert.strictEqual(route.url(), '/users');
+      assert.strictEqual(route.url({ toString: undefined }), '/users');
+      assert.strictEqual(route.url({ toString: 'me' }), '/users/me');
+
+      const proto = new Layer('/users{/:__proto__}', ['GET'], [() => {}]);
+      assert.strictEqual(proto.url(), '/users');
+      assert.strictEqual(proto.url('me'), '/users/me');
+    });
   });
 
   describe('Layer#prefix', () => {
