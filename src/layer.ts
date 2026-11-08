@@ -30,6 +30,30 @@ type ParameterMiddleware<
   _originalFn?: RouterParameterMiddleware<StateT, ContextT, BodyT>;
 };
 
+type PathToken = ReturnType<typeof parsePath>['tokens'][number];
+
+/**
+ * Collect named parameter tokens in path order, including the ones nested in
+ * optional groups (e.g. `id` in `/users{/:id}`)
+ * @internal
+ */
+function collectNamedTokens(
+  tokens: PathToken[],
+  isOptional = false
+): Array<{ name: string; isOptional: boolean }> {
+  const namedTokens: Array<{ name: string; isOptional: boolean }> = [];
+
+  for (const token of tokens) {
+    if (token.type === 'group') {
+      namedTokens.push(...collectNamedTokens(token.tokens, true));
+    } else if ('name' in token && token.name) {
+      namedTokens.push({ name: token.name, isOptional });
+    }
+  }
+
+  return namedTokens;
+}
+
 /**
  * Layer class represents a single route or middleware layer.
  * It handles path matching, parameter extraction, and middleware execution.
@@ -324,20 +348,20 @@ export default class Layer<
     cleanPath: string
   ): Record<string, string> {
     const { tokens } = parsePath(cleanPath);
-    const hasNamedParameters = tokens.some(
-      (token) => 'name' in token && token.name
-    );
+    const namedTokens = collectNamedTokens(tokens);
+    const hasNamedParameters = namedTokens.length > 0;
     const parameterReplacements: Record<string, string> = {};
 
     if (Array.isArray(parameters)) {
       let parameterIndex = 0;
 
-      for (const token of tokens) {
-        if ('name' in token && token.name) {
-          parameterReplacements[token.name] = String(
-            parameters[parameterIndex++]
-          );
+      for (const { name, isOptional } of namedTokens) {
+        const parameterValue = parameters[parameterIndex++];
+        if (isOptional && parameterValue === undefined) {
+          continue;
         }
+
+        parameterReplacements[name] = String(parameterValue);
       }
     } else if (
       hasNamedParameters &&

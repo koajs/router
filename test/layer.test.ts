@@ -353,6 +353,20 @@ describe('Layer', () => {
       const url = route.url({ id: 123 });
       assert.strictEqual(url, '/users/123');
     });
+
+    it('includes parameters inside optional groups', () => {
+      const route = new Layer('/users{/:id}', ['GET'], [() => {}]);
+      assert.strictEqual(route.url(), '/users');
+      assert.strictEqual(route.url({ id: 123 }), '/users/123');
+      assert.strictEqual(route.url(123), '/users/123');
+
+      const nested = new Layer('/:category{/:title}', ['GET'], [() => {}]);
+      assert.strictEqual(nested.url('programming'), '/programming');
+      assert.strictEqual(
+        nested.url('programming', 'how-to-node'),
+        '/programming/how-to-node'
+      );
+    });
   });
 
   describe('Layer#prefix', () => {
