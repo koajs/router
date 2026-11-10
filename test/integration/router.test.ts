@@ -15,8 +15,8 @@ import Router, {
   RouterMiddleware,
   RouterParameterMiddleware,
   RouterEvents
-} from '../src';
-import Layer from '../src/layer';
+} from '../../src';
+import Layer from '../../src/layer';
 
 type HttpError = Error & {
   status?: number;
@@ -722,7 +722,7 @@ it('supports promises for route middleware', async () => {
   app.use(router.routes());
   const readVersion = () => {
     return new Promise((resolve, reject) => {
-      const packagePath = path.join(__dirname, '..', 'package.json');
+      const packagePath = path.join(__dirname, '..', '..', 'package.json');
       fs.readFile(packagePath, 'utf8', (err, data) => {
         if (err) return reject(err);
         resolve(JSON.parse(data).version);

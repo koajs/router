@@ -67,30 +67,30 @@ jobs:
       - name: Install dependencies
         timeout-minutes: 5
         run: |
-          npm install --global yarn@1.22.22
-          yarn install --frozen-lockfile
+          if [ -f package-lock.json ]; then
+            npm ci
+          else
+            npm install --package-lock=true
+          fi
 
       - name: Lint
         timeout-minutes: 5
         run: |
+          # Older tags can depend on ESLint without defining lint:ci.
           if node -e "process.exitCode = Number(!require('./package.json').scripts?.['lint:ci'])"; then
-            yarn lint:ci
+            npm run lint:ci
           else
-            yarn eslint src test
+            npm exec --no -- eslint src test
           fi
-
-      - name: Build
-        timeout-minutes: 5
-        run: yarn run build
 
       - name: Typecheck
         timeout-minutes: 5
-        run: yarn run ts:check
+        run: npm run ts:check
 
       - name: Test
         timeout-minutes: 10
         run: |
-          yarn test:all
+          npm run test:all
           git diff --exit-code
 
       - name: Upload checked build

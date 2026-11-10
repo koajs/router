@@ -8,8 +8,8 @@ import http from 'node:http';
 import Koa from 'koa';
 import request from 'supertest';
 
-import Router, { RouterContext } from '../src';
-import Layer from '../src/layer';
+import Router, { RouterContext } from '../../src';
+import Layer from '../../src/layer';
 
 type TestState = {
   user?: { name: string };
