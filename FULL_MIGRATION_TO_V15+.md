@@ -289,8 +289,6 @@ usersRouter.get('/:userId/accounts', async (ctx) => {
 
   ```bash
   npm uninstall @types/@koa/router
-  # or
-  yarn remove @types/@koa/router
   ```
 
 - Import types directly from `@koa/router`:

@@ -15,22 +15,29 @@ jobs:
           - '26'
     name: Node ${{ matrix.node_version }} on ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ matrix.node_version }}
-          cache: 'yarn'
+          package-manager-cache: false
+      - name: Setup npm
+        run: npm install --global npm@12.2.2
+      - name: Cache npm downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ matrix.node_version }}-npm-12-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: npm ci
       - name: Run lint
-        run: yarn run lint
+        run: npm run lint
       - name: Build
-        run: yarn run build
+        run: npm run build
       - name: Run typecheck
-        run: yarn run ts:check
+        run: npm run ts:check
       - name: Run test coverage
-        run: yarn run test:coverage
+        run: npm run test:coverage
 
   benchmarks:
     runs-on: ubuntu-latest
@@ -48,64 +55,66 @@ jobs:
             exit 1
           fi
           echo "wrk installed successfully: $(wrk --version 2>&1 | head -1)"
+      - name: Checkout PR lockfile
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Preserve npm lockfile
+        run: cp package-lock.json "$RUNNER_TEMP/router-package-lock.json"
       # First checkout master and run benchmarks
       - name: Checkout master branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: master
-      - name: Check if yarn.lock exists
-        id: check-yarn-lock
+      - name: Restore baseline npm lockfile
         run: |
-          if [ -f yarn.lock ]; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-            echo "yarn.lock found: $(wc -l < yarn.lock) lines"
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-            echo "yarn.lock not found on master branch"
+          if [ ! -f package-lock.json ]; then
+            cp "$RUNNER_TEMP/router-package-lock.json" package-lock.json
           fi
       - name: Setup node
-        if: steps.check-yarn-lock.outputs.exists == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24'
-          cache: 'yarn'
-      - name: Setup node without cache
-        if: steps.check-yarn-lock.outputs.exists == 'false'
-        uses: actions/setup-node@v4
+          node-version: '26'
+          package-manager-cache: false
+      - name: Setup npm
+        run: npm install --global npm@12.2.2
+      - name: Cache npm downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          node-version: '24'
+          path: ~/.npm
+          key: ${{ runner.os }}-node-26-npm-12-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
-        run: |
-          if [ -f yarn.lock ]; then
-            yarn install --frozen-lockfile
-          else
-            yarn install
-          fi
+        run: npm ci --package-lock=true
       - name: Run benchmarks
-        run: yarn run benchmark || echo "0" > bench-result.txt
+        run: npm run benchmark || echo "0" > bench-result.txt
       # Store output of bench-result.txt to workflow output
       - name: Store benchmark result
         id: main_benchmark
         run: |
-          echo "result=$(cat bench-result.txt)" >> $GITHUB_OUTPUT
+          echo "result=$(cat bench-result.txt)" >> "$GITHUB_OUTPUT"
 
       # Now checkout the PR branch and run benchmarks
       - name: Checkout PR branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup node for PR branch
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24'
-          cache: 'yarn'
+          node-version: '26'
+          package-manager-cache: false
+      - name: Setup npm
+        run: npm install --global npm@12.2.2
+      - name: Cache npm downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-26-npm-12-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: npm ci
       - name: Run benchmarks
-        run: yarn run benchmark
+        run: npm run benchmark
       # Store output of bench-result.txt to workflow output
       - name: Store benchmark result
         id: branch_benchmark
         run: |
-          echo "result=$(cat bench-result.txt)" >> $GITHUB_OUTPUT
+          echo "result=$(cat bench-result.txt)" >> "$GITHUB_OUTPUT"
 
       # Verify difference between main and branch benchmark outputs aren't greater than THRESHOLD env var
       - name: Verify benchmark results

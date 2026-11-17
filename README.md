@@ -44,16 +44,8 @@
 
 ## Installation
 
-**npm:**
-
 ```bash
 npm install @koa/router
-```
-
-**yarn:**
-
-```bash
-yarn add @koa/router
 ```
 
 **Requirements:**
@@ -1253,10 +1245,10 @@ Each recipe file contains complete, runnable TypeScript code that you can copy a
 
 ```bash
 # Run benchmarks
-yarn benchmark
+npm run benchmark
 
 # Run all benchmark scenarios
-yarn benchmark:all
+npm run benchmark:all
 ```
 
 ## Testing
@@ -1265,28 +1257,28 @@ yarn benchmark:all
 
 ```bash
 # Run all tests (core + recipes)
-yarn test:all
+npm run test:all
 
 # Run core tests only
-yarn test:core
+npm run test:core
 
 # Run recipe tests only
-yarn test:recipes
+npm run test:recipes
 
 # Run tests with coverage
-yarn test:coverage
+npm run test:coverage
 
 # Type check
-yarn ts:check
+npm run ts:check
 
 # Format code with Prettier
-yarn format
+npm run format
 
 # Check code formatting
-yarn format:check
+npm run format:check
 
 # Lint code
-yarn lint
+npm run lint
 ```
 
 **Example test:**
@@ -1348,29 +1340,29 @@ Contributions are welcome!
 git clone https://github.com/koajs/router.git
 cd router
 
-# Install dependencies (using yarn)
-yarn install
+# Install dependencies, validate, and install the optional pre-commit hook
+npm run setup
 
 # Run tests
-yarn test:all
+npm run test:all
 
 # Run tests with coverage
-yarn test:coverage
+npm run test:coverage
 
 # Format code
-yarn format
+npm run format
 
 # Check formatting
-yarn format:check
+npm run format:check
 
 # Lint code
-yarn lint
+npm run lint
 
 # Build TypeScript
-yarn build
+npm run build
 
 # Type check
-yarn ts:check
+npm run ts:check
 ```
 
 ## Contributors
