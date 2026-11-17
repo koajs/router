@@ -59,6 +59,7 @@
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   },
+  "packageManager": "npm@12.2.2",
   "engines": {
     "node": ">= 20"
   },

@@ -58,10 +58,10 @@ Each recipe folder contains:
 
 ```bash
 # Run all recipe tests
-yarn test:recipes
+npm run test:recipes
 
 # Run a specific recipe test
-yarn test:recipes -- --test-name-pattern="Authentication"
+NODE_OPTIONS="--test-name-pattern=Authentication" npm run test:recipes
 ```
 
 ## Usage Examples
