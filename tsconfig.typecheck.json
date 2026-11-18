@@ -2,6 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "skipLibCheck": true,
     "rootDir": "."
   },
@@ -9,6 +10,7 @@
     "src/**/*.ts",
     "recipes/**/*.ts",
     "bench/**/*.ts",
+    "scripts/**/*.mts",
     "test/**/*.ts"
   ],
   "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]

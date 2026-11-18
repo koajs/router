@@ -115,7 +115,7 @@
     "test:core": "TS_NODE_PROJECT=tsconfig.ts-node.json node --require ts-node/register --test test/*.test.ts test/**/*.test.ts",
     "test:recipes": "TS_NODE_PROJECT=tsconfig.recipes.json node --require ts-node/register --test recipes/**/*.test.ts",
     "pretest:all": "npm run lint && npm run build",
-    "test:all": "TS_NODE_PROJECT=tsconfig.ts-node.json node --require ts-node/register --test test/*.test.ts test/**/*.test.ts recipes/**/*.test.ts",
+    "test:all": "node --require ts-node/register/transpile-only --test \"test/*.test.ts\" \"test/**/*.test.ts\" \"recipes/**/*.test.ts\"",
     "test:coverage": "c8 --all --exclude eslint.config.js --exclude tsup.config.ts --exclude src/types.ts --exclude \"bench/**\" --exclude \"dist/**\" --exclude \"recipes/**\" --exclude \"test/**\" --exclude-after-remap npm run test:all",
     "ts:check": "tsc --noEmit --project tsconfig.typecheck.json",
     "ts:check:test": "tsc --noEmit --project tsconfig.test.json",
@@ -124,6 +124,7 @@
     "prepublishOnly": "npm run build",
     "release": "np --test-script test:all",
     "validate": "npm run lint:ci && npm run ts:check && npm run ts:check:test && npm run test:all",
-    "setup": "sh scripts/setup/setup.sh"
+    "prepare": "npm run setup",
+    "setup": "node scripts/hooks.mts"
   }
 }

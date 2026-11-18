@@ -50,7 +50,7 @@ npm install @koa/router
 
 **Requirements:**
 
-- Node.js >= 20 (tested on v20, v22, v24, v25)
+- Node.js >= 20 (tested on v22, v24, v26)
 - Koa >= 2.0.0
 
 ## TypeScript Support
@@ -1335,13 +1335,18 @@ Contributions are welcome!
 
 ### Development Setup
 
+Use Node.js 26 and npm 12 or later for development. Install npm 12 with `npm install --global npm@12.2.2` if needed.
+
 ```bash
 # Clone repository
 git clone https://github.com/koajs/router.git
 cd router
 
-# Install dependencies, validate, and install the optional pre-commit hook
-npm run setup
+# Install dependencies (prepare installs the optional pre-commit hook)
+npm ci
+
+# Validate the project
+npm run validate
 
 # Run tests
 npm run test:all
