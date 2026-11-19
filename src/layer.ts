@@ -285,7 +285,8 @@ export default class Layer<
     let parameters: Record<string, unknown> | unknown[] =
       (allArguments[0] as Record<string, unknown>) ?? {};
     let options: UrlOptions | undefined = allArguments[1] as
-      UrlOptions | undefined;
+      | UrlOptions
+      | undefined;
 
     if (typeof parameters !== 'object' || parameters === null) {
       const argumentsList = [...allArguments];

@@ -1128,7 +1128,8 @@ class RouterImplementation<
     path: string | RegExp | string[],
     methods: string[],
     middleware:
-      RouterMiddleware<StateT, ContextT> | RouterMiddleware<StateT, ContextT>[],
+      | RouterMiddleware<StateT, ContextT>
+      | RouterMiddleware<StateT, ContextT>[],
     additionalOptions: LayerOptions = {}
   ): Layer<StateT, ContextT> | Router<StateT, ContextT> {
     const mergedOptions = { ...this.opts, ...additionalOptions };
@@ -1170,7 +1171,8 @@ class RouterImplementation<
     pathArray: string[],
     methods: string[],
     middleware:
-      RouterMiddleware<StateT, ContextT> | RouterMiddleware<StateT, ContextT>[],
+      | RouterMiddleware<StateT, ContextT>
+      | RouterMiddleware<StateT, ContextT>[],
     options: LayerOptions
   ): Router<StateT, ContextT> {
     for (const singlePath of pathArray) {
@@ -1188,7 +1190,8 @@ class RouterImplementation<
     path: string | RegExp,
     methods: string[],
     middleware:
-      RouterMiddleware<StateT, ContextT> | RouterMiddleware<StateT, ContextT>[],
+      | RouterMiddleware<StateT, ContextT>
+      | RouterMiddleware<StateT, ContextT>[],
     options: LayerOptions
   ): Layer<StateT, ContextT> {
     return new Layer<StateT, ContextT>(path, methods, middleware, {
@@ -1275,7 +1278,8 @@ class RouterImplementation<
     for (const layer of this.stack) {
       debug('test %s %s', layer.path, layer.regexp);
 
-      if (layer.match(path)) {
+      const isPathMatch = layer.match(path);
+      if (isPathMatch) {
         matchResult.path.push(layer);
 
         const isMiddleware = layer.methods.length === 0;
