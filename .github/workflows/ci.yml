@@ -15,14 +15,19 @@ jobs:
           - '26'
     name: Node ${{ matrix.node_version }} on ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: ${{ matrix.node_version }}
-          cache: 'npm'
+          package-manager-cache: false
       - name: Setup npm
         run: npm install --global npm@12.2.2
+      - name: Cache npm downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ matrix.node_version }}-npm-12-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         run: npm ci
       - name: Run lint
@@ -52,32 +57,21 @@ jobs:
           echo "wrk installed successfully: $(wrk --version 2>&1 | head -1)"
       # First checkout master and run benchmarks
       - name: Checkout master branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: master
-      - name: Check if package-lock.json exists
-        id: check-npm-lock
-        run: |
-          if [ -f package-lock.json ]; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-            echo "package-lock.json found: $(wc -l < package-lock.json) lines"
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-            echo "package-lock.json not found on master branch"
-          fi
       - name: Setup node
-        if: steps.check-npm-lock.outputs.exists == 'true'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24'
-          cache: 'npm'
-      - name: Setup node without cache
-        if: steps.check-npm-lock.outputs.exists == 'false'
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
+          node-version: '26'
+          package-manager-cache: false
       - name: Setup npm
         run: npm install --global npm@12.2.2
+      - name: Cache npm downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-26-npm-12-${{ hashFiles('package-lock.json') || hashFiles('package.json') }}
       - name: Install dependencies
         run: |
           if [ ! -f package-lock.json ]; then
@@ -90,18 +84,23 @@ jobs:
       - name: Store benchmark result
         id: main_benchmark
         run: |
-          echo "result=$(cat bench-result.txt)" >> $GITHUB_OUTPUT
+          echo "result=$(cat bench-result.txt)" >> "$GITHUB_OUTPUT"
 
       # Now checkout the PR branch and run benchmarks
       - name: Checkout PR branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup node for PR branch
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24'
-          cache: 'npm'
+          node-version: '26'
+          package-manager-cache: false
       - name: Setup npm
         run: npm install --global npm@12.2.2
+      - name: Cache npm downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-26-npm-12-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         run: npm ci
       - name: Run benchmarks
@@ -110,7 +109,7 @@ jobs:
       - name: Store benchmark result
         id: branch_benchmark
         run: |
-          echo "result=$(cat bench-result.txt)" >> $GITHUB_OUTPUT
+          echo "result=$(cat bench-result.txt)" >> "$GITHUB_OUTPUT"
 
       # Verify difference between main and branch benchmark outputs aren't greater than THRESHOLD env var
       - name: Verify benchmark results
