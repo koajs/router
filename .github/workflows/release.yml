@@ -77,7 +77,7 @@ jobs:
           if node -e "process.exitCode = Number(!require('./package.json').scripts?.['lint:ci'])"; then
             npm run lint:ci
           else
-            npm exec -- eslint src test
+            npm exec -- oxlint src test
           fi
 
       - name: Build

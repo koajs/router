@@ -3,8 +3,6 @@
 > Modern TypeScript Router middleware for [Koa](https://github.com/koajs/koa). Maintained by [Forward Email][forward-email] and [Lad][].
 
 [![build status](https://github.com/koajs/router/actions/workflows/ci.yml/badge.svg)](https://github.com/koajs/router/actions/workflows/ci.yml)
-[![styled with prettier](https://img.shields.io/badge/styled_with-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
-[![made with lass](https://img.shields.io/badge/made_with-lass-95CC28.svg)](https://lass.js.org)
 [![license](https://img.shields.io/github/license/koajs/router.svg)](LICENSE)
 
 ## Table of Contents
@@ -50,7 +48,7 @@ npm install @koa/router
 
 **Requirements:**
 
-- Node.js >= 20 (tested on v22, v24, v26)
+- Node.js >= 22 (tested on v22, v24, v26)
 - Koa >= 2.0.0
 
 ## TypeScript Support
@@ -1271,7 +1269,7 @@ npm run test:coverage
 # Type check
 npm run ts:check
 
-# Format code with Prettier
+# Format code
 npm run format
 
 # Check code formatting
@@ -1310,24 +1308,7 @@ describe('Router', () => {
 
 ## Migration Guides
 
-For detailed migration information, see **[FULL_MIGRATION_TO_V15+.md](./FULL_MIGRATION_TO_V15+.md)**.
-
-**Breaking Changes:**
-
-- Custom regex patterns in parameters (`:param(regex)`) are **no longer supported** due to path-to-regexp v8. Use validation in handlers or middleware instead.
-- Node.js >= 20 is required.
-- TypeScript types are now included in the package (no need for `@types/@koa/router`).
-
-**Upgrading:**
-
-1. Update Node.js to >= 20
-2. Replace custom regex parameters with validation middleware
-3. Remove `@types/@koa/router` if installed (types are now included)
-4. Update any code using deprecated features
-
-**Backward Compatibility:**
-
-The code is mostly backward compatible. If you notice any issues when upgrading, please don't hesitate to [open an issue](https://github.com/koajs/router/issues) and let us know!
+Remove `@types/@koa__router` if installed and import the bundled types directly from `@koa/router`. See [TypeScript Support](#typescript-support).
 
 ## Contributing
 

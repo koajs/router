@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "singleQuote": true,
+  "bracketSpacing": true,
+  "trailingComma": "none",
+  "printWidth": 80,
+  "sortPackageJson": false,
+  "ignorePatterns": [
+    "node_modules/",
+    "dist/",
+    "coverage/",
+    "package-lock.json",
+    "*.log",
+    ".DS_Store",
+    "Thumbs.db",
+    ".vscode/",
+    ".idea/",
+    ".git/",
+    "*.tmp",
+    "*.temp"
+  ]
+}
