@@ -2199,6 +2199,26 @@ describe('Router#route()', () => {
 });
 
 describe('Router#url()', () => {
+  it('generates named route URLs with wildcard arrays', () => {
+    const router = new Router({ prefix: '/api' });
+    router.get('files', '/files/*path', () => {});
+
+    assert.strictEqual(
+      router.url('files', { path: ['a', 'b c'] }),
+      '/api/files/a/b%20c'
+    );
+  });
+
+  it('generates static URLs with wildcard arrays', () => {
+    assert.strictEqual(
+      Router.url('/users/:id/files/*path', {
+        id: 123,
+        path: ['a', 'b c']
+      }),
+      '/users/123/files/a/b%20c'
+    );
+  });
+
   it('generates URL for given route name', () => {
     const app = new Koa();
     const router = new Router();

@@ -307,6 +307,50 @@ describe('Layer', () => {
   });
 
   describe('Layer#url()', () => {
+    it('encodes each named wildcard segment separately', () => {
+      const route = new Layer('/files/*path', ['GET'], [() => {}]);
+      const path = ['hello world', 'a/b', '100%'];
+
+      assert.strictEqual(
+        route.url({ path }),
+        '/files/hello%20world/a%2Fb/100%25'
+      );
+      assert.deepStrictEqual(path, ['hello world', 'a/b', '100%']);
+    });
+
+    it('generates mixed parameters with wildcard segments and query options', () => {
+      const route = new Layer('/users/:id/files/*path', ['GET'], [() => {}]);
+
+      assert.strictEqual(
+        route.url({ id: 123, path: ['a', 'b'] }, { query: { download: 1 } }),
+        '/users/123/files/a/b?download=1'
+      );
+      assert.strictEqual(
+        route.url([123, ['a', 'b']], { query: { download: 1 } }),
+        '/users/123/files/a/b?download=1'
+      );
+    });
+
+    it('coerces wildcard segments individually and keeps ordinary parameter coercion', () => {
+      const route = new Layer('/users/:id/files/*path', ['GET'], [() => {}]);
+
+      assert.strictEqual(
+        route.url({ id: ['a', 'b'], path: [1, 2] }),
+        '/users/a%2Cb/files/1/2'
+      );
+    });
+
+    it('requires a non-empty array for a wildcard parameter', () => {
+      const route = new Layer('/files/*path', ['GET'], [() => {}]);
+
+      for (const path of [[], 'a/b']) {
+        assert.throws(
+          () => route.url({ path }),
+          /Expected "path" to be a non-empty array/
+        );
+      }
+    });
+
     it('generates route URL', () => {
       const route = new Layer('/:category/:title', ['get'], [() => {}], {
         name: 'books'
