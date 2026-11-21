@@ -323,19 +323,28 @@ export default class Layer<
   private _buildParamReplacements(
     parameters: Record<string, unknown> | unknown[],
     cleanPath: string
-  ): Record<string, string> {
+  ): Record<string, string | string[]> {
     const { tokens } = parsePath(cleanPath);
     const hasNamedParameters = tokens.some(
       (token) => 'name' in token && token.name
     );
-    const parameterReplacements: Record<string, string> = {};
+    const parameterReplacements: Record<string, string | string[]> = {};
+    const stringifyParameter = (name: string, value: unknown) => {
+      const isWildcard = this.paramNames.some(
+        (token) => token.type === 'wildcard' && token.name === name
+      );
+      return isWildcard && Array.isArray(value)
+        ? value.map(String)
+        : String(value);
+    };
 
     if (Array.isArray(parameters)) {
       let parameterIndex = 0;
 
       for (const token of tokens) {
         if ('name' in token && token.name) {
-          parameterReplacements[token.name] = String(
+          parameterReplacements[token.name] = stringifyParameter(
+            token.name,
             parameters[parameterIndex++]
           );
         }
@@ -348,7 +357,10 @@ export default class Layer<
       for (const [parameterName, parameterValue] of Object.entries(
         parameters
       )) {
-        parameterReplacements[parameterName] = String(parameterValue);
+        parameterReplacements[parameterName] = stringifyParameter(
+          parameterName,
+          parameterValue
+        );
       }
     }
 
