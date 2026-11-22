@@ -2199,6 +2199,20 @@ describe('Router#route()', () => {
 });
 
 describe('Router#url()', () => {
+  it('preserves wildcard string coercion with encoding disabled', () => {
+    const router = new Router({ prefix: '/api' });
+    router.get('files', '/files/*path', () => {});
+
+    assert.strictEqual(
+      router.url('files', { path: ['a', 'b'] }, { encode: false }),
+      '/api/files/a,b'
+    );
+    assert.strictEqual(
+      Router.url('/files/*path', { path: ['a', 'b'] }, { encode: false }),
+      '/files/a,b'
+    );
+  });
+
   it('generates named route URLs with wildcard arrays', () => {
     const router = new Router({ prefix: '/api' });
     router.get('files', '/files/*path', () => {});

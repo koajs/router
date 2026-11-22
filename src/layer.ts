@@ -257,7 +257,8 @@ export default class Layer<
 
     const parameterReplacements = this._buildParamReplacements(
       params,
-      cleanPath
+      cleanPath,
+      options
     );
 
     const generatedUrl = pathCompiler(parameterReplacements);
@@ -322,7 +323,8 @@ export default class Layer<
    */
   private _buildParamReplacements(
     parameters: Record<string, unknown> | unknown[],
-    cleanPath: string
+    cleanPath: string,
+    options?: UrlOptions
   ): Record<string, string | string[]> {
     const { tokens } = parsePath(cleanPath);
     const hasNamedParameters = tokens.some(
@@ -333,7 +335,7 @@ export default class Layer<
       const isWildcard = this.paramNames.some(
         (token) => token.type === 'wildcard' && token.name === name
       );
-      return isWildcard && Array.isArray(value)
+      return options?.encode !== false && isWildcard && Array.isArray(value)
         ? value.map(String)
         : String(value);
     };

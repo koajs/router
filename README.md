@@ -664,7 +664,7 @@ router.url('user', { id: 3 }, { query: { limit: 1 } });
 router.url('user', { id: 3 }, { query: 'limit=1' });
 // => "/users/3?limit=1"
 
-// Wildcard parameters use arrays of path segments.
+// With encoding enabled, wildcard parameters use arrays of path segments.
 router.get('files', '/files/*path', handler);
 router.url('files', { path: ['docs', 'getting started.md'] });
 // => "/files/docs/getting%20started.md"

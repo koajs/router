@@ -331,6 +331,50 @@ describe('Layer', () => {
       );
     });
 
+    it('preserves wildcard string coercion when encoding is disabled', () => {
+      const route = new Layer('/files/*path', ['GET'], [() => {}]);
+
+      assert.strictEqual(
+        route.url({ path: ['a', 'b'] }, { encode: false }),
+        '/files/a,b'
+      );
+      assert.strictEqual(
+        route.url({ path: 'a/b%20c' }, { encode: false }),
+        '/files/a/b%20c'
+      );
+    });
+
+    it('preserves positional wildcard coercion with encoding disabled and a query', () => {
+      const route = new Layer('/users/:id/files/*path', ['GET'], [() => {}]);
+
+      assert.strictEqual(
+        route.url([123, ['a/b', '100%']], {
+          encode: false,
+          query: { download: 1 }
+        }),
+        '/users/123/files/a/b,100%?download=1'
+      );
+    });
+
+    it('passes each wildcard segment as a string to a custom encoder', () => {
+      const route = new Layer('/files/*path', ['GET'], [() => {}]);
+      const encoded: string[] = [];
+
+      assert.strictEqual(
+        route.url(
+          { path: [123, 'a/b'] },
+          {
+            encode: (value: string) => {
+              encoded.push(value);
+              return encodeURIComponent(value);
+            }
+          }
+        ),
+        '/files/123/a%2Fb'
+      );
+      assert.deepStrictEqual(encoded, ['123', 'a/b']);
+    });
+
     it('coerces wildcard segments individually and keeps ordinary parameter coercion', () => {
       const route = new Layer('/users/:id/files/*path', ['GET'], [() => {}]);
 
