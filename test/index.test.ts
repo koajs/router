@@ -7,9 +7,10 @@
  */
 import { describe, it, before } from 'node:test';
 import assert from 'node:assert';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const distPath = join(__dirname, '..', 'dist');
 const cjsPath = join(distPath, 'index.js');
@@ -32,7 +33,7 @@ describe('Module Exports (CJS/ESM)', () => {
   describe('CommonJS exports', () => {
     it('should allow `const Router = require("@koa/router")`', () => {
       const code = `
-        const Router = require('${cjsPath.replace(/\\/g, '\\\\')}');
+        const Router = require(${JSON.stringify(cjsPath)});
         if (typeof Router !== 'function') {
           throw new Error('Router is not a function, got: ' + typeof Router);
         }
@@ -42,39 +43,45 @@ describe('Module Exports (CJS/ESM)', () => {
         }
         console.log('OK');
       `;
-      const result = execSync(`node -e "${code}"`, { encoding: 'utf-8' });
+      const result = execFileSync(process.execPath, ['-e', code], {
+        encoding: 'utf-8'
+      });
       assert.strictEqual(result.trim(), 'OK');
     });
 
     it('should allow `require("@koa/router").default` for backwards compatibility', () => {
       const code = `
-        const Router = require('${cjsPath.replace(/\\/g, '\\\\')}').default;
+        const Router = require(${JSON.stringify(cjsPath)}).default;
         if (typeof Router !== 'function') {
           throw new Error('Router.default is not a function, got: ' + typeof Router);
         }
         const router = new Router();
         console.log('OK');
       `;
-      const result = execSync(`node -e "${code}"`, { encoding: 'utf-8' });
+      const result = execFileSync(process.execPath, ['-e', code], {
+        encoding: 'utf-8'
+      });
       assert.strictEqual(result.trim(), 'OK');
     });
 
     it('should allow `require("@koa/router").Router` named export', () => {
       const code = `
-        const { Router } = require('${cjsPath.replace(/\\/g, '\\\\')}');
+        const { Router } = require(${JSON.stringify(cjsPath)});
         if (typeof Router !== 'function') {
           throw new Error('Router named export is not a function, got: ' + typeof Router);
         }
         const router = new Router();
         console.log('OK');
       `;
-      const result = execSync(`node -e "${code}"`, { encoding: 'utf-8' });
+      const result = execFileSync(process.execPath, ['-e', code], {
+        encoding: 'utf-8'
+      });
       assert.strictEqual(result.trim(), 'OK');
     });
 
     it('should have Router constructor equal to Router.Router and Router.default', () => {
       const code = `
-        const Router = require('${cjsPath.replace(/\\/g, '\\\\')}');
+        const Router = require(${JSON.stringify(cjsPath)});
         if (Router !== Router.Router) {
           throw new Error('Router !== Router.Router');
         }
@@ -83,13 +90,15 @@ describe('Module Exports (CJS/ESM)', () => {
         }
         console.log('OK');
       `;
-      const result = execSync(`node -e "${code}"`, { encoding: 'utf-8' });
+      const result = execFileSync(process.execPath, ['-e', code], {
+        encoding: 'utf-8'
+      });
       assert.strictEqual(result.trim(), 'OK');
     });
 
     it('should expose static url() method', () => {
       const code = `
-        const Router = require('${cjsPath.replace(/\\/g, '\\\\')}');
+        const Router = require(${JSON.stringify(cjsPath)});
         if (typeof Router.url !== 'function') {
           throw new Error('Router.url is not a function');
         }
@@ -99,7 +108,9 @@ describe('Module Exports (CJS/ESM)', () => {
         }
         console.log('OK');
       `;
-      const result = execSync(`node -e "${code}"`, { encoding: 'utf-8' });
+      const result = execFileSync(process.execPath, ['-e', code], {
+        encoding: 'utf-8'
+      });
       assert.strictEqual(result.trim(), 'OK');
     });
   });
@@ -107,7 +118,7 @@ describe('Module Exports (CJS/ESM)', () => {
   describe('ESM exports', () => {
     it('should allow `import Router from "@koa/router"`', () => {
       const code = `
-        import Router from '${esmPath.replace(/\\/g, '\\\\')}';
+        import Router from ${JSON.stringify(pathToFileURL(esmPath).href)};
         if (typeof Router !== 'function') {
           throw new Error('Router is not a function, got: ' + typeof Router);
         }
@@ -117,45 +128,57 @@ describe('Module Exports (CJS/ESM)', () => {
         }
         console.log('OK');
       `;
-      const result = execSync(`node --input-type=module -e "${code}"`, {
-        encoding: 'utf-8'
-      });
+      const result = execFileSync(
+        process.execPath,
+        ['--input-type=module', '-e', code],
+        {
+          encoding: 'utf-8'
+        }
+      );
       assert.strictEqual(result.trim(), 'OK');
     });
 
     it('should allow `import { Router } from "@koa/router"`', () => {
       const code = `
-        import { Router } from '${esmPath.replace(/\\/g, '\\\\')}';
+        import { Router } from ${JSON.stringify(pathToFileURL(esmPath).href)};
         if (typeof Router !== 'function') {
           throw new Error('Router named import is not a function, got: ' + typeof Router);
         }
         const router = new Router();
         console.log('OK');
       `;
-      const result = execSync(`node --input-type=module -e "${code}"`, {
-        encoding: 'utf-8'
-      });
+      const result = execFileSync(
+        process.execPath,
+        ['--input-type=module', '-e', code],
+        {
+          encoding: 'utf-8'
+        }
+      );
       assert.strictEqual(result.trim(), 'OK');
     });
 
     it('should have default export equal to named Router export', () => {
       const code = `
-        import DefaultRouter from '${esmPath.replace(/\\/g, '\\\\')}';
-        import { Router } from '${esmPath.replace(/\\/g, '\\\\')}';
+        import DefaultRouter from ${JSON.stringify(pathToFileURL(esmPath).href)};
+        import { Router } from ${JSON.stringify(pathToFileURL(esmPath).href)};
         if (DefaultRouter !== Router) {
           throw new Error('Default export !== named Router export');
         }
         console.log('OK');
       `;
-      const result = execSync(`node --input-type=module -e "${code}"`, {
-        encoding: 'utf-8'
-      });
+      const result = execFileSync(
+        process.execPath,
+        ['--input-type=module', '-e', code],
+        {
+          encoding: 'utf-8'
+        }
+      );
       assert.strictEqual(result.trim(), 'OK');
     });
 
     it('should expose static url() method', () => {
       const code = `
-        import Router from '${esmPath.replace(/\\/g, '\\\\')}';
+        import Router from ${JSON.stringify(pathToFileURL(esmPath).href)};
         if (typeof Router.url !== 'function') {
           throw new Error('Router.url is not a function');
         }
@@ -165,9 +188,13 @@ describe('Module Exports (CJS/ESM)', () => {
         }
         console.log('OK');
       `;
-      const result = execSync(`node --input-type=module -e "${code}"`, {
-        encoding: 'utf-8'
-      });
+      const result = execFileSync(
+        process.execPath,
+        ['--input-type=module', '-e', code],
+        {
+          encoding: 'utf-8'
+        }
+      );
       assert.strictEqual(result.trim(), 'OK');
     });
   });
