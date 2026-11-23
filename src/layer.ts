@@ -255,10 +255,10 @@ export default class Layer<
       ...options
     });
 
+    const parameterEntries = this._getParamEntries(params, cleanPath);
     const parameterReplacements = this._buildParamReplacements(
-      params,
-      cleanPath,
-      options
+      parameterEntries,
+      { encode: options?.encode !== false }
     );
 
     const generatedUrl = pathCompiler(parameterReplacements);
@@ -318,52 +318,53 @@ export default class Layer<
   }
 
   /**
-   * Build parameter replacements for URL generation
+   * Resolve named and positional URL parameters to entries
    * @private
    */
-  private _buildParamReplacements(
+  private _getParamEntries(
     parameters: Record<string, unknown> | unknown[],
-    cleanPath: string,
-    options?: UrlOptions
-  ): Record<string, string | string[]> {
+    cleanPath: string
+  ): Array<[string, unknown]> {
     const { tokens } = parsePath(cleanPath);
-    const hasNamedParameters = tokens.some(
-      (token) => 'name' in token && token.name
+    const namedTokens = tokens.filter(
+      (token): token is Key => 'name' in token && Boolean(token.name)
     );
-    const parameterReplacements: Record<string, string | string[]> = {};
-    const stringifyParameter = (name: string, value: unknown) => {
-      const isWildcard = this.paramNames.some(
-        (token) => token.type === 'wildcard' && token.name === name
-      );
-      return options?.encode !== false && isWildcard && Array.isArray(value)
-        ? value.map(String)
-        : String(value);
-    };
 
     if (Array.isArray(parameters)) {
-      let parameterIndex = 0;
+      return namedTokens.map((token, index) => [token.name, parameters[index]]);
+    }
 
-      for (const token of tokens) {
-        if ('name' in token && token.name) {
-          parameterReplacements[token.name] = stringifyParameter(
-            token.name,
-            parameters[parameterIndex++]
-          );
-        }
-      }
-    } else if (
-      hasNamedParameters &&
+    if (
+      namedTokens.length > 0 &&
       typeof parameters === 'object' &&
       !('query' in parameters)
     ) {
-      for (const [parameterName, parameterValue] of Object.entries(
-        parameters
-      )) {
-        parameterReplacements[parameterName] = stringifyParameter(
-          parameterName,
-          parameterValue
-        );
-      }
+      return Object.entries(parameters);
+    }
+
+    return [];
+  }
+
+  /**
+   * Coerce URL parameter values for the path compiler
+   * @private
+   */
+  private _buildParamReplacements(
+    parameterEntries: Array<[string, unknown]>,
+    { encode }: { encode: boolean }
+  ): Record<string, string | string[]> {
+    const wildcardNames = new Set(
+      this.paramNames
+        .filter((token) => token.type === 'wildcard')
+        .map((token) => token.name)
+    );
+    const parameterReplacements: Record<string, string | string[]> = {};
+
+    for (const [name, value] of parameterEntries) {
+      parameterReplacements[name] =
+        encode && wildcardNames.has(name) && Array.isArray(value)
+          ? value.map(String)
+          : String(value);
     }
 
     return parameterReplacements;
