@@ -33,7 +33,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 10
     env:
-      NPM_CONFIG_CACHE: ${{ runner.temp }}/npm-cache
+      NPM_CONFIG_CACHE: ${{ github.workspace }}/.npm-cache
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -45,7 +45,7 @@ jobs:
       - name: Cache npm downloads
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ${{ runner.temp }}/npm-cache
+          path: ${{ env.NPM_CONFIG_CACHE }}
           key: ${{ runner.os }}-node-26-npm-12-${{ hashFiles('package-lock.json') }}
       - name: Set up npm
         run: npm install --global npm@12.2.2
