@@ -32,6 +32,8 @@ jobs:
     name: Module exports on Windows
     runs-on: windows-latest
     timeout-minutes: 10
+    env:
+      NPM_CONFIG_CACHE: ${{ runner.temp }}/npm-cache
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -39,7 +41,12 @@ jobs:
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '26'
-          cache: npm
+          package-manager-cache: false
+      - name: Cache npm downloads
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/npm-cache
+          key: ${{ runner.os }}-node-26-npm-12-${{ hashFiles('package-lock.json') }}
       - name: Set up npm
         run: npm install --global npm@12.2.2
       - name: Install dependencies
