@@ -8,7 +8,7 @@ import type {
   RouterParameterMiddleware,
   UrlOptions
 } from './types';
-import type { Key } from './utils/path-to-regexp-wrapper';
+import type { Key, Token } from './utils/path-to-regexp-wrapper';
 import {
   compilePathToRegexp,
   compilePath,
@@ -255,10 +255,14 @@ export default class Layer<
       ...options
     });
 
-    const parameterEntries = this._getParamEntries(params, cleanPath);
+    const { tokens } = parsePath(cleanPath);
+    const parameterEntries = this._getParamEntries(params, tokens);
     const parameterReplacements = this._buildParamReplacements(
       parameterEntries,
-      { encode: options?.encode !== false }
+      {
+        encode: options?.encode !== false,
+        wildcardNames: this._getWildcardNames(tokens)
+      }
     );
 
     const generatedUrl = pathCompiler(parameterReplacements);
@@ -323,9 +327,8 @@ export default class Layer<
    */
   private _getParamEntries(
     parameters: Record<string, unknown> | unknown[],
-    cleanPath: string
+    tokens: Token[]
   ): Array<[string, unknown]> {
-    const { tokens } = parsePath(cleanPath);
     const namedTokens = tokens.filter(
       (token): token is Key => 'name' in token && Boolean(token.name)
     );
@@ -346,18 +349,33 @@ export default class Layer<
   }
 
   /**
+   * Collect wildcard names from the current path, including optional groups
+   * @private
+   */
+  private _getWildcardNames(tokens: Token[]): Set<string> {
+    const names = new Set<string>();
+
+    for (const token of tokens) {
+      if (token.type === 'wildcard') {
+        names.add(token.name);
+      } else if (token.type === 'group') {
+        for (const name of this._getWildcardNames(token.tokens)) {
+          names.add(name);
+        }
+      }
+    }
+
+    return names;
+  }
+
+  /**
    * Coerce URL parameter values for the path compiler
    * @private
    */
   private _buildParamReplacements(
     parameterEntries: Array<[string, unknown]>,
-    { encode }: { encode: boolean }
+    { encode, wildcardNames }: { encode: boolean; wildcardNames: Set<string> }
   ): Record<string, string | string[]> {
-    const wildcardNames = new Set(
-      this.paramNames
-        .filter((token) => token.type === 'wildcard')
-        .map((token) => token.name)
-    );
     const parameterReplacements: Record<string, string | string[]> = {};
 
     for (const [name, value] of parameterEntries) {

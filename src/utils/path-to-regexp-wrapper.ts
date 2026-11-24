@@ -151,4 +151,4 @@ export function normalizeLayerOptionsToPathToRegexp(
   return normalized;
 }
 
-export { type Key } from 'path-to-regexp';
+export { type Key, type Token } from 'path-to-regexp';

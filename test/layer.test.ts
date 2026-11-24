@@ -307,6 +307,35 @@ describe('Layer', () => {
   });
 
   describe('Layer#url()', () => {
+    it('uses the current path for renamed wildcard parameters', () => {
+      const route = new Layer('/files/*old', ['GET'], [() => {}]);
+      route.path = '/files/*path';
+
+      assert.strictEqual(route.url({ path: ['a', 'b c'] }), '/files/a/b%20c');
+      assert.strictEqual(route.url([['a', 'b c']]), '/files/a/b%20c');
+    });
+
+    it('uses ordinary parameter coercion after replacing a wildcard path', () => {
+      const route = new Layer('/files/*path', ['GET'], [() => {}]);
+      route.path = '/files/:path';
+
+      assert.strictEqual(route.url({ path: ['a', 'b'] }), '/files/a%2Cb');
+    });
+
+    it('recognizes grouped wildcards in the current path', () => {
+      const route = new Layer('/users/:id', ['GET'], [() => {}]);
+      route.path = '/users/:id{/files{/*path}}';
+
+      assert.strictEqual(
+        route.url({ id: 123, path: ['a', 'b c'] }),
+        '/users/123/files/a/b%20c'
+      );
+      assert.strictEqual(
+        route.url({ id: 123, path: ['a', 'b'] }, { encode: false }),
+        '/users/123/files/a,b'
+      );
+    });
+
     it('encodes each named wildcard segment separately', () => {
       const route = new Layer('/files/*path', ['GET'], [() => {}]);
       const path = ['hello world', 'a/b', '100%'];
