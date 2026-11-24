@@ -13,7 +13,12 @@ jobs:
           - '22'
           - '24'
           - '26'
+        include:
+          - os: windows-latest
+            node_version: '26'
     name: Node ${{ matrix.node_version }} on ${{ matrix.os }}
+    env:
+      NPM_CONFIG_CACHE: ${{ github.workspace }}/.npm-cache
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Setup node
@@ -26,7 +31,7 @@ jobs:
       - name: Cache npm downloads
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ~/.npm
+          path: ${{ env.NPM_CONFIG_CACHE }}
           key: ${{ runner.os }}-node-${{ matrix.node_version }}-npm-12-${{ hashFiles('package-lock.json') }}
       - name: Install dependencies
         run: npm ci
