@@ -8,7 +8,7 @@ import type {
   RouterParameterMiddleware,
   UrlOptions
 } from './types';
-import type { Key } from './utils/path-to-regexp-wrapper';
+import type { Key, Token } from './utils/path-to-regexp-wrapper';
 import {
   compilePathToRegexp,
   compilePath,
@@ -255,9 +255,14 @@ export default class Layer<
       ...options
     });
 
+    const { tokens } = parsePath(cleanPath);
+    const parameterEntries = this._getParamEntries(params, tokens);
     const parameterReplacements = this._buildParamReplacements(
-      params,
-      cleanPath
+      parameterEntries,
+      {
+        encode: options?.encode !== false,
+        wildcardNames: this._getWildcardNames(tokens)
+      }
     );
 
     const generatedUrl = pathCompiler(parameterReplacements);
@@ -317,39 +322,67 @@ export default class Layer<
   }
 
   /**
-   * Build parameter replacements for URL generation
+   * Resolve named and positional URL parameters to entries
    * @private
    */
-  private _buildParamReplacements(
+  private _getParamEntries(
     parameters: Record<string, unknown> | unknown[],
-    cleanPath: string
-  ): Record<string, string> {
-    const { tokens } = parsePath(cleanPath);
-    const hasNamedParameters = tokens.some(
-      (token) => 'name' in token && token.name
+    tokens: Token[]
+  ): Array<[string, unknown]> {
+    const namedTokens = tokens.filter(
+      (token): token is Key => 'name' in token && Boolean(token.name)
     );
-    const parameterReplacements: Record<string, string> = {};
 
     if (Array.isArray(parameters)) {
-      let parameterIndex = 0;
+      return namedTokens.map((token, index) => [token.name, parameters[index]]);
+    }
 
-      for (const token of tokens) {
-        if ('name' in token && token.name) {
-          parameterReplacements[token.name] = String(
-            parameters[parameterIndex++]
-          );
-        }
-      }
-    } else if (
-      hasNamedParameters &&
+    if (
+      namedTokens.length > 0 &&
       typeof parameters === 'object' &&
       !('query' in parameters)
     ) {
-      for (const [parameterName, parameterValue] of Object.entries(
-        parameters
-      )) {
-        parameterReplacements[parameterName] = String(parameterValue);
+      return Object.entries(parameters);
+    }
+
+    return [];
+  }
+
+  /**
+   * Collect wildcard names from the current path, including optional groups
+   * @private
+   */
+  private _getWildcardNames(tokens: Token[]): Set<string> {
+    const names = new Set<string>();
+
+    for (const token of tokens) {
+      if (token.type === 'wildcard') {
+        names.add(token.name);
+      } else if (token.type === 'group') {
+        for (const name of this._getWildcardNames(token.tokens)) {
+          names.add(name);
+        }
       }
+    }
+
+    return names;
+  }
+
+  /**
+   * Coerce URL parameter values for the path compiler
+   * @private
+   */
+  private _buildParamReplacements(
+    parameterEntries: Array<[string, unknown]>,
+    { encode, wildcardNames }: { encode: boolean; wildcardNames: Set<string> }
+  ): Record<string, string | string[]> {
+    const parameterReplacements: Record<string, string | string[]> = {};
+
+    for (const [name, value] of parameterEntries) {
+      parameterReplacements[name] =
+        encode && wildcardNames.has(name) && Array.isArray(value)
+          ? value.map(String)
+          : String(value);
     }
 
     return parameterReplacements;

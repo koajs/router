@@ -98,7 +98,7 @@ export function compilePathToRegexp(
 export function compilePath(
   path: string,
   options: Record<string, unknown> = {}
-): (parameters?: Record<string, string>) => string {
+): (parameters?: Record<string, string | string[]>) => string {
   return compile(path, options);
 }
 
@@ -151,4 +151,4 @@ export function normalizeLayerOptionsToPathToRegexp(
   return normalized;
 }
 
-export { type Key } from 'path-to-regexp';
+export { type Key, type Token } from 'path-to-regexp';
