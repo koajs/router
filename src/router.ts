@@ -111,15 +111,8 @@ class RouterImplementation<
    */
   constructor(options: RouterOptions = {}) {
     this.opts = options;
-    this.methods = this.opts.methods || [
-      'HEAD',
-      'OPTIONS',
-      'GET',
-      'PUT',
-      'PATCH',
-      'POST',
-      'DELETE'
-    ];
+    this.methods =
+      this.opts.methods || httpMethods.map((method) => method.toUpperCase());
     this.exclusive = Boolean(this.opts.exclusive);
 
     this.params = {};

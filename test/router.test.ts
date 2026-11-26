@@ -903,9 +903,23 @@ it('responds with user-provided throwable using the "throw" and "methodNotAllowe
   });
 });
 
-it('responds with 501 Not Implemented', async () => {
+it('implements every Node.js HTTP method by default', async () => {
   const app = new Koa();
   const router = new Router();
+  app.use(router.routes());
+  app.use(router.allowedMethods());
+  router.get('/users', () => {});
+  router.put('/users', () => {});
+  assert.deepStrictEqual(router.methods, http.METHODS);
+  const res = await request(http.createServer(app.callback()))
+    .search('/users')
+    .expect(405);
+  assert.strictEqual(res.header.allow, 'HEAD, GET, PUT');
+});
+
+it('responds with 501 Not Implemented', async () => {
+  const app = new Koa();
+  const router = new Router({ methods: ['GET', 'PUT'] });
   app.use(router.routes());
   app.use(router.allowedMethods());
   router.get('/users', () => {});
@@ -915,7 +929,7 @@ it('responds with 501 Not Implemented', async () => {
 
 it('responds with 501 Not Implemented using the "throw" option', async () => {
   const app = new Koa();
-  const router = new Router();
+  const router = new Router({ methods: ['GET', 'PUT'] });
   app.use(router.routes());
   app.use((ctx, next) => {
     return next().catch((err: HttpError) => {
@@ -937,7 +951,7 @@ it('responds with 501 Not Implemented using the "throw" option', async () => {
 
 it('responds with user-provided throwable using the "throw" and "notImplemented" options', async () => {
   const app = new Koa();
-  const router = new Router();
+  const router = new Router({ methods: ['GET', 'PUT'] });
   app.use(router.routes());
   app.use((ctx, next) => {
     return next().catch((err: HttpError) => {
