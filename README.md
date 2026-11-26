@@ -262,7 +262,7 @@ Create a new router instance.
 | `prefix`    | `string`                       | Prefix all routes with this path                                                                                                                                               |
 | `exclusive` | `boolean \| 'specificity'`     | `true`: only run the last-registered matching route. `'specificity'`: only run the route with the fewest path parameters (OpenAPI-compliant). Omit to run all matching routes. |
 | `host`      | `string \| string[] \| RegExp` | Match routes only for this hostname(s)                                                                                                                                         |
-| `methods`   | `string[]`                     | Custom HTTP methods to support                                                                                                                                                 |
+| `methods`   | `string[]`                     | HTTP methods the router responds to; `allowedMethods()` answers `501` for others. Defaults to Node.js `http.METHODS`                                                           |
 | `sensitive` | `boolean`                      | Enable case-sensitive routing                                                                                                                                                  |
 | `strict`    | `boolean`                      | Require trailing slashes                                                                                                                                                       |
 
