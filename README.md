@@ -291,7 +291,7 @@ Router provides methods for all standard HTTP verbs:
 - `router.trace(path, ...middleware)` - TRACE method
 - `router.all(path, ...middleware)` - Match any HTTP method
 
-**Note:** All standard HTTP methods (as defined by Node.js `http.METHODS`) are automatically available as router methods. The `methods` option in the constructor only controls which methods `allowedMethods()` answers with `501 Not Implemented`; it does not restrict route registration or dispatch. You cannot use truly custom HTTP methods beyond the standard set.
+**Note:** All standard HTTP methods (as defined by Node.js `http.METHODS`) are automatically available as router methods. The `methods` option in the constructor only controls which methods `allowedMethods()` answers with `501 Not Implemented`; it does not restrict route registration or dispatch. `router.register()` accepts any method name, but Node.js's HTTP/1 parser rejects requests whose method is not in `http.METHODS`, so such routes are only reachable over other transports such as HTTP/2.
 
 **Basic Example:**
 
