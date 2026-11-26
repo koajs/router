@@ -262,7 +262,7 @@ Create a new router instance.
 | `prefix`    | `string`                       | Prefix all routes with this path                                                                                                                                               |
 | `exclusive` | `boolean \| 'specificity'`     | `true`: only run the last-registered matching route. `'specificity'`: only run the route with the fewest path parameters (OpenAPI-compliant). Omit to run all matching routes. |
 | `host`      | `string \| string[] \| RegExp` | Match routes only for this hostname(s)                                                                                                                                         |
-| `methods`   | `string[]`                     | HTTP methods the router responds to; `allowedMethods()` answers `501` for others. Defaults to Node.js `http.METHODS`                                                           |
+| `methods`   | `string[]`                     | Methods `allowedMethods()` treats as implemented (default: Node.js `http.METHODS`); it answers `501` for others. Does not restrict route registration or dispatch              |
 | `sensitive` | `boolean`                      | Enable case-sensitive routing                                                                                                                                                  |
 | `strict`    | `boolean`                      | Require trailing slashes                                                                                                                                                       |
 
@@ -291,7 +291,7 @@ Router provides methods for all standard HTTP verbs:
 - `router.trace(path, ...middleware)` - TRACE method
 - `router.all(path, ...middleware)` - Match any HTTP method
 
-**Note:** All standard HTTP methods (as defined by Node.js `http.METHODS`) are automatically available as router methods. The `methods` option in the constructor can be used to limit which methods the router responds to, but you cannot use truly custom HTTP methods beyond the standard set.
+**Note:** All standard HTTP methods (as defined by Node.js `http.METHODS`) are automatically available as router methods. The `methods` option in the constructor only controls which methods `allowedMethods()` answers with `501 Not Implemented`; it does not restrict route registration or dispatch. You cannot use truly custom HTTP methods beyond the standard set.
 
 **Basic Example:**
 
@@ -330,14 +330,14 @@ router.copy('/files/:source', async (ctx) => {
   ctx.body = { message: 'File copied' };
 });
 
-// Limiting which methods the router responds to
+// Limiting which methods allowedMethods() treats as implemented
 const apiRouter = new Router({
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] // Only these methods
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
 });
 
 apiRouter.get('/users', getUsers);
 apiRouter.post('/users', createUser);
-// router.purge() won't work here because PURGE is not in the methods array
+// allowedMethods() answers PURGE requests with 501, unless a PURGE route handles them first
 ```
 
 **Note:** HEAD requests are automatically supported for all GET routes. When you define a GET route, HEAD requests will execute the same handler and return the same headers but with an empty body.
